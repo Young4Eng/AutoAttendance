@@ -1,0 +1,54 @@
+[
+  {
+    "date": "2026-08-28",
+    "year": 2026,
+    "grade": 2,
+    "class": 3,
+    "number": 1,
+    "name": "학생01",
+    "category": "illness",
+    "type": "late",
+    "period": 3,
+    "reason": "",
+    "status": "queued"
+  },
+  {
+    "date": "2026-08-28",
+    "year": 2026,
+    "grade": 2,
+    "class": 3,
+    "number": 2,
+    "name": "학생02",
+    "category": "illness",
+    "type": "early_leave",
+    "period": 3,
+    "reason": "",
+    "status": "queued"
+  },
+  {
+    "date": "2026-08-28",
+    "year": 2026,
+    "grade": 2,
+    "class": 3,
+    "number": 3,
+    "name": "학생03",
+    "category": "illness",
+    "type": "absence",
+    "period": 3,
+    "reason": "",
+    "status": "queued"
+  },
+  {
+    "date": "2026-08-28",
+    "year": 2026,
+    "grade": 2,
+    "class": 3,
+    "number": 4,
+    "name": "학생04",
+    "category": "illness",
+    "type": "result",
+    "period": 3,
+    "reason": "",
+    "status": "queued"
+  }
+]

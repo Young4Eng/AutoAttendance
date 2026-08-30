@@ -1,0 +1,32 @@
+# 의존성·빌드
+node_modules/
+dist/
+build/
+.vite/
+*.local
+
+# 비밀
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+
+# 실데이터·캡처 (가명 픽스처만 허용)
+*.xls
+*.xlsx
+!tests/fixtures/**
+captures/
+screenshots/
+neis-raw/
+
+# 로그·OS
+*.log
+.DS_Store
+Thumbs.db
+
+# 에디터
+.idea/
+.vscode/
+*.swp
