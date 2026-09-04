@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "출결메이트",
-  "version": "0.1.0",
-  "description": "나이스 일일출결관리(담임용) 화면 감지 뼈대. 저장·로그인 자동화 없음.",
+  "version": "0.2.0",
+  "description": "나이스 일일출결관리(담임용) 감지 + 웹앱 대기열 수신. 저장·로그인 자동화 없음.",
   "minimum_chrome_version": "116",
   "permissions": [
     "storage"
@@ -19,6 +19,11 @@
     "*://*.neis.go.kr/*",
     "http://localhost:5173/*"
   ],
+  "externally_connectable": {
+    "matches": [
+      "http://localhost:5173/*"
+    ]
+  },
   "content_scripts": [
     {
       "matches": [
