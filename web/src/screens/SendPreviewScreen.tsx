@@ -9,6 +9,7 @@ import { PreviewList } from '../components/PreviewList';
 import { SlashRangeHint } from '../components/SlashRangeHint';
 import { ConfirmSendDialog } from '../components/ConfirmSendDialog';
 import { ConfirmClearDialog } from '../components/ConfirmClearDialog';
+import { sendToExtension } from '../lib/sendToExtension';
 
 interface Props {
   owner: Owner;
@@ -80,6 +81,13 @@ export function SendPreviewScreen({ owner, date, periodCount, onBack }: Props) {
       }
       setStatus(`${drafts.length}건을 대기(queued)로 표시했습니다`);
       await load();
+      const queued = drafts.map((r) => ({ ...r, status: 'queued' as const }));
+      const ext = await sendToExtension(queued);
+      if (ext.ok) {
+        setStatus((s) => `${s ?? ''} · 확장 수신 ${ext.accepted}건`);
+      } else if (ext.code !== 'missing_extension_id') {
+        setStatus((s) => `${s ?? ''} · 확장 미연결(${ext.code})`);
+      }
     } catch (e) {
       const code = e instanceof Error ? e.message : 'queue_error';
       setError(`대기열 반영 실패: ${code}`);
