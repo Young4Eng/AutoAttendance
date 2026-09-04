@@ -19,4 +19,4 @@
 
 - #33/0.4.2: tables=0(Nexacro) 행을 번호+성명 밴드·리프 스캔으로 매칭. table.rows/nth-row=번호 가정 없음. 빈 번호 스킵. row_not_found 시 hitNum/hitName/rowCand 익명 diag. row-match 순수헬퍼+픽스처. 권한 추가 없음.
 
-- #35/0.4.3: 적용 UI 통짜(Nexacro). 마감 셀·contentsbox 재시도로 팝업 오픈, 출결마감구분/질병+지각 레이어 탐지, 라벨 텍스트로 구분·종류·적용(출결마감 제외), P칸 좌표 1회 클릭. popup_not_found/apply_not_found/period_cell_missing 익명 diag. popup-apply 순수헬퍼+픽스처. 권한 추가 없음.
+- #35/0.4.3: 적용 UI 통짜(Nexacro). 마감 셀·contentsbox 재시도로 팝업 오픈, 출결마감구분/질병+지각 레이어 탐지, 라벨 텍스트로 구분·종류·적용(출결마감 제외), P칸 좌표 1회 클릭. popup_not_found/popup_no_apply/period_cell_missing 익명 diag. popup-apply 순수헬퍼+픽스처. 권한 추가 없음.
