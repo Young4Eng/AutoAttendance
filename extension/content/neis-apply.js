@@ -1672,6 +1672,10 @@
       closeText.indexOf(wantClose) >= 0 ||
       (catKo && typeKo && closeText.indexOf(catKo) >= 0 && closeText.indexOf(typeKo) >= 0);
     if (!closeOk) return { ok: false, code: "close_label_mismatch" };
+    // Nexacro(spatial/div): '/' 표시가 table과 다름 → 마감 라벨 일치면 soft OK
+    if (grid.kind === "spatial" || grid.kind === "div-row") {
+      return { ok: true, soft: true };
+    }
     var expect = expectedSlashMap(item.type, item.period, grid.periodCount);
     function check(cell, should) {
       if (!cell) return !should;
