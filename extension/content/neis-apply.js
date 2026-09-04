@@ -53,6 +53,33 @@
       .trim();
   }
 
+  /** 사이드내비(메시지함 등) — 「반」라벨 오탐 제외 */
+  function isSidenavContext(el) {
+    var cur = el;
+    var depth = 0;
+    while (cur && cur.nodeType === 1 && depth < 24) {
+      var id = String(cur.id || "").toLowerCase();
+      var cls = "";
+      try {
+        cls = String(cur.className && cur.className.baseVal != null ? cur.className.baseVal : cur.className || "").toLowerCase();
+      } catch (e) {
+        cls = "";
+      }
+      var aria = "";
+      try {
+        aria = String((cur.getAttribute && (cur.getAttribute("aria-label") || cur.getAttribute("title"))) || "");
+      } catch (e2) {
+        aria = "";
+      }
+      var blob = id + " " + cls + " " + aria;
+      if (/sidenavigation|sidenav|cl-sidenavigation|메시지함/i.test(blob)) return true;
+      if (cur.tagName === "NAV" && /side|nav|메시지/i.test(blob)) return true;
+      cur = cur.parentElement;
+      depth++;
+    }
+    return false;
+  }
+
   function findElementsByExactText(root, text) {
     const out = [];
     function walk(node) {
@@ -625,17 +652,21 @@
   }
 
   function exactLabelEls(labelText) {
+    function notSide(el) {
+      return !isSidenavContext(el);
+    }
     var hits = findLabelHits(document, labelText).filter(function (el) {
-      return labelTextMatches(normText(el.textContent), labelText);
+      return labelTextMatches(normText(el.textContent), labelText) && notSide(el);
     });
     if (hits.length) return hits;
-    var exact = findElementsByExactText(document, labelText);
+    var exact = findElementsByExactText(document, labelText).filter(notSide);
     if (exact.length) return exact;
     var soft = [];
     var all = document.querySelectorAll("*");
     for (var i = 0; i < all.length; i++) {
       var el = all[i];
       if (!visible(el)) continue;
+      if (!notSide(el)) continue;
       var full = normText(el.textContent);
       if (!labelTextMatches(full, labelText)) continue;
       if (full.length > labelText.length + 3) continue;
@@ -828,44 +859,129 @@
     return out;
   }
 
+  /** input value 날짜 패턴 스캔 (visible 포함, 값만·이름 없음) */
+  function scanDateFromInputs() {
+    var inputs = document.querySelectorAll("input");
+    var date = "";
+    var hit = 0;
+    for (var i = 0; i < inputs.length; i++) {
+      var inp = inputs[i];
+      if (isSidenavContext(inp)) continue;
+      var v = controlValue(inp);
+      if (!v) continue;
+      var d = normalizeDate(v);
+      if (!d) continue;
+      hit++;
+      if (!date) date = d;
+    }
+    return { date: date, hasDateInput: hit > 0, count: hit };
+  }
+
+  /** 짧은 DIV/페이지 텍스트에서 "2학년 3반 2026.09.04." 밴드 압축 파싱 */
+  function scanBandCompactFromDom() {
+    var fb = FB();
+    var empty = { year: null, grade: null, class: null, date: "", raw: {} };
+    if (!fb || !fb.parseBandCompact) return { parsed: empty, bandHit: false, count: 0 };
+    var count = 0;
+    var best = null;
+    var nodes = document.querySelectorAll("div, span, td, th, label, a, p, li");
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (isSidenavContext(el)) continue;
+      var tx = normText(el.textContent);
+      if (!tx || tx.length > 80) continue;
+      if (!/\d+학년/.test(tx) || tx.indexOf("반") < 0) continue;
+      var p = fb.parseBandCompact(tx);
+      if (p && p.grade != null && p.class != null) {
+        count++;
+        if (!best) best = p;
+      }
+    }
+    if (!best) {
+      var p2 = fb.parseBandCompact(pageInnerText());
+      if (p2 && p2.grade != null && p2.class != null) {
+        best = p2;
+        count++;
+      }
+    }
+    return { parsed: best || empty, bandHit: count > 0, count: count };
+  }
+
   function readFilters() {
     var fb = FB();
     var labels = collectFilterBarLabels();
+    var hasYearLab = false;
+    var hasGradeLab = false;
+    var hasDateLab = false;
     var bandY = null;
     for (var i = 0; i < labels.length; i++) {
       if (labels[i].key === "year") {
-        bandY = labels[i].y;
-        break;
+        hasYearLab = true;
+        if (bandY == null) bandY = labels[i].y;
+      } else if (labels[i].key === "grade") {
+        hasGradeLab = true;
+      } else if (labels[i].key === "date") {
+        hasDateLab = true;
       }
     }
     if (bandY == null && labels.length) bandY = labels[0].y;
+    // 학년도/학년/일자 라벨 전부 없으면 라벨 경로 비활성 (반만 sidenav 오탐일 수 있음)
+    var labelPathEmpty = !(hasYearLab || hasGradeLab || hasDateLab);
+
     var tokens = collectFilterBarTokens(bandY, 40);
     var orderParsed =
-      fb && fb.parseFilterBarByOrder ? fb.parseFilterBarByOrder(labels, tokens) : null;
+      !labelPathEmpty && fb && fb.parseFilterBarByOrder
+        ? fb.parseFilterBarByOrder(labels, tokens)
+        : null;
 
-    var domRaw = {
-      year: readFilterFieldDom("학년도", "year"),
-      grade: readFilterFieldDom("학년", "grade"),
-      class: readFilterFieldDom("반", "class"),
-      date: readFilterFieldDom("일자", "date"),
-    };
+    var domRaw = labelPathEmpty
+      ? { year: "", grade: "", class: "", date: "" }
+      : {
+          year: readFilterFieldDom("학년도", "year"),
+          grade: readFilterFieldDom("학년", "grade"),
+          class: readFilterFieldDom("반", "class"),
+          date: readFilterFieldDom("일자", "date"),
+        };
+
+    var dateScan = scanDateFromInputs();
+    var bandScan = scanBandCompactFromDom();
+
     var textParsed = fb
       ? fb.parseFilterBarText(pageInnerText())
       : { year: null, grade: null, class: null, date: "", raw: {} };
+
+    var extras = {
+      band: bandScan.parsed,
+      dateInput: dateScan.date,
+      hasDateInput: dateScan.hasDateInput,
+      bandHit: bandScan.bandHit,
+      bandHitCount: bandScan.count,
+      labelPathEmpty: labelPathEmpty,
+    };
+
     if (fb && fb.mergeFilterValues) {
-      return fb.mergeFilterValues(domRaw, textParsed, orderParsed);
+      return fb.mergeFilterValues(domRaw, textParsed, orderParsed, extras);
     }
+    // 최소 폴백: band/input 우선
+    var year = bandScan.parsed.year;
+    var grade = bandScan.parsed.grade;
+    var klass = bandScan.parsed.class;
+    var date = dateScan.date || bandScan.parsed.date || "";
+    if (!year && date) year = Number(String(date).slice(0, 4)) || null;
     return {
-      year: domRaw.year ? Number(String(domRaw.year).match(/(?:19|20)\d{2}/) || [])[0] : null,
-      grade: domRaw.grade ? Number(String(domRaw.grade).match(/\d+/) || [])[0] : null,
-      class: domRaw.class ? Number(String(domRaw.class).match(/\d+/) || [])[0] : null,
-      date: normalizeDate(domRaw.date),
+      year: year,
+      grade: grade,
+      class: klass,
+      date: normalizeDate(date),
       _raw: {
-        year: String(domRaw.year || "").slice(0, 24),
-        grade: String(domRaw.grade || "").slice(0, 12),
-        class: String(domRaw.class || "").slice(0, 12),
-        date: String(domRaw.date || "").slice(0, 24),
-        filterSrc: "dom-fallback",
+        year: String(year || "").slice(0, 24),
+        grade: String(grade || "").slice(0, 12),
+        class: String(klass || "").slice(0, 12),
+        date: String(date || "").slice(0, 24),
+        hasDateInput: dateScan.hasDateInput,
+        bandHit: bandScan.bandHit,
+        bandHitCount: bandScan.count,
+        filterSrc: "band-input-fallback",
       },
     };
   }
@@ -893,6 +1009,9 @@
       srcGrade: filters._raw && filters._raw.srcGrade,
       srcClass: filters._raw && filters._raw.srcClass,
       srcDate: filters._raw && filters._raw.srcDate,
+      hasDateInput: filters._raw && filters._raw.hasDateInput,
+      bandHit: filters._raw && filters._raw.bandHit,
+      bandHitCount: filters._raw && filters._raw.bandHitCount,
       itemYear: item.year,
       itemGrade: item.grade,
       itemClass: item.class,

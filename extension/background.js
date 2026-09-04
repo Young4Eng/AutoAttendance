@@ -168,6 +168,10 @@ async function runApply(dryRun) {
           d.softYear ?? "",
           "filterSrc=",
           d.filterSrc ?? "",
+          "hasDateInput=",
+          d.hasDateInput ?? "",
+          "bandHit=",
+          d.bandHit ?? "",
           "itemYear=",
           d.itemYear ?? "",
         );
