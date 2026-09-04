@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>nexacro-like 출결마감구분 popup (tables=0)</title>
+    <style>
+      body { margin: 0; font: 12px/1.2 sans-serif; }
+      #grid { position: relative; width: 640px; height: 120px; }
+      .cell { position: absolute; padding: 2px 4px; }
+      .hdr { font-weight: 700; top: 8px; }
+      .r1 { top: 40px; }
+      /* Nexacro-like layer: no role=dialog, div radios */
+      #popupLayer {
+        position: absolute;
+        left: 80px;
+        top: 90px;
+        width: 320px;
+        padding: 12px;
+        border: 1px solid #888;
+        background: #fff;
+        z-index: 20;
+      }
+      #popupLayer .title { font-weight: 700; margin-bottom: 8px; }
+      #popupLayer .opt { display: inline-block; margin: 4px 8px 4px 0; cursor: pointer; }
+      #popupLayer .row { margin: 6px 0; }
+      #popupLayer .btn {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 4px 12px;
+        border: 1px solid #444;
+        cursor: pointer;
+      }
+      #popupLayer.hidden { display: none; }
+    </style>
+  </head>
+  <body>
+    <div id="grid" aria-label="일일출결관리">
+      <div class="cell hdr" style="left: 12px">번호</div>
+      <div class="cell hdr" style="left: 56px">성명</div>
+      <div class="cell hdr" style="left: 140px">마감</div>
+      <div class="cell hdr" style="left: 220px">3교시</div>
+      <div class="cell r1" style="left: 12px">9</div>
+      <div class="cell r1" style="left: 56px">학생01</div>
+      <div class="cell r1" id="closeCell" style="left: 140px" class="contentsbox">미마감</div>
+      <div class="cell r1" id="p3Cell" style="left: 220px" class="contentsbox">미마감</div>
+    </div>
+
+    <div id="popupLayer" class="hidden" data-popup="close-kind">
+      <div class="title">출결마감구분</div>
+      <div class="row">
+        <span class="opt" data-cat="질병">질병</span>
+        <span class="opt" data-cat="미인정">미인정</span>
+        <span class="opt" data-cat="기타">기타</span>
+        <span class="opt" data-cat="출석인정">출석인정</span>
+      </div>
+      <div class="row">
+        <span class="opt" data-type="지각">지각</span>
+        <span class="opt" data-type="조퇴">조퇴</span>
+        <span class="opt" data-type="결석">결석</span>
+        <span class="opt" data-type="결과">결과</span>
+      </div>
+      <div class="row">
+        <span>사유</span>
+        <input id="reasonInput" type="text" />
+      </div>
+      <div class="btn" id="applyBtn">적용</div>
+      <!-- 출결마감 must never be auto-clicked -->
+      <div class="btn" id="closeAllBtn" style="display:none">출결마감</div>
+    </div>
+  </body>
+</html>

@@ -27,3 +27,4 @@ MV3. 유저스크립트 없음. 이슈 #5 감지 · #6 메시지 · #12 라벨 �
 4. 나이스 담임용 화면에서 확장 팝업 → **시운전 (저장 전 중단)** 먼저
 
 가명 그리드 픽스처: `tests/fixtures/neis-grid-dummy.html` (빈 번호 7→9).
+Nexacro 팝업 픽스처: `tests/fixtures/neis-popup-nexacro.html` (출결마감구분·적용).
