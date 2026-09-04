@@ -16,3 +16,5 @@
 - #28/0.3.7: 필터 innerText·전방향 근접·숨은 input. softYear/filterSrc diag. 권한 추가 없음.
 - #30/0.4.0: 조회조건 4칸 동일 전략(밴드 좌표 순서·DOM 근접·innerText). 끝점 일자 normalize. unreadable/mismatch 유지. 픽스처+단위테스트. 권한 추가 없음.
 - #30 follow-up/0.4.1: 라벨(학년도·학년·일자) 없이도 input 날짜·「N학년 M반 날짜」밴드 압축 파싱. sidenav(메시지함/cl-sidenavigation) 「반」오탐 제외. hasDateInput/bandHit 익명 diag. 권한 추가 없음.
+
+- #33/0.4.2: tables=0(Nexacro) 행을 번호+성명 밴드·리프 스캔으로 매칭. table.rows/nth-row=번호 가정 없음. 빈 번호 스킵. row_not_found 시 hitNum/hitName/rowCand 익명 diag. row-match 순수헬퍼+픽스처. 권한 추가 없음.
