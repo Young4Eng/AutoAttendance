@@ -78,6 +78,102 @@
     return false;
   }
 
+  /** 제목 「출결마감구분」포함 여부(루트·폴백·TreeWalker용) */
+  function hasPopupTitleInText(blob) {
+    return blobHasPopupTitle(blob);
+  }
+
+  function blobHasPopupAction(blob) {
+    var t = normText(blob);
+    if (!t) return false;
+    if (t.indexOf("닫기") >= 0) return true;
+    if (t.indexOf("적용") >= 0) return true;
+    return false;
+  }
+
+  function blobHasCategoryLabel(blob) {
+    var t = normText(blob);
+    if (!t) return false;
+    for (var i = 0; i < CATEGORY_LABELS.length; i++) {
+      if (t.indexOf(CATEGORY_LABELS[i]) >= 0) return true;
+    }
+    return false;
+  }
+
+  /**
+   * climb 후보 본문: 제목 + (적용|닫기) + 구분 라벨.
+   * titleRequiredOk(제목+질병)는 pick 단계에서 별도 강제.
+   */
+  function isClimbPopupRootContent(blob) {
+    var t = normText(blob);
+    if (!t) return false;
+    if (!blobHasPopupTitle(t)) return false;
+    if (!blobHasPopupAction(t)) return false;
+    if (!blobHasCategoryLabel(t)) return false;
+    return true;
+  }
+
+  /** 루트 크기 상한 — body/html·거대 래퍼 거부 */
+  var POPUP_ROOT_MAX_TEXT_LEN = 900;
+  var POPUP_ROOT_MAX_TEXT_COUNT = 72;
+  var POPUP_ROOT_MAX_WIDTH = 900;
+  var POPUP_ROOT_MAX_HEIGHT = 700;
+  var POPUP_ROOT_MAX_AREA = 520000;
+  var POPUP_ROOT_MIN_WIDTH = 120;
+  var POPUP_ROOT_MIN_HEIGHT = 60;
+
+  function isPopupRootSizeOk(rec) {
+    rec = rec || {};
+    var tag = String(rec.tagName || "").toUpperCase();
+    if (tag === "BODY" || tag === "HTML") return false;
+    var w = Number(rec.width) || 0;
+    var h = Number(rec.height) || 0;
+    if (w > 0 && w < POPUP_ROOT_MIN_WIDTH) return false;
+    if (h > 0 && h < POPUP_ROOT_MIN_HEIGHT) return false;
+    if (w > POPUP_ROOT_MAX_WIDTH || h > POPUP_ROOT_MAX_HEIGHT) return false;
+    if (w > 0 && h > 0 && w * h > POPUP_ROOT_MAX_AREA) return false;
+    var text = normText(rec.text);
+    if (text.length > POPUP_ROOT_MAX_TEXT_LEN) return false;
+    var tc = rec.textCount;
+    if (tc != null && tc !== "" && Number(tc) > POPUP_ROOT_MAX_TEXT_COUNT) return false;
+    return true;
+  }
+
+  /**
+   * 조상 후보 중 가장 작은 유효 팝업 루트 선택.
+   * 필수: isClimbPopupRootContent + fallbackPopupNeedsTitle(titleRequiredOk) + 크기 상한.
+   * 동점이면 textLen → area → textCount 순으로 더 작은 쪽.
+   * @returns {{ id: number, textLen: number, textCount: number, area: number } | null}
+   */
+  function pickSmallestPopupRoot(candidates) {
+    var list = candidates || [];
+    var best = null;
+    for (var i = 0; i < list.length; i++) {
+      var c = list[i];
+      if (!c || c.id == null) continue;
+      if (!isPopupRootSizeOk(c)) continue;
+      var blob = normText(c.text);
+      if (!isClimbPopupRootContent(blob)) continue;
+      if (!fallbackPopupNeedsTitle(blob)) continue;
+      var textLen = blob.length;
+      var tc = c.textCount != null && c.textCount !== "" ? Number(c.textCount) : textLen;
+      if (isNaN(tc)) tc = textLen;
+      var w = Number(c.width) || 0;
+      var h = Number(c.height) || 0;
+      var area = w > 0 && h > 0 ? w * h : textLen * 10;
+      var row = { id: c.id, textLen: textLen, textCount: tc, area: area };
+      if (
+        !best ||
+        row.textLen < best.textLen ||
+        (row.textLen === best.textLen && row.area < best.area) ||
+        (row.textLen === best.textLen && row.area === best.area && row.textCount < best.textCount)
+      ) {
+        best = row;
+      }
+    }
+    return best;
+  }
+
   function isEnabledState(flags) {
     flags = flags || {};
     if (flags.disabled === true) return false;
@@ -239,9 +335,17 @@
     OPTION_LABELS: OPTION_LABELS,
     normText: normText,
     isPopupTitleText: isPopupTitleText,
+    hasPopupTitleInText: hasPopupTitleInText,
     looksLikeClosePopupText: looksLikeClosePopupText,
     fallbackPopupNeedsTitle: fallbackPopupNeedsTitle,
     blobHasPopupTitle: blobHasPopupTitle,
+    blobHasPopupAction: blobHasPopupAction,
+    blobHasCategoryLabel: blobHasCategoryLabel,
+    isClimbPopupRootContent: isClimbPopupRootContent,
+    isPopupRootSizeOk: isPopupRootSizeOk,
+    pickSmallestPopupRoot: pickSmallestPopupRoot,
+    POPUP_ROOT_MAX_TEXT_LEN: POPUP_ROOT_MAX_TEXT_LEN,
+    POPUP_ROOT_MAX_TEXT_COUNT: POPUP_ROOT_MAX_TEXT_COUNT,
     isEnabledState: isEnabledState,
     isDisabledControlState: isDisabledControlState,
     typeEnabledAfterCategory: typeEnabledAfterCategory,

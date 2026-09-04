@@ -1355,11 +1355,19 @@
 
   function popupDiag(root) {
     var api = PA();
-    var texts = collectVisibleShortTexts(root || document);
+    var scope = root || document;
+    var texts = collectVisibleShortTexts(scope);
     var d = api
       ? api.popupDiagFromTexts(texts)
       : { titleHit: 0, illnessHit: 0, lateHit: 0, applyHit: 0, popupLike: 0, textCount: texts.length };
-    d.dialogLike = countDialogLikeContainers(root || document);
+    d.dialogLike = countDialogLikeContainers(scope);
+    // short-text miss 시 전체 blob으로 titleRequiredOk 보강 (Nexacro 장문 셀)
+    if (api && api.fallbackPopupNeedsTitle && scope && scope.textContent) {
+      var full = normText(scope.textContent);
+      if (api.fallbackPopupNeedsTitle(full)) d.titleRequiredOk = 1;
+      if (api.blobHasPopupTitle && api.blobHasPopupTitle(full) && d.titleHit === 0) d.titleHit = 1;
+      if (full.indexOf("질병") >= 0 && (!d.illnessHit || d.illnessHit === 0)) d.illnessHit = Math.max(1, d.illnessHit || 0);
+    }
     return d;
   }
 
@@ -1375,59 +1383,61 @@
     return n;
   }
 
+  /**
+   * 제목 앵커에서 조상 상승 → 제목+(적용|닫기)+구분 라벨을 포함한
+   * 가장 작은 visible 루트. body/html·거대 textCount 거부. titleRequiredOk 필수.
+   */
   function climbPopupRoot(el) {
     if (!el) return null;
     var api = PA();
-    var cur = el;
-    for (var d = 0; d < 14 && cur; d++) {
+    var start = el;
+    if (start && start.nodeType === 3) start = start.parentElement;
+    if (!start || !(start instanceof Element)) return null;
+    var cands = [];
+    var nodes = [];
+    var cur = start;
+    for (var k = 0; k < 28 && cur; k++, cur = cur.parentElement) {
       if (!(cur instanceof Element)) break;
-      var hit =
-        cur.closest &&
-        cur.closest(
-          "[role='dialog'], .ui-dialog, .modal, .popup, .layer, [class*='popup'], [class*='Popup'], [class*='layer'], [class*='Layer']",
-        );
-      if (hit && visible(hit)) {
-        // 바깥 그리드 「미인정」오탐 방지: 제목 또는 구분 리프가 있을 때만
-        var texts = collectVisibleShortTexts(hit);
-        var d0 = api ? api.popupDiagFromTexts(texts) : null;
-        if (d0 && (d0.titleHit > 0 || d0.illnessHit > 0 || d0.popupLike)) return hit;
-        if (!api && normText(hit.textContent).indexOf("출결마감구분") >= 0) return hit;
-      }
-      cur = cur.parentElement;
-    }
-    // Nexacro: climb to a reasonably sized visible container with popup-like body
-    cur = el;
-    var best = null;
-    var bestScore = -1;
-    for (var k = 0; k < 14 && cur && cur !== document.body; k++, cur = cur.parentElement) {
+      var tag = cur.tagName;
+      if (tag === "BODY" || tag === "HTML") break;
       if (!visible(cur)) continue;
       var r = cur.getBoundingClientRect();
-      if (r.width < 160 || r.height < 80) continue;
-      if (r.width > 900 || r.height > 700) continue;
       var blob = normText(cur.textContent);
-      if (blob.length > 5000) continue;
-      var score = 0;
-      var shortTexts = collectVisibleShortTexts(cur);
-      var diag = api ? api.popupDiagFromTexts(shortTexts) : null;
-      if (diag) {
-        if (diag.titleHit > 0) score += 12;
-        if (diag.illnessHit > 0) score += 6;
-        if (diag.lateHit > 0) score += 4;
-        if (diag.applyHit > 0) score += 5;
-        if (diag.popupLike) score += 3;
-        // 바깥 오탐: 미인정만 있고 질병·제목 없음 → 감점
-        if (diag.unexcusedHit > 0 && diag.illnessHit === 0 && diag.titleHit === 0) score -= 4;
-      } else if (api && api.looksLikeClosePopupText(blob)) {
-        score += 3;
-      } else if (blob.indexOf("적용") >= 0 && blob.indexOf("질병") >= 0) {
-        score += 2;
-      }
-      if (score > bestScore) {
-        bestScore = score;
-        best = cur;
+      var shorts = collectVisibleShortTexts(cur);
+      cands.push({
+        id: nodes.length,
+        text: blob,
+        textCount: shorts.length,
+        width: r.width,
+        height: r.height,
+        tagName: tag,
+      });
+      nodes.push(cur);
+    }
+    if (api && api.pickSmallestPopupRoot) {
+      var pick = api.pickSmallestPopupRoot(cands);
+      if (pick && pick.id != null && nodes[pick.id]) return nodes[pick.id];
+      return null;
+    }
+    // API 없을 때: 동일 규칙으로 최소 본문 길이 선택
+    var best = null;
+    var bestLen = Infinity;
+    for (var i = 0; i < cands.length; i++) {
+      var c = cands[i];
+      var t = normText(c.text);
+      if (c.width > 900 || c.height > 700) continue;
+      if (t.length > 900 || c.textCount > 72) continue;
+      if (t.indexOf("출결마감구분") < 0) continue;
+      if (t.indexOf("질병") < 0) continue;
+      if (t.indexOf("적용") < 0 && t.indexOf("닫기") < 0) continue;
+      if (!(t.indexOf("질병") >= 0 || t.indexOf("미인정") >= 0 || t.indexOf("기타") >= 0 || t.indexOf("출석인정") >= 0))
+        continue;
+      if (t.length < bestLen) {
+        bestLen = t.length;
+        best = nodes[c.id];
       }
     }
-    return bestScore > 0 ? best : null;
+    return best;
   }
 
   function findPopup() {
@@ -1454,46 +1464,94 @@
         if (!childTitle) titleEls.push(el);
       }
     }
-    for (var j = 0; j < titleEls.length; j++) {
-      var root = climbPopupRoot(titleEls[j]);
-      if (root && visible(root)) return root;
+    // TreeWalker: 텍스트 노드 「출결마감구분」앵커 보강
+    try {
+      var rootTw = document.body || document.documentElement;
+      if (rootTw && document.createTreeWalker) {
+        var tw = document.createTreeWalker(rootTw, NodeFilter.SHOW_TEXT, null);
+        var tn;
+        while ((tn = tw.nextNode())) {
+          var tx = normText(tn.textContent);
+          if (!tx || tx.length > 64) continue;
+          var titleTw =
+            api && api.hasPopupTitleInText
+              ? api.hasPopupTitleInText(tx)
+              : tx.indexOf("출결마감구분") >= 0;
+          if (!titleTw) continue;
+          var pel = tn.parentElement;
+          if (pel && visible(pel) && titleEls.indexOf(pel) < 0) titleEls.push(pel);
+        }
+      }
+    } catch (eTw) {}
+
+    function rootPassesTitleRequired(root) {
+      if (!root || !visible(root)) return false;
+      var blob = normText(root.textContent);
+      if (api && api.fallbackPopupNeedsTitle) {
+        if (!api.fallbackPopupNeedsTitle(blob)) return false;
+        if (api.isClimbPopupRootContent && !api.isClimbPopupRootContent(blob)) return false;
+        if (api.isPopupRootSizeOk) {
+          var shorts = collectVisibleShortTexts(root);
+          var rr = root.getBoundingClientRect();
+          if (
+            !api.isPopupRootSizeOk({
+              text: blob,
+              textCount: shorts.length,
+              width: rr.width,
+              height: rr.height,
+              tagName: root.tagName,
+            })
+          ) {
+            return false;
+          }
+        }
+        return true;
+      }
+      return blob.indexOf("출결마감구분") >= 0 && blob.indexOf("질병") >= 0;
     }
 
-    // Fallback MUST include 「출결마감구분」+질병 — popupLike alone rejected (바깥 미인정 오탐)
+    for (var j = 0; j < titleEls.length; j++) {
+      var root = climbPopupRoot(titleEls[j]);
+      if (rootPassesTitleRequired(root)) return root;
+    }
+
+    // Fallback: 동일 규칙으로 최소 루트 (popupLike 단독 거부)
     var containers = document.querySelectorAll(
       "div, [role='dialog'], section, aside, form, [class*='popup'], [class*='Popup'], [class*='layer']",
     );
-    var best = null;
-    var bestScore = -1;
+    var fbCands = [];
+    var fbNodes = [];
     for (var u = 0; u < containers.length; u++) {
       var box = containers[u];
       if (!visible(box)) continue;
+      if (box.tagName === "BODY" || box.tagName === "HTML") continue;
       var br = box.getBoundingClientRect();
-      if (br.width < 180 || br.height < 100) continue;
-      if (br.width > 1200 || br.height > 900) continue;
       var blob = normText(box.textContent);
-      if (blob.length > 6000) continue;
-      var titleOk =
-        api && api.fallbackPopupNeedsTitle
-          ? api.fallbackPopupNeedsTitle(blob)
-          : blob.indexOf("출결마감구분") >= 0 && blob.indexOf("질병") >= 0;
-      if (!titleOk) continue;
       var shortTexts = collectVisibleShortTexts(box);
-      var diag = api ? api.popupDiagFromTexts(shortTexts) : null;
-      var score = 10;
-      if (diag) {
-        if (diag.titleHit > 0) score += 10;
-        if (diag.illnessHit > 0) score += 6;
-        if (diag.lateHit > 0) score += 4;
-        if (diag.applyHit > 0) score += 5;
-        if (diag.reasonHit > 0) score += 2;
-        if (diag.unexcusedHit > 0 && diag.illnessHit === 0 && diag.titleHit === 0) score -= 8;
-      }
-      if (blob.indexOf("적용") >= 0) score += 3;
-      score += Math.max(0, 40 - Math.floor(blob.length / 80));
-      if (score > bestScore) {
-        bestScore = score;
-        best = box;
+      fbCands.push({
+        id: fbNodes.length,
+        text: blob,
+        textCount: shortTexts.length,
+        width: br.width,
+        height: br.height,
+        tagName: box.tagName,
+      });
+      fbNodes.push(box);
+    }
+    if (api && api.pickSmallestPopupRoot) {
+      var fbPick = api.pickSmallestPopupRoot(fbCands);
+      if (fbPick && fbPick.id != null && fbNodes[fbPick.id]) return fbNodes[fbPick.id];
+      return null;
+    }
+    var best = null;
+    var bestLen = Infinity;
+    for (var v = 0; v < fbCands.length; v++) {
+      var fc = fbCands[v];
+      if (!rootPassesTitleRequired(fbNodes[fc.id])) continue;
+      var fl = normText(fc.text).length;
+      if (fl < bestLen) {
+        bestLen = fl;
+        best = fbNodes[fc.id];
       }
     }
     return best;
