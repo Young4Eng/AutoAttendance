@@ -62,18 +62,27 @@ async function runApply(dryRun) {
   };
   const frameIds = await listFrameIds(tab.id);
   let lastCode = "content_unreachable";
+  let softFail = null; // grid_not_found 등 — 다른 프레임 계속
   for (const frameId of frameIds) {
     try {
       const res = await chrome.tabs.sendMessage(tab.id, payload, { frameId });
-      if (res && typeof res === "object") {
-        return res;
+      if (!res || typeof res !== "object") {
+        lastCode = "no_response";
+        continue;
       }
-      lastCode = "no_response";
+      if (res.ok) return res;
+      // 이 프레임에 그리드 없음 → iframe 후보 계속
+      if (res.code === "grid_not_found") {
+        softFail = softFail || res;
+        continue;
+      }
+      // 그리드는 있는데 매칭·팝업 등 실패 → 그 결과 반환
+      return res;
     } catch {
-      // try next frame
+      // 수신자 없는 프레임
     }
   }
-  return { ok: false, code: lastCode };
+  return softFail || { ok: false, code: lastCode };
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
