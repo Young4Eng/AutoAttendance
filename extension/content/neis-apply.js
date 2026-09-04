@@ -1602,7 +1602,7 @@
     }
     var applyBtn = findApplyControl(popup);
     if (!applyBtn) {
-      return { ok: false, code: "popup_no_apply", diag: popupDiag(popup) };
+      return { ok: false, code: "apply_not_found", diag: popupDiag(popup) };
     }
     clickEl(applyBtn);
     await sleep(450);
