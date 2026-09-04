@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "출결메이트",
-  "version": "0.2.0",
-  "description": "나이스 일일출결관리(담임용) 감지 + 웹앱 대기열 수신. 저장·로그인 자동화 없음.",
+  "version": "0.3.0",
+  "description": "나이스 담임용 출결: 감지·대기열·라벨 기준 마감/P칸/저장. 출결마감·로그인 자동화 없음.",
   "minimum_chrome_version": "116",
   "permissions": [
     "storage"
@@ -30,9 +30,11 @@
         "*://*.neis.go.kr/*"
       ],
       "js": [
-        "content/detect.js"
+        "content/detect.js",
+        "content/neis-apply.js"
       ],
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "all_frames": true
     }
   ],
   "content_security_policy": {
