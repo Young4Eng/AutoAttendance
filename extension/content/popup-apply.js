@@ -375,6 +375,19 @@
     return /gridcell|cellcontrol|nexacontentsbox|contentsbox/.test(blob);
   }
 
+  /** 마감 열 정렬 임계(px). 열폭/2 또는 ≤40 — 기본 40. */
+  var CLOSE_HEADER_MAX_DX = 40;
+
+  /** headerWidth 알면 min(40, halfWidth), 아니면 40. */
+  function closeHeaderMaxDx(headerWidth) {
+    var base = CLOSE_HEADER_MAX_DX;
+    if (headerWidth == null || headerWidth === "") return base;
+    var w = Number(headerWidth);
+    if (isNaN(w) || w <= 0) return base;
+    var half = w / 2;
+    return Math.min(base, Math.max(8, half));
+  }
+
   /** 후보 centerX − 「마감」헤더 centerX (익명 숫자). */
   function closeHeaderDx(cellCenterX, headerCenterX) {
     var a = Number(cellCenterX);
@@ -383,12 +396,12 @@
     return Math.round(a - b);
   }
 
-  /** 마감 열 정렬: |dx| ≤ maxDx (기본 64). */
+  /** 마감 열 정렬: |dx| ≤ maxDx (기본 CLOSE_HEADER_MAX_DX=40). */
   function alignsWithCloseHeader(cellCenterX, headerCenterX, maxDx) {
     var dx = closeHeaderDx(cellCenterX, headerCenterX);
     if (dx == null) return false;
-    var lim = maxDx == null ? 64 : Number(maxDx);
-    if (isNaN(lim) || lim < 0) lim = 64;
+    var lim = maxDx == null ? CLOSE_HEADER_MAX_DX : Number(maxDx);
+    if (isNaN(lim) || lim < 0) lim = CLOSE_HEADER_MAX_DX;
     return Math.abs(dx) <= lim;
   }
 
@@ -440,7 +453,7 @@
     var kept = items.filter(function (it) {
       return it.aligned;
     });
-    if (!kept.length) kept = items.slice();
+    // headerX 있는데 정렬 후보 0이면 빈 배열 — 원본 폴백/오클릭 금지 (#50)
     // placeholder면 컨테이너·더 큰 부모를 앞세움
     kept.sort(function (a, b) {
       if (leafIsPh) {
@@ -539,12 +552,19 @@
     var dxRaw = dump.closeHeaderDx;
     var dxNum = dxRaw == null || dxRaw === "" ? null : Number(dxRaw);
     if (dxNum != null && isNaN(dxNum)) dxNum = null;
+    function anonX(v) {
+      if (v == null || v === "") return null;
+      var n = Number(v);
+      return isNaN(n) ? null : Math.round(n);
+    }
+    var headerX = anonX(dump.headerX);
+    var cellX = anonX(dump.cellX);
     var aligned =
       dump.closeHeaderAligned != null
         ? vis(dump.closeHeaderAligned)
         : dxNum == null
           ? 0
-          : Math.abs(dxNum) <= 64
+          : Math.abs(dxNum) <= CLOSE_HEADER_MAX_DX
             ? 1
             : 0;
     return {
@@ -566,6 +586,8 @@
           }).slice(0, 16)
         : [],
       candidateCount: outCands.length,
+      headerX: headerX,
+      cellX: cellX,
       closeHeaderDx: dxNum,
       closeHeaderAligned: aligned,
     };
@@ -638,6 +660,8 @@
     classNameTokens: classNameTokens,
     isPlaceholderCloseLeaf: isPlaceholderCloseLeaf,
     isCloseCellContainerTokens: isCloseCellContainerTokens,
+    CLOSE_HEADER_MAX_DX: CLOSE_HEADER_MAX_DX,
+    closeHeaderMaxDx: closeHeaderMaxDx,
     closeHeaderDx: closeHeaderDx,
     alignsWithCloseHeader: alignsWithCloseHeader,
     orderCloseClimbTargets: orderCloseClimbTargets,

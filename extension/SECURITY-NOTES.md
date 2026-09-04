@@ -26,3 +26,4 @@
 - #44/0.4.6: 마감 셀 Nexacro 클릭 강화(focus·mousedown/mouseup/click·cell input·중심 elementFromPoint). 클릭 후 「출결마감구분」+구분(질병 등) **가시** poll — titleHit(decoy) 단독 성공 금지. 픽스처 closeCell→popup 오픈. 권한 추가 없음.
 - #46/0.4.7: dry-run·openClosePopup 실패 시 마감 셀 **비식별** DOM/이벤트 dump(tag·class tokens·rect·클릭 후보·클릭 전후 제목/질병 가시). decoy titleHit≠신규 가시. clickNexa 강화(parent/nexacontentsbox·fireEvent·dblclick). 권한 추가 없음.
 - #48/0.4.8: placeholder(cl-text/cl-placeholder) 리프 → 부모 GridCell/contentsbox 상승 클릭. class 토큰 cl- 접두 분리·closeCellDump JSON.stringify·마감 헤더 dx 열 검증. 픽스처+단위테스트. 권한 추가 없음.
+- #50/0.4.9: 마감 셀 클릭 전 「마감」헤더 centerX 정렬 필수(|dx|≤40 또는 열폭/2). aligned=0이면 클릭 없이 `close_col_misaligned`+dump(headerX/cellX/closeHeaderDx/closeHeaderAligned). 폴백 오클릭 제거. 클릭 모드·출결마감 추가 없음. 픽스처+단위테스트. 권한 추가 없음.
