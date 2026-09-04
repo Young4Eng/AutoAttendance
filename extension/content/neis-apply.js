@@ -1866,25 +1866,106 @@
     return best;
   }
 
-  function closeClickTargets(cell) {
+  function elClassRaw(el) {
+    try {
+      if (!el) return "";
+      if (el.className && el.className.baseVal != null) return String(el.className.baseVal);
+      return String(el.className || "");
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function elClassTokens(el) {
+    var api = PA();
+    var raw = elClassRaw(el);
+    if (api && api.classNameTokens) return api.classNameTokens(raw);
+    return String(raw || "")
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 12);
+  }
+
+  function clsBlob(el) {
+    return elClassTokens(el).join(" ").toLowerCase();
+  }
+
+  /** 「마감」헤더 centerX (익명). 없으면 null. */
+  function findCloseHeaderCenterX(root) {
+    root = root || document.body || document.documentElement;
+    if (!root) return null;
+    var hits = leafLabelEls(root, "마감");
+    if (!hits || !hits.length) {
+      try {
+        hits = findLabelHits(root, "마감");
+      } catch (eH) {
+        hits = [];
+      }
+    }
+    var best = null;
+    var bestY = 1e15;
+    for (var i = 0; i < hits.length; i++) {
+      var el = hits[i];
+      if (!el || !visible(el)) continue;
+      var r = el.getBoundingClientRect();
+      if (!(r.width > 0 && r.height > 0)) continue;
+      // 헤더는 보통 상단 — 가장 위쪽 가시 「마감」
+      if (r.top < bestY) {
+        bestY = r.top;
+        best = r.left + r.width / 2;
+      }
+    }
+    return best;
+  }
+
+  /**
+   * placeholder 리프(작은 cl-text/cl-placeholder)면 부모 GridCell/contentsbox를
+   * 클릭 후보로 상승 — 리프보다 앞에 둠. headerCenterX로 열 정렬 필터.
+   */
+  function closeClickTargets(cell, headerCenterX) {
     var out = [];
     if (!cell) return out;
+    var api = PA();
     function push(el) {
       if (!el || !(el instanceof Element)) return;
       if (out.indexOf(el) >= 0) return;
       out.push(el);
     }
-    function clsBlob(el) {
-      try {
-        var c = el.className;
-        if (c && typeof c === "object" && c.baseVal != null) c = c.baseVal;
-        return String(c || "").toLowerCase();
-      } catch (e) {
-        return "";
-      }
+    var leafR = cell.getBoundingClientRect();
+    var leafTok = elClassTokens(cell);
+    var leafPh =
+      api && api.isPlaceholderCloseLeaf
+        ? api.isPlaceholderCloseLeaf(leafTok, leafR, "cell")
+        : leafR.height <= 22 && leafR.width <= 120;
+    var parents = [];
+    var cur = cell.parentElement;
+    for (var p = 0; p < 8 && cur; p++, cur = cur.parentElement) {
+      if (!(cur instanceof Element)) break;
+      var tag = (cur.tagName || "").toUpperCase();
+      if (tag === "BODY" || tag === "HTML" || tag === "TR" || tag === "TABLE") break;
+      var tok = elClassTokens(cur);
+      var cb = tok.join(" ").toLowerCase();
+      var pr = cur.getBoundingClientRect();
+      if (pr.width < 2 || pr.height < 2) continue;
+      if (pr.width > 480 || pr.height > 140) continue;
+      var isNexa =
+        (api && api.isCloseCellContainerTokens && api.isCloseCellContainerTokens(tok)) ||
+        /contentsbox|nexacontentsbox|gridcell|cellcontrol|gridband|nexa/.test(cb) ||
+        tag === "TD";
+      var larger = pr.width * pr.height > leafR.width * leafR.height * 1.15;
+      // placeholder면 class 힌트 없어도 더 큰 부모 DIV를 후보에 포함
+      if (!isNexa && !(leafPh && larger && tag === "DIV")) continue;
+      parents.push(cur);
     }
-    push(cell);
-    // Nexacro: cell 내부 input/edit 를 우선 후보에 포함
+    // placeholder: 부모 컨테이너를 리프보다 먼저
+    if (leafPh) {
+      for (var pi = 0; pi < parents.length; pi++) push(parents[pi]);
+      push(cell);
+    } else {
+      push(cell);
+      for (var pj = 0; pj < parents.length; pj++) push(parents[pj]);
+    }
+    // Nexacro: cell 내부 input/edit
     var inputs = cell.querySelectorAll(
       "input, textarea, [contenteditable='true'], [class*='Edit'], [class*='edit']",
     );
@@ -1900,28 +1981,37 @@
       var r = el.getBoundingClientRect();
       if (r.width < 2 || r.height < 2) continue;
       if (r.width > 240 || r.height > 80) continue;
+      // placeholder 리프 자신은 이미 처리 — 중복 push는 no-op
       push(el);
     }
-    // 부모 셀 / GridCellControl / nexacontentsbox 상승 (Nexacro 히트는 부모에 붙는 경우)
-    var cur = cell.parentElement;
-    for (var p = 0; p < 5 && cur; p++, cur = cur.parentElement) {
-      if (!(cur instanceof Element)) break;
-      var tag = (cur.tagName || "").toUpperCase();
-      if (tag === "BODY" || tag === "HTML" || tag === "TR" || tag === "TABLE") break;
-      var cb = clsBlob(cur);
-      var isNexa =
-        /contentsbox|nexacontentsbox|gridcell|cellcontrol|gridband|nexa/.test(cb) ||
-        tag === "TD";
-      if (!isNexa) continue;
-      var pr = cur.getBoundingClientRect();
-      if (pr.width < 2 || pr.height < 2) continue;
-      if (pr.width > 480 || pr.height > 120) continue;
-      push(cur);
+    // 마감 헤더 열 정렬: 멀리 떨어진 후보 제거 (전부 탈락 시 원본 유지)
+    if (headerCenterX != null && !isNaN(Number(headerCenterX))) {
+      var hx = Number(headerCenterX);
+      var filtered = [];
+      for (var fi = 0; fi < out.length; fi++) {
+        var fe = out[fi];
+        var fr = fe.getBoundingClientRect();
+        var fcx = fr.left + fr.width / 2;
+        var okAlign =
+          api && api.alignsWithCloseHeader
+            ? api.alignsWithCloseHeader(fcx, hx, 64)
+            : Math.abs(fcx - hx) <= 64;
+        if (okAlign) filtered.push(fe);
+      }
+      if (filtered.length) out = filtered;
     }
-    // prefer smaller inner clickables; inputs ahead of divs; parents after leaf
+    // 정렬: placeholder면 컨테이너 우선, 아니면 input→nexa→작은 면적
     out.sort(function (a, b) {
-      if (a === cell) return -1;
-      if (b === cell) return 1;
+      if (leafPh) {
+        var aPar = parents.indexOf(a) >= 0 || (api && api.isCloseCellContainerTokens && api.isCloseCellContainerTokens(elClassTokens(a)));
+        var bPar = parents.indexOf(b) >= 0 || (api && api.isCloseCellContainerTokens && api.isCloseCellContainerTokens(elClassTokens(b)));
+        if (aPar !== bPar) return aPar ? -1 : 1;
+        if (a === cell && b !== cell && !bPar) return 1;
+        if (b === cell && a !== cell && !aPar) return -1;
+      } else {
+        if (a === cell) return -1;
+        if (b === cell) return 1;
+      }
       var atag = (a.tagName || "").toUpperCase();
       var btag = (b.tagName || "").toUpperCase();
       var aIn = atag === "INPUT" || atag === "TEXTAREA" ? 0 : 1;
@@ -1932,12 +2022,10 @@
       if (aNexa !== bNexa) return aNexa - bNexa;
       var ar = a.getBoundingClientRect();
       var br = b.getBoundingClientRect();
+      // placeholder: 부모는 더 큰 면적 선호
+      if (leafPh && aPar && bPar) return br.width * br.height - ar.width * ar.height;
       return ar.width * ar.height - br.width * br.height;
     });
-    // cell first again
-    if (out[0] !== cell) {
-      out = [cell].concat(out.filter(function (x) { return x !== cell; }));
-    }
     return out;
   }
 
@@ -2034,33 +2122,37 @@
    * 마감 셀 클릭 실패 익명 dump — tag/class tokens/rect/후보·전후 가시만.
    * 성명·번호·cell text 값 금지. console.info 익명.
    */
-  function buildCloseCellFailDump(cell, targets, before, after, modes) {
+  function buildCloseCellFailDump(cell, targets, before, after, modes, headerCenterX) {
     var api = PA();
     var cands = [];
     var list = targets && targets.length ? targets : cell ? [cell] : [];
+    var hx = headerCenterX != null && !isNaN(Number(headerCenterX)) ? Number(headerCenterX) : null;
+    var primaryDx = null;
     for (var i = 0; i < list.length && i < 20; i++) {
       var el = list[i];
       if (!el || !el.getBoundingClientRect) continue;
       var r = el.getBoundingClientRect();
       var kind = "node";
       var tag = (el.tagName || "").toUpperCase();
-      var cls = "";
-      try {
-        cls = el.className && el.className.baseVal != null ? el.className.baseVal : el.className || "";
-      } catch (eC) {
-        cls = "";
-      }
-      if (el === cell) kind = "cell";
-      else if (tag === "INPUT" || tag === "TEXTAREA") kind = "input";
-      else if (/nexacontentsbox|contentsbox/i.test(String(cls))) kind = "contentsbox";
-      else if (/gridcell|cellcontrol/i.test(String(cls))) kind = "gridcell";
+      var cls = elClassRaw(el);
+      var toks = elClassTokens(el);
+      var blob = toks.join(" ").toLowerCase();
+      if (el === cell) {
+        kind =
+          api && api.isPlaceholderCloseLeaf && api.isPlaceholderCloseLeaf(toks, r, "cell")
+            ? "placeholder"
+            : "cell";
+      } else if (tag === "INPUT" || tag === "TEXTAREA") kind = "input";
+      else if (/nexacontentsbox|contentsbox/i.test(blob)) kind = "contentsbox";
+      else if (/gridcell|cellcontrol/i.test(blob)) kind = "gridcell";
       else if (cell && cell.contains && !cell.contains(el)) kind = "parent";
       var rec = { tagName: tag, className: cls, rect: r, kind: kind };
-      if (api && api.anonClickCandidate) cands.push(api.anonClickCandidate(rec));
+      var cand;
+      if (api && api.anonClickCandidate) cand = api.anonClickCandidate(rec);
       else
-        cands.push({
+        cand = {
           tag: tag,
-          cls: String(cls).split(/\s+/).filter(Boolean).slice(0, 8),
+          cls: toks.slice(0, 8),
           rect: {
             x: Math.round(r.left),
             y: Math.round(r.top),
@@ -2068,13 +2160,33 @@
             h: Math.round(r.height),
           },
           kind: kind,
-        });
+        };
+      if (hx != null) {
+        var cx = r.left + r.width / 2;
+        var dx =
+          api && api.closeHeaderDx ? api.closeHeaderDx(cx, hx) : Math.round(cx - hx);
+        cand.dx = dx;
+        if (primaryDx == null && (el === cell || kind === "parent" || kind === "gridcell" || kind === "contentsbox")) {
+          primaryDx = dx;
+        }
+      }
+      cands.push(cand);
+    }
+    if (primaryDx == null && cell && hx != null) {
+      var cr = cell.getBoundingClientRect();
+      primaryDx =
+        api && api.closeHeaderDx
+          ? api.closeHeaderDx(cr.left + cr.width / 2, hx)
+          : Math.round(cr.left + cr.width / 2 - hx);
     }
     var raw = {
       candidates: cands,
       before: before || {},
       after: after || {},
       modes: modes || [],
+      closeHeaderDx: primaryDx,
+      closeHeaderAligned:
+        primaryDx == null ? 0 : Math.abs(primaryDx) <= 64 ? 1 : 0,
     };
     if (api && api.normalizeCloseCellFailDump) return api.normalizeCloseCellFailDump(raw);
     return raw;
@@ -2083,6 +2195,11 @@
   function logCloseCellFailDump(dump) {
     try {
       var d = dump || {};
+      var api = PA();
+      var jsonStr =
+        api && api.stringifyCloseCellDump
+          ? api.stringifyCloseCellDump(d)
+          : JSON.stringify(d);
       console.info(
         "[출결메이트]",
         "close_cell_dump",
@@ -2094,10 +2211,12 @@
         "titleNewly=" + ((d.after && d.after.titleNewly) || 0),
         "illnessNewly=" + ((d.after && d.after.illnessNewly) || 0),
         "decoyTitle=" + ((d.before && d.before.decoyTitle) || 0),
+        "closeHeaderDx=" + (d.closeHeaderDx != null ? d.closeHeaderDx : ""),
+        "closeHeaderAligned=" + (d.closeHeaderAligned != null ? d.closeHeaderAligned : 0),
         "modes=" + ((d.modes && d.modes.join(",")) || ""),
       );
-      // 구조화 익명 객체(성명·번호 없음)
-      console.info("[출결메이트]", "close_cell_dump_json", d);
+      // JSON 문자열 — [object Object] 복붙 불가 방지. 성명·번호 없음.
+      console.info("[출결메이트]", "close_cell_dump_json", jsonStr);
     } catch (eLog) {}
   }
 
@@ -2131,7 +2250,7 @@
     return null;
   }
 
-  async function openClosePopup(row, closeIdx, cellsOpt) {
+  async function openClosePopup(row, closeIdx, cellsOpt, headerCenterXOpt) {
     var cells = cellsOpt || rowCells(row);
     var cell = cells[closeIdx];
     if (!cell) return { ok: false, code: "no_close_cell", diag: popupDiag(document) };
@@ -2141,7 +2260,11 @@
 
     // decoy titleHit vs 신규: 클릭 전 문서 전역 제목·질병 가시 스냅샷
     var beforeProbe = probeTitleIllnessVisible(document.body || document.documentElement);
-    var targets = closeClickTargets(cell);
+    var headerCx =
+      headerCenterXOpt != null && !isNaN(Number(headerCenterXOpt))
+        ? Number(headerCenterXOpt)
+        : findCloseHeaderCenterX(document.body || document.documentElement);
+    var targets = closeClickTargets(cell, headerCx);
     if (!targets.length) targets = [cell];
     var modes = ["full", "mouseOnly", "dblclick"];
     var modesTried = [];
@@ -2152,6 +2275,7 @@
       var mode = modes[Math.floor(attempt / targets.length) % modes.length];
       if (modesTried.indexOf(mode) < 0) modesTried.push(mode);
 
+      // 상승한 부모 GridCell/contentsbox 우선 클릭 (placeholder 리프만 찍지 않음)
       clickNexa(target, { usePoint: true, mode: mode });
       // cell 내부 input 별도 시도
       var inp =
@@ -2160,16 +2284,26 @@
       if (inp && inp !== target) {
         clickNexa(inp, { usePoint: true, mode: mode });
       }
-      // nexacontentsbox / contentsbox 자식 우선 재시도
+      // nexacontentsbox / contentsbox 자식·부모 재시도
       var nexaBox =
-        cell.querySelector &&
-        cell.querySelector(
-          "[class*='nexacontentsbox'], [class*='nexaContentsBox'], [class*='contentsbox'], [class*='ContentsBox']",
-        );
+        (cell.querySelector &&
+          cell.querySelector(
+            "[class*='nexacontentsbox'], [class*='nexaContentsBox'], [class*='contentsbox'], [class*='ContentsBox']",
+          )) ||
+        null;
       if (nexaBox && nexaBox !== target && nexaBox !== inp) {
         clickNexa(nexaBox, { usePoint: true, mode: mode });
       }
-      // 셀·부모 중심 coordinate / elementFromPoint
+      var climbParent =
+        cell.parentElement &&
+        /gridcell|cellcontrol|nexacontentsbox|contentsbox/i.test(clsBlob(cell.parentElement))
+          ? cell.parentElement
+          : null;
+      if (climbParent && climbParent !== target && climbParent !== nexaBox) {
+        clickNexa(climbParent, { usePoint: true, mode: mode });
+        clickNexaAtCenter(climbParent, mode);
+      }
+      // 셀·타깃 중심 coordinate / elementFromPoint
       clickNexaAtCenter(cell, mode);
       if (target !== cell) clickNexaAtCenter(target, mode);
 
@@ -2191,10 +2325,29 @@
     }
     if (!popup) {
       var afterProbe = probeTitleIllnessVisible(document.body || document.documentElement);
-      var dump = buildCloseCellFailDump(cell, targets, beforeProbe, afterProbe, modesTried);
+      var dump = buildCloseCellFailDump(
+        cell,
+        targets,
+        beforeProbe,
+        afterProbe,
+        modesTried,
+        headerCx,
+      );
       logCloseCellFailDump(dump);
       var diag = popupDiag(document);
       diag.closeCellDump = dump;
+      // diag에 JSON 문자열 요약 — [object Object] 금지
+      try {
+        var apiS = PA();
+        diag.closeCellDumpJson =
+          apiS && apiS.stringifyCloseCellDump
+            ? apiS.stringifyCloseCellDump(dump)
+            : JSON.stringify(dump);
+      } catch (eJ) {
+        diag.closeCellDumpJson = "";
+      }
+      diag.closeHeaderDx = dump.closeHeaderDx != null ? dump.closeHeaderDx : null;
+      diag.closeHeaderAligned = dump.closeHeaderAligned != null ? dump.closeHeaderAligned : 0;
       diag.beforeTitleVisible = beforeProbe.titleVisible ? 1 : 0;
       diag.beforeIllnessVisible = beforeProbe.illnessVisible ? 1 : 0;
       diag.afterTitleVisible = afterProbe.titleVisible ? 1 : 0;
@@ -2406,7 +2559,11 @@
           diag: rowMatchDiag(document, grid, item.number, item.name),
         };
       }
-      var pop = await openClosePopup(hit.row, grid.col.close, hit.cells);
+      var closeHdrCx = null;
+      if (grid.headerCenters && grid.col && grid.col.close != null && grid.headerCenters[grid.col.close] != null) {
+        closeHdrCx = grid.headerCenters[grid.col.close];
+      }
+      var pop = await openClosePopup(hit.row, grid.col.close, hit.cells, closeHdrCx);
       if (!pop.ok) {
         log(row, item.type || "?", "stop", pop.code);
         return { ok: false, code: pop.code, applied: applied, dryRun: dryRun, diag: pop.diag };

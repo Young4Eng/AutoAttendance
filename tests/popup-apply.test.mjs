@@ -308,6 +308,116 @@ check("classNameTokens / anonRect / anonClickCandidate anonymized", () => {
   assert.ok(!("textContent" in cand));
 });
 
+check("classNameTokens splits concatenated cl- prefixes", () => {
+  const toks = P.classNameTokens("cl-textcl-placeholdercl-unselectable");
+  // vm realm arrays: compare via JSON / includes (not deepEqual prototypes)
+  assert.equal(JSON.stringify([...toks]), JSON.stringify(["cl-text", "cl-placeholder", "cl-unselectable"]));
+  assert.ok(toks.includes("cl-text"));
+  assert.ok(toks.includes("cl-placeholder"));
+  assert.ok(toks.includes("cl-unselectable"));
+  const mixed = P.classNameTokens("GridCellControl cl-textcl-placeholder");
+  assert.ok(mixed.includes("GridCellControl"));
+  assert.ok(mixed.includes("cl-text"));
+  assert.ok(mixed.includes("cl-placeholder"));
+  const spaced = P.classNameTokens("cl-text cl-placeholder");
+  assert.ok(spaced.includes("cl-text"));
+  assert.ok(spaced.includes("cl-placeholder"));
+});
+
+check("orderCloseClimbTargets prefers parent GridCell over placeholder leaf", () => {
+  const leaf = {
+    id: "ph",
+    tokens: ["cl-text", "cl-placeholder", "cl-unselectable"],
+    rect: { x: 831, y: 584, w: 100, h: 19 },
+    kind: "cell",
+    centerX: 881,
+  };
+  const ancestors = [
+    {
+      id: "box",
+      tokens: ["nexacontentsbox", "contentsbox"],
+      rect: { x: 826, y: 580, w: 110, h: 24 },
+      kind: "contentsbox",
+      centerX: 881,
+    },
+    {
+      id: "grid",
+      tokens: ["GridCellControl", "cell"],
+      rect: { x: 820, y: 576, w: 120, h: 28 },
+      kind: "gridcell",
+      centerX: 880,
+    },
+  ];
+  const ordered = P.orderCloseClimbTargets(leaf, ancestors, 880, 64);
+  assert.ok(ordered.length >= 2);
+  assert.equal(ordered[0].id, "grid"); // largest container first among parents
+  assert.ok(ordered.some((x) => x.id === "ph"));
+  assert.ok(ordered[0].id !== "ph");
+  assert.ok(P.isPlaceholderCloseLeaf(leaf.tokens, leaf.rect, "cell"));
+  assert.ok(P.isCloseCellContainerTokens(["GridCellControl", "cell"]));
+});
+
+check("alignsWithCloseHeader / closeHeaderDx reject far-off candidates", () => {
+  assert.equal(P.closeHeaderDx(881, 880), 1);
+  assert.equal(P.alignsWithCloseHeader(881, 880, 64), true);
+  assert.equal(P.alignsWithCloseHeader(200, 880, 64), false);
+  const leaf = {
+    id: "far",
+    tokens: ["cl-text", "cl-placeholder"],
+    rect: { x: 10, y: 584, w: 100, h: 19 },
+    kind: "cell",
+    centerX: 60,
+  };
+  const parent = {
+    id: "near",
+    tokens: ["GridCellControl"],
+    rect: { x: 850, y: 576, w: 120, h: 28 },
+    kind: "gridcell",
+    centerX: 910,
+  };
+  const ordered = P.orderCloseClimbTargets(leaf, [parent], 880, 64);
+  assert.ok(ordered.every((x) => x.aligned));
+  assert.ok(ordered.some((x) => x.id === "near"));
+  assert.ok(!ordered.some((x) => x.id === "far")); // far leaf rejected by dx
+});
+
+check("stringifyCloseCellDump is JSON string without names/numbers", () => {
+  const dump = {
+    candidates: [
+      {
+        tagName: "DIV",
+        className: "cl-textcl-placeholdercl-unselectable",
+        rect: { left: 831, top: 584, width: 100, height: 19 },
+        kind: "placeholder",
+        text: "학생01",
+      },
+      {
+        tagName: "DIV",
+        className: "GridCellControl cell",
+        rect: { left: 820, top: 576, width: 120, height: 28 },
+        kind: "gridcell",
+      },
+    ],
+    before: { titleVisible: true, illnessVisible: false },
+    after: { titleVisible: true, illnessVisible: false },
+    modes: ["full", "mouseOnly", "dblclick"],
+    closeHeaderDx: 1,
+  };
+  const s = P.stringifyCloseCellDump(dump);
+  assert.equal(typeof s, "string");
+  assert.ok(s.startsWith("{"));
+  assert.ok(!s.includes("학생"));
+  assert.ok(!s.includes("[object Object]"));
+  const parsed = JSON.parse(s);
+  assert.equal(parsed.candidateCount, 2);
+  assert.ok(parsed.candidates[0].cls.includes("cl-text"));
+  assert.ok(parsed.candidates[0].cls.includes("cl-placeholder"));
+  assert.equal(parsed.before.decoyTitle, 1);
+  assert.equal(parsed.after.illnessNewly, 0);
+  assert.equal(parsed.closeHeaderDx, 1);
+  assert.equal(parsed.closeHeaderAligned, 1);
+});
+
 check("popupNewlyOpenedOk distinguishes decoy titleHit vs newly visible", () => {
   // field: decoy title before, illness appears after click
   assert.equal(
@@ -357,6 +467,7 @@ check("normalizeCloseCellFailDump strips names and keeps visibility flags", () =
     before: { titleVisible: true, illnessVisible: false },
     after: { titleVisible: true, illnessVisible: false },
     modes: ["full", "dblclick"],
+    closeHeaderDx: 3,
   });
   assert.equal(dump.before.decoyTitle, 1);
   assert.equal(dump.before.titleVisible, 1);
@@ -365,6 +476,8 @@ check("normalizeCloseCellFailDump strips names and keeps visibility flags", () =
   assert.equal(dump.after.illnessNewly, 0);
   assert.equal(dump.candidateCount, 1);
   assert.ok(dump.modes.includes("dblclick"));
+  assert.equal(dump.closeHeaderDx, 3);
+  assert.equal(dump.closeHeaderAligned, 1);
   const s = JSON.stringify(dump);
   assert.ok(!s.includes("학생"));
   assert.ok(!s.includes("미마감"));
@@ -380,5 +493,14 @@ check("fixture has GridCell parent + nexacontentsbox + dblclick open path", () =
   assert.ok(html.includes('id="closeCell"'));
   assert.ok(html.includes('data-decoy="title"'));
   assert.ok(html.includes("학생01"));
+});
+
+check("fixture placeholder leaf + parent GridCell climb path", () => {
+  const html = readFileSync(new URL("./fixtures/neis-popup-nexacro.html", import.meta.url), "utf8");
+  assert.ok(html.includes('id="closePlaceholder"'));
+  assert.ok(html.includes("cl-textcl-placeholdercl-unselectable"));
+  assert.ok(html.includes('id="closeCellWrap"'));
+  assert.ok(html.includes("GridCellControl"));
+  assert.ok(html.includes("stopPropagation")); // leaf alone must not open
 });
 
