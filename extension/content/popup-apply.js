@@ -1,6 +1,6 @@
 /**
  * 출결마감구분 팝업 라벨·버튼 탐지 순수 헬퍼.
- * DOM 없음 — 텍스트 레코드만. 실명·번호 값 금지.
+ * DOM 없음 — 텍스트·상태 레코드만. 실명·번호 값 금지.
  */
 (function (g) {
   if (g.__chulgyeolMatePopupApply) return;
@@ -20,6 +20,7 @@
   };
   var CATEGORY_LABELS = ["질병", "미인정", "기타", "출석인정"];
   var TYPE_LABELS = ["지각", "조퇴", "결석", "결과"];
+  var OPTION_LABELS = CATEGORY_LABELS.concat(TYPE_LABELS).concat(["적용"]);
 
   function normText(s) {
     return String(s || "")
@@ -28,7 +29,6 @@
       .trim();
   }
 
-  /** 팝업 제목: 정확 일치 또는 출결마감/구분 선택 포함 */
   function isPopupTitleText(text) {
     var t = normText(text);
     if (!t || t.length > 48) return false;
@@ -40,10 +40,6 @@
     return false;
   }
 
-  /**
-   * 본문 텍스트가 출결마감구분 레이어처럼 보이는지.
-   * 구분(질병 등) + 종류(지각 등) 마커가 같이 있어야 함.
-   */
   function looksLikeClosePopupText(blob) {
     var t = normText(blob);
     if (!t) return false;
@@ -64,12 +60,57 @@
     return hasCat && hasType;
   }
 
-  /** 「적용」만. 「출결마감」은 거부. */
+  /** 폴백 수락: 제목「출결마감구분」+질병 필수. popupLike만으로는 거부. */
+  function fallbackPopupNeedsTitle(blob) {
+    var t = normText(blob);
+    if (!t) return false;
+    if (t.indexOf("출결마감구분") < 0) return false;
+    if (t.indexOf("질병") < 0) return false;
+    return true;
+  }
+
+  function blobHasPopupTitle(blob) {
+    var t = normText(blob);
+    if (!t) return false;
+    if (t.indexOf("출결마감구분") >= 0) return true;
+    if (t.indexOf("출결 구분 선택") >= 0) return true;
+    if (t.indexOf("출결마감") >= 0 && t.indexOf("구분") >= 0) return true;
+    return false;
+  }
+
+  function isEnabledState(flags) {
+    flags = flags || {};
+    if (flags.disabled === true) return false;
+    var aria = flags.ariaDisabled;
+    if (aria === true || aria === "true") return false;
+    var cls = String(flags.className || "").toLowerCase();
+    if (/\bdisabled\b|\bis-disabled\b|\bnexadisabled\b|\bdimmed\b|\bgrayed\b/.test(cls)) {
+      return false;
+    }
+    if (String(flags.pointerEvents || "").toLowerCase() === "none") return false;
+    var op = flags.opacity;
+    if (op != null && op !== "") {
+      var n = typeof op === "number" ? op : parseFloat(op);
+      if (!isNaN(n) && n < 0.45) return false;
+    }
+    return true;
+  }
+
+  function isDisabledControlState(opts) {
+    return !isEnabledState(opts);
+  }
+
+  function typeEnabledAfterCategory(categorySelected) {
+    return Boolean(categorySelected);
+  }
+
   function isApplyButtonText(text) {
     var t = normText(text);
     if (!t) return false;
     if (t.indexOf("출결마감") >= 0) return false;
-    return t === "적용";
+    if (t === "적용") return true;
+    if (t.indexOf("적용") === 0 && t.length <= 4) return true;
+    return false;
   }
 
   function isCloseAllButtonText(text) {
@@ -77,59 +118,100 @@
     return t === "출결마감" || (t.indexOf("출결마감") >= 0 && t.indexOf("구분") < 0);
   }
 
-  /**
-   * texts: string[] 보이는 짧은 라벨.
-   * want와 정확·선두 일치하는 첫 후보 인덱스.
-   */
+  function isLeafOptionText(text, want) {
+    var t = normText(text);
+    var w = normText(want);
+    if (!t || !w) return false;
+    if (t === w) return true;
+    if (t.indexOf(w) === 0 && t.length <= w.length + 2) {
+      var rest = t.slice(w.length);
+      return /^[\s*:：.]*$/.test(rest);
+    }
+    return false;
+  }
+
+  function endsWithOptionLabel(s) {
+    for (var i = 0; i < OPTION_LABELS.length; i++) {
+      var lab = OPTION_LABELS[i];
+      if (s.length >= lab.length && s.slice(s.length - lab.length) === lab) return true;
+    }
+    return false;
+  }
+
+  function startsWithOptionLabel(s) {
+    for (var i = 0; i < OPTION_LABELS.length; i++) {
+      var lab = OPTION_LABELS[i];
+      if (s.indexOf(lab) === 0) return true;
+    }
+    return false;
+  }
+
+  function labelTokenMatch(text, want) {
+    var t = normText(text);
+    var w = normText(want);
+    if (!t || !w) return false;
+    if (isLeafOptionText(t, w)) return true;
+    if (t.length > 64) return false;
+    var parts = t.split(/[\s|/·∙⋅,，、:：;；()\[\]{}<>]+/).filter(Boolean);
+    for (var i = 0; i < parts.length; i++) {
+      if (isLeafOptionText(parts[i], w)) return true;
+    }
+    if (OPTION_LABELS.indexOf(w) < 0) return false;
+    var idx = t.indexOf(w);
+    if (idx < 0) return false;
+    var before = t.slice(0, idx);
+    var after = t.slice(idx + w.length);
+    return (!before || endsWithOptionLabel(before)) && (!after || startsWithOptionLabel(after));
+  }
+
   function findLabelTextIndex(texts, want) {
     var w = normText(want);
     if (!w) return -1;
     var list = texts || [];
     for (var i = 0; i < list.length; i++) {
-      var t = normText(list[i]);
-      if (t === w) return i;
+      if (isLeafOptionText(list[i], w)) return i;
     }
     for (var j = 0; j < list.length; j++) {
       var t2 = normText(list[j]);
       if (t2.indexOf(w) === 0 && t2.length <= w.length + 8) return j;
     }
+    for (var k = 0; k < list.length; k++) {
+      if (labelTokenMatch(list[k], w)) return k;
+    }
     return -1;
   }
 
-  /** 익명 diag — 값 문자열 없이 히트 카운트만 */
+  function countLabelHits(list, want) {
+    var n = 0;
+    for (var i = 0; i < list.length; i++) {
+      if (labelTokenMatch(list[i], want)) n++;
+    }
+    return n;
+  }
+
   function popupDiagFromTexts(texts) {
     var list = texts || [];
     var titleHit = 0;
-    var illnessHit = 0;
-    var unexcusedHit = 0;
-    var otherHit = 0;
-    var recognizedHit = 0;
-    var lateHit = 0;
-    var earlyHit = 0;
-    var absenceHit = 0;
-    var resultHit = 0;
     var applyHit = 0;
     var closeAllHit = 0;
     var reasonHit = 0;
-    var popupLike = 0;
     for (var i = 0; i < list.length; i++) {
       var t = normText(list[i]);
       if (!t) continue;
       if (isPopupTitleText(t)) titleHit++;
-      if (t === "질병" || t.indexOf("질병") === 0) illnessHit++;
-      if (t === "미인정" || t.indexOf("미인정") === 0) unexcusedHit++;
-      if (t === "기타" || t.indexOf("기타") === 0) otherHit++;
-      if (t === "출석인정" || t.indexOf("출석인정") === 0) recognizedHit++;
-      if (t === "지각" || t.indexOf("지각") === 0) lateHit++;
-      if (t === "조퇴" || t.indexOf("조퇴") === 0) earlyHit++;
-      if (t === "결석" || t.indexOf("결석") === 0) absenceHit++;
-      if (t === "결과" || t.indexOf("결과") === 0) resultHit++;
       if (isApplyButtonText(t)) applyHit++;
       if (isCloseAllButtonText(t)) closeAllHit++;
       if (t === "사유" || t.indexOf("사유") === 0) reasonHit++;
     }
+    var illnessHit = countLabelHits(list, "질병");
+    var unexcusedHit = countLabelHits(list, "미인정");
+    var otherHit = countLabelHits(list, "기타");
+    var recognizedHit = countLabelHits(list, "출석인정");
+    var lateHit = countLabelHits(list, "지각");
+    var earlyHit = countLabelHits(list, "조퇴");
+    var absenceHit = countLabelHits(list, "결석");
+    var resultHit = countLabelHits(list, "결과");
     var joined = list.map(normText).join(" ");
-    if (looksLikeClosePopupText(joined)) popupLike = 1;
     return {
       titleHit: titleHit,
       illnessHit: illnessHit,
@@ -143,7 +225,8 @@
       applyHit: applyHit,
       closeAllHit: closeAllHit,
       reasonHit: reasonHit,
-      popupLike: popupLike,
+      popupLike: looksLikeClosePopupText(joined) ? 1 : 0,
+      titleRequiredOk: fallbackPopupNeedsTitle(joined) ? 1 : 0,
       textCount: list.length,
     };
   }
@@ -153,11 +236,19 @@
     TYPE_KO: TYPE_KO,
     CATEGORY_LABELS: CATEGORY_LABELS,
     TYPE_LABELS: TYPE_LABELS,
+    OPTION_LABELS: OPTION_LABELS,
     normText: normText,
     isPopupTitleText: isPopupTitleText,
     looksLikeClosePopupText: looksLikeClosePopupText,
+    fallbackPopupNeedsTitle: fallbackPopupNeedsTitle,
+    blobHasPopupTitle: blobHasPopupTitle,
+    isEnabledState: isEnabledState,
+    isDisabledControlState: isDisabledControlState,
+    typeEnabledAfterCategory: typeEnabledAfterCategory,
     isApplyButtonText: isApplyButtonText,
     isCloseAllButtonText: isCloseAllButtonText,
+    isLeafOptionText: isLeafOptionText,
+    labelTokenMatch: labelTokenMatch,
     findLabelTextIndex: findLabelTextIndex,
     popupDiagFromTexts: popupDiagFromTexts,
   };
