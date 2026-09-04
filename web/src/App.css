@@ -1,0 +1,94 @@
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 3rem;
+}
+.header h1 {
+  margin: 0 0 0.35rem;
+  font-size: 1.75rem;
+  color: var(--text-h);
+}
+.header.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+.lede, .hint, .meta {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.5;
+}
+.lede { margin-bottom: 1.5rem; }
+.meta { margin-top: 0.35rem; font-size: 0.95rem; }
+.mono { font-family: var(--mono); font-size: 0.85rem; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem 1.35rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow);
+}
+.card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+  color: var(--text-h);
+}
+.login-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+.gis-wrap { min-height: 44px; }
+.btn {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 0.55rem 1rem;
+  font: inherit;
+  cursor: pointer;
+  background: var(--accent);
+  color: #fff;
+}
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn.secondary {
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+.btn.ghost {
+  background: transparent;
+  color: var(--text-h);
+  border-color: var(--border);
+}
+.file-label {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.95rem;
+  color: var(--text-h);
+}
+.file-label input { max-width: 100%; }
+.error { color: #b42318; margin: 0.5rem 0 0; }
+.status { color: #027a48; margin: 0.5rem 0 0; }
+.roster {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+.roster th, .roster td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.45rem 0.35rem;
+  text-align: left;
+}
+.roster th { color: var(--text-h); font-weight: 600; }
+code {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  background: var(--code-bg);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
