@@ -610,12 +610,32 @@
     return "";
   }
 
+  function labelTextMatches(full, label) {
+    if (full === label) return true;
+    if (full.indexOf(label) !== 0) return false;
+    var rest = full.slice(label.length);
+    return rest.length <= 3 && /^[\s*:：]*$/.test(rest);
+  }
+
   function exactLabelEls(labelText) {
     var hits = findLabelHits(document, labelText).filter(function (el) {
-      return normText(el.textContent) === labelText;
+      return labelTextMatches(normText(el.textContent), labelText);
     });
     if (hits.length) return hits;
-    return findElementsByExactText(document, labelText);
+    var exact = findElementsByExactText(document, labelText);
+    if (exact.length) return exact;
+    // 짧은 텍스트에 라벨이 앞에 붙는 경우
+    var soft = [];
+    var all = document.querySelectorAll("*");
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      if (!visible(el)) continue;
+      var full = normText(el.textContent);
+      if (!labelTextMatches(full, labelText)) continue;
+      if (full.length > labelText.length + 3) continue;
+      soft.push(el);
+    }
+    return soft;
   }
 
   /** 라벨 오른쪽·같은 줄의 콤보/입력/짧은 표시 텍스트 (넥사크로 Combo 포함). */
@@ -705,8 +725,98 @@
       }
       var right = readValueRightOf(lab);
       if (right) return right;
+      var near = readValueNearAny(lab, labelText);
+      if (near) return near;
     }
     return "";
+  }
+
+  /** 라벨 기준 전방향 근접 값(위·아래·오른쪽). 숨은 input value도 허용. */
+  function readValueNearAny(lab, labelText) {
+    var r = lab.getBoundingClientRect();
+    var cx = (r.left + r.right) / 2;
+    var cy = (r.top + r.bottom) / 2;
+    var best = "";
+    var bestScore = 1e15;
+    var nodes = document.querySelectorAll("input, select, textarea, div, span");
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (el === lab || lab.contains(el)) continue;
+      var er = el.getBoundingClientRect();
+      // hidden input: rect 0이어도 value 사용
+      var isHiddenInp =
+        el.tagName === "INPUT" && (el.type === "hidden" || !visible(el));
+      if (!isHiddenInp && !visible(el)) continue;
+      if (!isHiddenInp) {
+        if (er.width > 400 || er.height > 80) continue;
+        var dx = (er.left + er.right) / 2 - cx;
+        var dy = (er.top + er.bottom) / 2 - cy;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 240) continue;
+      } else {
+        // 숨은 입력은 조상 근접만
+        if (!lab.parentElement || !lab.parentElement.contains(el)) {
+          var pr = (el.parentElement && el.parentElement.getBoundingClientRect()) || er;
+          var dxh = (pr.left + pr.right) / 2 - cx;
+          var dyh = (pr.top + pr.bottom) / 2 - cy;
+          if (Math.sqrt(dxh * dxh + dyh * dyh) > 280) continue;
+        }
+      }
+      var val = controlValue(el);
+      if (!val && !isHiddenInp) {
+        var tx = normText(el.textContent);
+        if (!tx || tx.length > 28) continue;
+        if (labelTextMatches(tx, labelText) || tx === labelText) continue;
+        var childShorter = false;
+        for (var c = 0; c < el.children.length; c++) {
+          var ct = normText(el.children[c].textContent);
+          if (ct && ct.length < tx.length && ct.length <= 28) {
+            childShorter = true;
+            break;
+          }
+        }
+        if (childShorter) continue;
+        val = tx;
+      }
+      if (!val) continue;
+      var score;
+      if (isHiddenInp) score = 50;
+      else {
+        var er2 = el.getBoundingClientRect();
+        var ddx = (er2.left + er2.right) / 2 - cx;
+        var ddy = (er2.top + er2.bottom) / 2 - cy;
+        score = Math.sqrt(ddx * ddx + ddy * ddy);
+        if (ddx > 0) score *= 0.7; // 오른쪽 가산
+      }
+      if (score < bestScore) {
+        bestScore = score;
+        best = val;
+      }
+    }
+    return best;
+  }
+
+  /** 화면에 보이는 텍스트 순서(넥사크로 콤보 DOM 우회). */
+  function readFiltersFromInnerText() {
+    var text = normText(
+      (document.body && document.body.innerText) ||
+        (document.documentElement && document.documentElement.innerText) ||
+        "",
+    );
+    var out = { year: "", grade: "", class: "", date: "" };
+    var iY = text.indexOf("학년도");
+    if (iY >= 0) {
+      var ys = text.slice(iY + 3, iY + 48);
+      var ym = ys.match(/(?:19|20)\d{2}/);
+      if (ym) out.year = ym[0];
+    }
+    var gm = text.match(/학년도[\s\S]{0,48}?학년\s*[:：]?\s*(\d{1,2})/);
+    if (gm) out.grade = gm[1];
+    var cm = text.match(/반\s*[:：]?\s*(\d{1,2})/);
+    if (cm) out.class = cm[1];
+    var dm = text.match(/일자\s*[:：]?\s*(\d{4}\D{1,4}\d{1,2}\D{1,4}\d{1,2})/);
+    if (dm) out.date = dm[1];
+    return out;
   }
 
   function parseYear(raw) {
@@ -724,6 +834,28 @@
     var gradeRaw = readNearbyValue("학년");
     var classRaw = readNearbyValue("반");
     var dateRaw = readNearbyValue("일자");
+    var soft = readFiltersFromInnerText();
+    var src = "dom";
+    if (!parseYear(yearRaw) && soft.year) {
+      yearRaw = soft.year;
+      src = "innerText";
+    }
+    if (!parseIntLoose(gradeRaw) && soft.grade) {
+      gradeRaw = soft.grade;
+      if (src === "dom") src = "innerText";
+      else src = "mixed";
+    }
+    if (!parseIntLoose(classRaw) && soft.class) {
+      classRaw = soft.class;
+      if (src === "dom") src = "innerText";
+      else if (src !== "innerText") src = "mixed";
+    }
+    if (!normalizeDate(dateRaw) && soft.date) {
+      dateRaw = soft.date;
+      if (src === "dom") src = "innerText";
+      else if (src !== "innerText") src = "mixed";
+    }
+    // 학년 라벨이 학년도에 흡수된 경우: DOM 학년 재시도 없이 soft만
     return {
       year: parseYear(yearRaw),
       grade: parseIntLoose(gradeRaw),
@@ -734,6 +866,8 @@
         grade: String(gradeRaw || "").slice(0, 12),
         class: String(classRaw || "").slice(0, 12),
         date: String(dateRaw || "").slice(0, 24),
+        softYear: String(soft.year || "").slice(0, 8),
+        filterSrc: src,
       },
     };
   }
@@ -748,6 +882,8 @@
       rawGrade: filters._raw && filters._raw.grade,
       rawClass: filters._raw && filters._raw.class,
       rawDate: filters._raw && filters._raw.date,
+      softYear: filters._raw && filters._raw.softYear,
+      filterSrc: filters._raw && filters._raw.filterSrc,
       itemYear: item.year,
       itemGrade: item.grade,
       itemClass: item.class,
