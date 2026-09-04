@@ -285,6 +285,33 @@
     return n;
   }
 
+
+  /** getBoundingClientRect-like: width/height > 0 */
+  function isClientRectVisible(r) {
+    if (!r) return false;
+    var w = Number(r.width) || 0;
+    var h = Number(r.height) || 0;
+    return w > 0 && h > 0;
+  }
+
+  /**
+   * 팝업 오픈 성공 판정 — titleHit만으로 절대 성공 금지.
+   * titleVisible + categoryVisible 필수.
+   */
+  function popupOpenVisibleOk(flags) {
+    flags = flags || {};
+    if (!flags.titleVisible) return false;
+    if (!flags.categoryVisible) return false;
+    // titleHit alone must never pass
+    if (flags.titleVisible !== true && flags.categoryVisible !== true) return false;
+    return true;
+  }
+
+  /** 클릭 전 비가시 → 클릭 후 가시 (새로 뜸) */
+  function titleBecameNewlyVisible(beforeVisible, afterVisible) {
+    return !beforeVisible && !!afterVisible;
+  }
+
   function popupDiagFromTexts(texts) {
     var list = texts || [];
     var titleHit = 0;
@@ -346,6 +373,9 @@
     pickSmallestPopupRoot: pickSmallestPopupRoot,
     POPUP_ROOT_MAX_TEXT_LEN: POPUP_ROOT_MAX_TEXT_LEN,
     POPUP_ROOT_MAX_TEXT_COUNT: POPUP_ROOT_MAX_TEXT_COUNT,
+    isClientRectVisible: isClientRectVisible,
+    popupOpenVisibleOk: popupOpenVisibleOk,
+    titleBecameNewlyVisible: titleBecameNewlyVisible,
     isEnabledState: isEnabledState,
     isDisabledControlState: isDisabledControlState,
     typeEnabledAfterCategory: typeEnabledAfterCategory,

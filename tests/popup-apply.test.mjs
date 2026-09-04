@@ -248,3 +248,38 @@ check("fixture has decoy outer + inner dialog markers", () => {
   assert.ok(html.includes("decoyUnexcused"));
   assert.ok(html.includes("학생01"));
 });
+
+check("isClientRectVisible", () => {
+  assert.equal(P.isClientRectVisible({ width: 10, height: 8 }), true);
+  assert.equal(P.isClientRectVisible({ width: 0, height: 8 }), false);
+  assert.equal(P.isClientRectVisible({ width: 10, height: 0 }), false);
+  assert.equal(P.isClientRectVisible(null), false);
+});
+
+check("popupOpenVisibleOk requires title+category visible (not titleHit alone)", () => {
+  assert.equal(P.popupOpenVisibleOk({ titleVisible: true, categoryVisible: true }), true);
+  assert.equal(P.popupOpenVisibleOk({ titleVisible: true, categoryVisible: false, titleHit: 1 }), false);
+  assert.equal(P.popupOpenVisibleOk({ titleVisible: false, categoryVisible: true, titleHit: 1 }), false);
+  assert.equal(P.popupOpenVisibleOk({ titleHit: 1 }), false);
+  assert.equal(P.popupOpenVisibleOk({}), false);
+});
+
+check("titleBecameNewlyVisible", () => {
+  assert.equal(P.titleBecameNewlyVisible(false, true), true);
+  assert.equal(P.titleBecameNewlyVisible(true, true), false);
+  assert.equal(P.titleBecameNewlyVisible(false, false), false);
+});
+
+check("fixture closeCell opens popup; decoy title alone is not enough", () => {
+  const html = readFileSync(new URL("./fixtures/neis-popup-nexacro.html", import.meta.url), "utf8");
+  assert.ok(html.includes('id="closeCell"'));
+  assert.ok(html.includes('id="popupLayer"'));
+  assert.ok(html.includes('class="hidden"') || html.includes("classList.remove(\"hidden\")") || html.includes("classList.remove('hidden')"));
+  assert.ok(html.includes("openPopup") || html.includes('classList.remove("hidden")') || html.includes("classList.remove('hidden')"));
+  assert.ok(html.includes('data-decoy="title"'));
+  assert.ok(html.includes("closeCellInput") || html.includes("bindOpen"));
+  assert.ok(html.includes("elementFromPoint") === false); // browser-only; fixture just opens on click
+  assert.ok(html.includes("학생01"));
+  // decoy title present while layer starts hidden
+  assert.ok(html.includes('id="popupLayer" class="hidden"') || html.includes('id="popupLayer" class="hidden" data-popup'));
+});
