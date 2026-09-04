@@ -23,9 +23,12 @@
   }
 
   function normalizeDate(s) {
+    if (globalThis.ChulgyeolFilterBar && globalThis.ChulgyeolFilterBar.normalizeDate) {
+      return globalThis.ChulgyeolFilterBar.normalizeDate(s);
+    }
     if (!s) return "";
     const m = String(s).match(/(\d{4})\D(\d{1,2})\D(\d{1,2})/);
-    if (!m) return String(s).trim();
+    if (!m) return "";
     return m[1] + "-" + m[2].padStart(2, "0") + "-" + m[3].padStart(2, "0");
   }
 
@@ -598,6 +601,10 @@
     return null;
   }
 
+  function FB() {
+    return globalThis.ChulgyeolFilterBar || null;
+  }
+
   function controlValue(el) {
     if (!el) return "";
     if (el.tagName === "SELECT") {
@@ -624,7 +631,6 @@
     if (hits.length) return hits;
     var exact = findElementsByExactText(document, labelText);
     if (exact.length) return exact;
-    // 짧은 텍스트에 라벨이 앞에 붙는 경우
     var soft = [];
     var all = document.querySelectorAll("*");
     for (var i = 0; i < all.length; i++) {
@@ -638,32 +644,42 @@
     return soft;
   }
 
-  /** 라벨 오른쪽·같은 줄의 콤보/입력/짧은 표시 텍스트 (넥사크로 Combo 포함). */
-  function readValueRightOf(lab) {
+  function collectNearValues(lab, labelText) {
     var r = lab.getBoundingClientRect();
-    var best = "";
-    var bestScore = 1e15;
+    var cx = (r.left + r.right) / 2;
+    var cy = (r.top + r.bottom) / 2;
+    var found = [];
     var nodes = document.querySelectorAll("input, select, textarea, div, span");
     for (var i = 0; i < nodes.length; i++) {
       var el = nodes[i];
-      if (!visible(el)) continue;
-      if (el === lab || lab.contains(el) || el.contains(lab)) continue;
+      if (el === lab || lab.contains(el)) continue;
+      var isHiddenInp =
+        el.tagName === "INPUT" && (el.type === "hidden" || !visible(el));
+      if (!isHiddenInp && !visible(el)) continue;
       var er = el.getBoundingClientRect();
-      if (er.left < r.right - 8) continue;
-      if (er.left - r.right > 420) continue;
-      if (Math.abs(er.top - r.top) > 28) continue;
-      if (er.width > 360 || er.height > 60) continue;
-
+      var dist;
+      if (isHiddenInp) {
+        var pr = (el.parentElement && el.parentElement.getBoundingClientRect()) || er;
+        var dxh = (pr.left + pr.right) / 2 - cx;
+        var dyh = (pr.top + pr.bottom) / 2 - cy;
+        dist = Math.sqrt(dxh * dxh + dyh * dyh);
+        if (dist > 320) continue;
+      } else {
+        if (er.width > 420 || er.height > 90) continue;
+        var dx = (er.left + er.right) / 2 - cx;
+        var dy = (er.top + er.bottom) / 2 - cy;
+        dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 280) continue;
+      }
       var val = controlValue(el);
-      if (!val) {
+      if (!val && !isHiddenInp) {
         var tx = normText(el.textContent);
-        if (!tx || tx.length > 24) continue;
-        if (tx === normText(lab.textContent)) continue;
-        // 자식에 더 짧은 동일 텍스트 있으면 스킵(컨테이너)
+        if (!tx || tx.length > 32) continue;
+        if (labelTextMatches(tx, labelText) || tx === labelText) continue;
         var childShorter = false;
         for (var c = 0; c < el.children.length; c++) {
           var ct = normText(el.children[c].textContent);
-          if (ct && ct.length < tx.length && ct.length <= 24) {
+          if (ct && ct.length < tx.length && ct.length <= 32) {
             childShorter = true;
             break;
           }
@@ -672,16 +688,49 @@
         val = tx;
       }
       if (!val) continue;
-      var score = er.left - r.right + Math.abs(er.top - r.top) * 2;
-      if (score < bestScore) {
-        bestScore = score;
-        best = val;
-      }
+      var left = isHiddenInp ? cx : er.left;
+      found.push({ val: val, dist: dist, left: left, top: isHiddenInp ? cy : er.top });
     }
-    return best;
+    found.sort(function (a, b) {
+      if (a.dist !== b.dist) return a.dist - b.dist;
+      return a.left - b.left;
+    });
+    return found;
   }
 
-  function readNearbyValue(labelText) {
+  function pickByKind(values, kind) {
+    var fb = FB();
+    for (var i = 0; i < values.length; i++) {
+      var v = values[i].val;
+      if (kind === "year") {
+        var y = fb ? fb.parseYear(v) : (String(v).match(/(?:19|20)\d{2}/) || [])[0];
+        if (y != null && y !== "") return String(typeof y === "number" ? y : y);
+      } else if (kind === "grade" || kind === "class") {
+        var n = fb ? fb.parseIntLoose(v) : (String(v).match(/\d{1,2}/) || [])[0];
+        if (n != null && n !== "") return String(n);
+      } else if (kind === "date") {
+        var d = normalizeDate(v);
+        if (d) return d;
+      }
+    }
+    if (kind === "date" && values.length >= 3) {
+      // Y M D 분리 콤보
+      var nums = [];
+      for (var j = 0; j < values.length && nums.length < 3; j++) {
+        var m = String(values[j].val).match(/\d{1,4}/);
+        if (m) nums.push(m[0]);
+      }
+      if (nums.length >= 3) {
+        var joined = nums[0] + "-" + nums[1] + "-" + nums[2];
+        var nd = normalizeDate(joined);
+        if (nd) return nd;
+      }
+    }
+    return values.length ? values[0].val : "";
+  }
+
+  /** 4칸 공통: 라벨 → 근접/형제/숨은input 값 */
+  function readFilterFieldDom(labelText, kind) {
     var labels = exactLabelEls(labelText);
     for (var i = 0; i < labels.length; i++) {
       var lab = labels[i];
@@ -691,183 +740,132 @@
         var sel = climb.querySelector("select");
         if (sel && visible(sel)) {
           var sv = controlValue(sel);
-          if (sv) return sv;
+          if (sv && pickByKind([{ val: sv, dist: 0 }], kind)) return pickByKind([{ val: sv, dist: 0 }], kind);
         }
-        var inputs = climb.querySelectorAll(
-          "input:not([type='hidden']):not([type='button']):not([type='submit']):not([type='checkbox']):not([type='radio'])",
-        );
+        var inputs = climb.querySelectorAll("input");
         for (var u = 0; u < inputs.length; u++) {
-          if (!visible(inputs[u])) continue;
-          // 라벨 왼쪽 입력은 다른 필드일 수 있음 → 라벨 오른쪽만
-          var ir = inputs[u].getBoundingClientRect();
+          var inp = inputs[u];
+          var iv = controlValue(inp);
+          if (!iv) continue;
           var lr = lab.getBoundingClientRect();
-          if (ir.left + ir.width / 2 < lr.left) continue;
-          var iv = controlValue(inputs[u]);
-          if (iv) return iv;
+          var ir = inp.getBoundingClientRect();
+          if (inp.type !== "hidden" && visible(inp) && ir.left + ir.width / 2 < lr.left) continue;
+          var picked = pickByKind([{ val: iv, dist: 0 }], kind);
+          if (picked) return picked;
         }
       }
-      var wrap = lab.closest("td, th, label, div, span, li") || lab.parentElement;
-      if (wrap) {
-        var sib = wrap.nextElementSibling;
-        for (var k = 0; k < 4 && sib; k++, sib = sib.nextElementSibling) {
-          if (sib.tagName === "SELECT" && visible(sib)) {
-            var s2 = controlValue(sib);
-            if (s2) return s2;
-          }
-          var nested = sib.querySelector && sib.querySelector("select, input:not([type='hidden']):not([type='button'])");
-          if (nested && visible(nested)) {
-            var nv = controlValue(nested);
-            if (nv) return nv;
-          }
-          var st = normText(sib.textContent);
-          if (st && st.length <= 24 && st !== labelText) return st;
-        }
-      }
-      var right = readValueRightOf(lab);
-      if (right) return right;
-      var near = readValueNearAny(lab, labelText);
-      if (near) return near;
+      var near = collectNearValues(lab, labelText);
+      var got = pickByKind(near, kind);
+      if (got) return got;
     }
     return "";
   }
 
-  /** 라벨 기준 전방향 근접 값(위·아래·오른쪽). 숨은 input value도 허용. */
-  function readValueNearAny(lab, labelText) {
-    var r = lab.getBoundingClientRect();
-    var cx = (r.left + r.right) / 2;
-    var cy = (r.top + r.bottom) / 2;
-    var best = "";
-    var bestScore = 1e15;
-    var nodes = document.querySelectorAll("input, select, textarea, div, span");
-    for (var i = 0; i < nodes.length; i++) {
-      var el = nodes[i];
-      if (el === lab || lab.contains(el)) continue;
-      var er = el.getBoundingClientRect();
-      // hidden input: rect 0이어도 value 사용
-      var isHiddenInp =
-        el.tagName === "INPUT" && (el.type === "hidden" || !visible(el));
-      if (!isHiddenInp && !visible(el)) continue;
-      if (!isHiddenInp) {
-        if (er.width > 400 || er.height > 80) continue;
-        var dx = (er.left + er.right) / 2 - cx;
-        var dy = (er.top + er.bottom) / 2 - cy;
-        var dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist > 240) continue;
-      } else {
-        // 숨은 입력은 조상 근접만
-        if (!lab.parentElement || !lab.parentElement.contains(el)) {
-          var pr = (el.parentElement && el.parentElement.getBoundingClientRect()) || er;
-          var dxh = (pr.left + pr.right) / 2 - cx;
-          var dyh = (pr.top + pr.bottom) / 2 - cy;
-          if (Math.sqrt(dxh * dxh + dyh * dyh) > 280) continue;
-        }
-      }
-      var val = controlValue(el);
-      if (!val && !isHiddenInp) {
-        var tx = normText(el.textContent);
-        if (!tx || tx.length > 28) continue;
-        if (labelTextMatches(tx, labelText) || tx === labelText) continue;
-        var childShorter = false;
-        for (var c = 0; c < el.children.length; c++) {
-          var ct = normText(el.children[c].textContent);
-          if (ct && ct.length < tx.length && ct.length <= 28) {
-            childShorter = true;
-            break;
-          }
-        }
-        if (childShorter) continue;
-        val = tx;
-      }
-      if (!val) continue;
-      var score;
-      if (isHiddenInp) score = 50;
-      else {
-        var er2 = el.getBoundingClientRect();
-        var ddx = (er2.left + er2.right) / 2 - cx;
-        var ddy = (er2.top + er2.bottom) / 2 - cy;
-        score = Math.sqrt(ddx * ddx + ddy * ddy);
-        if (ddx > 0) score *= 0.7; // 오른쪽 가산
-      }
-      if (score < bestScore) {
-        bestScore = score;
-        best = val;
-      }
-    }
-    return best;
-  }
-
-  /** 화면에 보이는 텍스트 순서(넥사크로 콤보 DOM 우회). */
-  function readFiltersFromInnerText() {
-    var text = normText(
+  function pageInnerText() {
+    return normText(
       (document.body && document.body.innerText) ||
         (document.documentElement && document.documentElement.innerText) ||
         "",
     );
-    var out = { year: "", grade: "", class: "", date: "" };
-    var iY = text.indexOf("학년도");
-    if (iY >= 0) {
-      var ys = text.slice(iY + 3, iY + 48);
-      var ym = ys.match(/(?:19|20)\d{2}/);
-      if (ym) out.year = ym[0];
+  }
+
+  /** 조회조건 라벨 좌표 (학년도/학년/반/일자) — 같은 밴드 순서 파서용 */
+  function collectFilterBarLabels() {
+    var specs = [
+      { key: "year", text: "학년도" },
+      { key: "grade", text: "학년" },
+      { key: "class", text: "반" },
+      { key: "date", text: "일자" },
+    ];
+    var found = [];
+    for (var s = 0; s < specs.length; s++) {
+      var els = exactLabelEls(specs[s].text);
+      for (var i = 0; i < els.length; i++) {
+        var el = els[i];
+        if (!visible(el)) continue;
+        var r = el.getBoundingClientRect();
+        if (r.width < 1 || r.height < 1) continue;
+        found.push({
+          key: specs[s].key,
+          text: specs[s].text,
+          x: r.left,
+          y: r.top,
+          right: r.right,
+          bottom: r.bottom,
+        });
+      }
     }
-    var gm = text.match(/학년도[\s\S]{0,48}?학년\s*[:：]?\s*(\d{1,2})/);
-    if (gm) out.grade = gm[1];
-    var cm = text.match(/반\s*[:：]?\s*(\d{1,2})/);
-    if (cm) out.class = cm[1];
-    var dm = text.match(/일자\s*[:：]?\s*(\d{4}\D{1,4}\d{1,2}\D{1,4}\d{1,2})/);
-    if (dm) out.date = dm[1];
+    return found;
+  }
+
+  /** 필터 밴드 근처 짧은 표시 토큰 (select/input 없이도 Nexacro 표시값) */
+  function collectFilterBarTokens(bandY, bandTol) {
+    var labelWords = { 학년도: 1, 학년: 1, 반: 1, 일자: 1, 조회: 1 };
+    var nodes = document.querySelectorAll("div, span, td, th, label, a, p, li");
+    var out = [];
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (!visible(el)) continue;
+      var r = el.getBoundingClientRect();
+      if (r.width < 1 || r.height < 1) continue;
+      if (r.width > 400 || r.height > 80) continue;
+      if (bandY != null && Math.abs(r.top - bandY) > bandTol) continue;
+      var tx = normText(el.textContent);
+      if (!tx || tx.length > 32) continue;
+      if (labelWords[tx]) continue;
+      // 컨테이너 스킵: 자식에 더 짧은 동일 밴드 텍스트가 있으면 리프만
+      var childShorter = false;
+      for (var c = 0; c < el.children.length; c++) {
+        var ct = normText(el.children[c].textContent);
+        if (ct && ct.length < tx.length && ct.length <= 32) {
+          childShorter = true;
+          break;
+        }
+      }
+      if (childShorter) continue;
+      out.push({ text: tx, x: r.left, y: r.top });
+    }
     return out;
   }
 
-  function parseYear(raw) {
-    var m = String(raw || "").match(/(?:19|20)\d{2}/);
-    return m ? Number(m[0]) : null;
-  }
-
-  function parseIntLoose(raw) {
-    var m = String(raw || "").match(/\d+/);
-    return m ? Number(m[0]) : null;
-  }
-
   function readFilters() {
-    var yearRaw = readNearbyValue("학년도");
-    var gradeRaw = readNearbyValue("학년");
-    var classRaw = readNearbyValue("반");
-    var dateRaw = readNearbyValue("일자");
-    var soft = readFiltersFromInnerText();
-    var src = "dom";
-    if (!parseYear(yearRaw) && soft.year) {
-      yearRaw = soft.year;
-      src = "innerText";
+    var fb = FB();
+    var labels = collectFilterBarLabels();
+    var bandY = null;
+    for (var i = 0; i < labels.length; i++) {
+      if (labels[i].key === "year") {
+        bandY = labels[i].y;
+        break;
+      }
     }
-    if (!parseIntLoose(gradeRaw) && soft.grade) {
-      gradeRaw = soft.grade;
-      if (src === "dom") src = "innerText";
-      else src = "mixed";
+    if (bandY == null && labels.length) bandY = labels[0].y;
+    var tokens = collectFilterBarTokens(bandY, 40);
+    var orderParsed =
+      fb && fb.parseFilterBarByOrder ? fb.parseFilterBarByOrder(labels, tokens) : null;
+
+    var domRaw = {
+      year: readFilterFieldDom("학년도", "year"),
+      grade: readFilterFieldDom("학년", "grade"),
+      class: readFilterFieldDom("반", "class"),
+      date: readFilterFieldDom("일자", "date"),
+    };
+    var textParsed = fb
+      ? fb.parseFilterBarText(pageInnerText())
+      : { year: null, grade: null, class: null, date: "", raw: {} };
+    if (fb && fb.mergeFilterValues) {
+      return fb.mergeFilterValues(domRaw, textParsed, orderParsed);
     }
-    if (!parseIntLoose(classRaw) && soft.class) {
-      classRaw = soft.class;
-      if (src === "dom") src = "innerText";
-      else if (src !== "innerText") src = "mixed";
-    }
-    if (!normalizeDate(dateRaw) && soft.date) {
-      dateRaw = soft.date;
-      if (src === "dom") src = "innerText";
-      else if (src !== "innerText") src = "mixed";
-    }
-    // 학년 라벨이 학년도에 흡수된 경우: DOM 학년 재시도 없이 soft만
     return {
-      year: parseYear(yearRaw),
-      grade: parseIntLoose(gradeRaw),
-      class: parseIntLoose(classRaw),
-      date: normalizeDate(dateRaw),
+      year: domRaw.year ? Number(String(domRaw.year).match(/(?:19|20)\d{2}/) || [])[0] : null,
+      grade: domRaw.grade ? Number(String(domRaw.grade).match(/\d+/) || [])[0] : null,
+      class: domRaw.class ? Number(String(domRaw.class).match(/\d+/) || [])[0] : null,
+      date: normalizeDate(domRaw.date),
       _raw: {
-        year: String(yearRaw || "").slice(0, 24),
-        grade: String(gradeRaw || "").slice(0, 12),
-        class: String(classRaw || "").slice(0, 12),
-        date: String(dateRaw || "").slice(0, 24),
-        softYear: String(soft.year || "").slice(0, 8),
-        filterSrc: src,
+        year: String(domRaw.year || "").slice(0, 24),
+        grade: String(domRaw.grade || "").slice(0, 12),
+        class: String(domRaw.class || "").slice(0, 12),
+        date: String(domRaw.date || "").slice(0, 24),
+        filterSrc: "dom-fallback",
       },
     };
   }
@@ -883,7 +881,18 @@
       rawClass: filters._raw && filters._raw.class,
       rawDate: filters._raw && filters._raw.date,
       softYear: filters._raw && filters._raw.softYear,
+      softGrade: filters._raw && filters._raw.softGrade,
+      softClass: filters._raw && filters._raw.softClass,
+      softDate: filters._raw && filters._raw.softDate,
+      orderYear: filters._raw && filters._raw.orderYear,
+      orderGrade: filters._raw && filters._raw.orderGrade,
+      orderClass: filters._raw && filters._raw.orderClass,
+      orderDate: filters._raw && filters._raw.orderDate,
       filterSrc: filters._raw && filters._raw.filterSrc,
+      srcYear: filters._raw && filters._raw.srcYear,
+      srcGrade: filters._raw && filters._raw.srcGrade,
+      srcClass: filters._raw && filters._raw.srcClass,
+      srcDate: filters._raw && filters._raw.srcDate,
       itemYear: item.year,
       itemGrade: item.grade,
       itemClass: item.class,
@@ -915,7 +924,6 @@
     }
     return { ok: true };
   }
-
 
   function cellText(cell) {
     return ((cell && cell.textContent) || "").replace(/\s+/g, " ").trim();

@@ -67,7 +67,7 @@ async function ensureScripts(tabId, frameIds) {
   if (!chrome.scripting || !chrome.scripting.executeScript) {
     return { ok: false, code: "no_scripting" };
   }
-  const files = ["content/detect.js", "content/neis-apply.js"];
+  const files = ["content/detect.js", "content/filter-bar-parse.js", "content/neis-apply.js"];
   // 1) allFrames 한 번 (host_permissions 범위)
   try {
     await chrome.scripting.executeScript({
