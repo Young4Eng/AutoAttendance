@@ -155,6 +155,23 @@ async function runApply(dryRun) {
         softFail = softFail || res;
         continue;
       }
+      // 익명 필터 diag만 (이름·번호 없음)
+      if (res.diag && typeof res.diag === "object") {
+        const d = res.diag;
+        console.info(
+          "[출결메이트]",
+          "code=",
+          res.code,
+          "rawYear=",
+          d.rawYear ?? "",
+          "softYear=",
+          d.softYear ?? "",
+          "filterSrc=",
+          d.filterSrc ?? "",
+          "itemYear=",
+          d.itemYear ?? "",
+        );
+      }
       return res;
     } catch {
       // next
