@@ -174,18 +174,29 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const hostOk = Boolean(
       sender.tab?.url && /\.neis\.go\.kr(\/|$|\?|#)/i.test(sender.tab.url),
     );
-    const next = hostOk ? kind : "other";
-    chrome.storage.session.set({ [PAGE_KEY]: next });
-    setBadge(next, sender.tab?.id).catch(() => {});
-    console.info(
-      "[출결메이트]",
-      "page=",
-      next,
-      "badge=",
-      next === "homeroom-daily" ? "ON" : "off",
-    );
-    sendResponse({ ok: true, kind: next });
-    return false;
+    const frameId = sender.frameId || 0;
+    chrome.storage.session.get(PAGE_KEY).then((data) => {
+      const prev = data[PAGE_KEY] || "unknown";
+      let next = hostOk ? kind : "other";
+      // 자식 iframe의 other로 담임용 감지를 지우지 않음
+      if (next === "other" && prev === "homeroom-daily" && frameId !== 0) {
+        sendResponse({ ok: true, kind: prev, ignored: true });
+        return;
+      }
+      chrome.storage.session.set({ [PAGE_KEY]: next });
+      setBadge(next, sender.tab?.id).catch(() => {});
+      console.info(
+        "[출결메이트]",
+        "page=",
+        next,
+        "frame=",
+        frameId,
+        "badge=",
+        next === "homeroom-daily" ? "ON" : "off",
+      );
+      sendResponse({ ok: true, kind: next });
+    });
+    return true;
   }
 
   if (message.type === "get-page-kind") {

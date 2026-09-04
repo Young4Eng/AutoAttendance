@@ -95,54 +95,116 @@
     console.info("[출결메이트]", parts.join(" "));
   }
 
+  function cellLabel(cell) {
+    return ((cell && cell.textContent) || "").replace(/\s+/g, " ").trim();
+  }
+
+  function parseHeaderCells(cells) {
+    var texts = [];
+    for (var c = 0; c < cells.length; c++) texts.push(cellLabel(cells[c]));
+    var idxNum = -1, idxName = -1, idxClose = -1;
+    for (var h = 0; h < texts.length; h++) {
+      var tx = texts[h];
+      if (idxNum < 0 && (tx === "번호" || tx.indexOf("번호") === 0)) idxNum = h;
+      if (idxName < 0 && (tx === "성명" || tx.indexOf("성명") === 0)) idxName = h;
+      if (idxClose < 0 && (tx === "마감" || tx.indexOf("마감") === 0)) idxClose = h;
+    }
+    if (idxNum < 0 || idxName < 0 || idxClose < 0) return null;
+    var col = { number: idxNum, name: idxName, close: idxClose };
+    var periodCols = {};
+    var periodCount = 0;
+    for (var p = 0; p < texts.length; p++) {
+      var tx = texts[p];
+      if (tx === "조회" || tx.indexOf("조회") === 0) col.morning = p;
+      if (tx === "종례" || tx.indexOf("종례") === 0) col.afternoon = p;
+      if (tx === "사유" || tx.indexOf("사유") === 0) col.reason = p;
+      var pm = tx.match(/^(\d+)\s*교시/);
+      if (pm) {
+        periodCols[Number(pm[1])] = p;
+        periodCount = Math.max(periodCount, Number(pm[1]));
+      }
+    }
+    if (periodCount === 0) return null;
+    return { col: col, periodCols: periodCols, periodCount: periodCount, colCount: cells.length };
+  }
+
+  /**
+   * 나이스는 헤더 테이블 / 본문 테이블이 갈라진 경우가 많음.
+   * 같은 테이블에 헤더+데이터가 있으면 그걸 쓰고, 없으면 헤더 맵 + 다른 본문 테이블.
+   */
   function findAttendanceGrid(root) {
     var tables = Array.prototype.slice.call(root.querySelectorAll("table")).filter(visible);
+    var headerMap = null;
+    var headerTable = null;
+    var headerIdx = -1;
+
     for (var t = 0; t < tables.length; t++) {
       var table = tables[t];
       var rows = table.rows;
-      if (!rows || rows.length < 2) continue;
-      for (var i = 0; i < Math.min(rows.length, 5); i++) {
-        var cells = rows[i].cells;
-        var texts = [];
-        for (var c = 0; c < cells.length; c++) {
-          texts.push((cells[c].textContent || "").replace(/\s+/g, " ").trim());
+      if (!rows || !rows.length) continue;
+      var limit = Math.min(rows.length, 12);
+      for (var i = 0; i < limit; i++) {
+        var parsed = parseHeaderCells(rows[i].cells);
+        if (!parsed) continue;
+        headerMap = parsed;
+        headerTable = table;
+        headerIdx = i;
+        // 같은 테이블에 데이터 행이 있으면 바로 사용
+        if (rows.length > i + 1) {
+          return {
+            table: table,
+            bodyTable: table,
+            headerIdx: i,
+            col: parsed.col,
+            periodCols: parsed.periodCols,
+            periodCount: parsed.periodCount,
+          };
         }
-        var idxNum = -1,
-          idxName = -1,
-          idxClose = -1;
-        for (var h = 0; h < texts.length; h++) {
-          if (idxNum < 0 && (texts[h] === "번호" || texts[h].indexOf("번호") === 0)) idxNum = h;
-          if (idxName < 0 && (texts[h] === "성명" || texts[h].indexOf("성명") === 0)) idxName = h;
-          if (idxClose < 0 && (texts[h] === "마감" || texts[h].indexOf("마감") === 0)) idxClose = h;
-        }
-        if (idxNum < 0 || idxName < 0 || idxClose < 0) continue;
-        var col = { number: idxNum, name: idxName, close: idxClose };
-        var periodCols = {};
-        var periodCount = 0;
-        for (var p = 0; p < texts.length; p++) {
-          if (texts[p] === "조회" || texts[p].indexOf("조회") === 0) col.morning = p;
-          if (texts[p] === "종례" || texts[p].indexOf("종례") === 0) col.afternoon = p;
-          if (texts[p] === "사유" || texts[p].indexOf("사유") === 0) col.reason = p;
-          var pm = texts[p].match(/^(\d+)\s*교시/);
-          if (pm) {
-            periodCols[Number(pm[1])] = p;
-            periodCount = Math.max(periodCount, Number(pm[1]));
-          }
-        }
-        if (periodCount === 0) continue;
-        return { table: table, headerIdx: i, col: col, periodCols: periodCols, periodCount: periodCount };
+        break;
+      }
+      if (headerMap) break;
+    }
+    if (!headerMap) return null;
+
+    // 본문만 있는 테이블: 열 수가 비슷하고 숫자·이름이 있는 행
+    var best = null;
+    for (var u = 0; u < tables.length; u++) {
+      var bt = tables[u];
+      if (bt === headerTable && bt.rows.length <= headerIdx + 1) continue;
+      if (!bt.rows || bt.rows.length < 1) continue;
+      var sample = bt.rows[0].cells;
+      if (!sample || sample.length < headerMap.colCount - 2) continue;
+      var dataStart = bt === headerTable ? headerIdx + 1 : 0;
+      if (bt.rows.length <= dataStart) continue;
+      var score = bt.rows.length;
+      if (!best || score > best.score) {
+        best = { table: bt, dataStart: dataStart, score: score };
       }
     }
-    return null;
+    if (!best) return null;
+    return {
+      table: best.table,
+      bodyTable: best.table,
+      headerIdx: best.dataStart - 1,
+      dataStart: best.dataStart,
+      col: headerMap.col,
+      periodCols: headerMap.periodCols,
+      periodCount: headerMap.periodCount,
+    };
   }
 
   function findRowByNumberName(grid, number, name) {
     var wantNum = String(number).trim();
     var wantName = String(name).trim();
-    for (var i = grid.headerIdx + 1; i < grid.table.rows.length; i++) {
-      var row = grid.table.rows[i];
-      var numText = (row.cells[grid.col.number] && row.cells[grid.col.number].textContent || "").trim();
-      var nameText = (row.cells[grid.col.name] && row.cells[grid.col.name].textContent || "").trim();
+    var body = grid.bodyTable || grid.table;
+    var start = grid.dataStart != null ? grid.dataStart : grid.headerIdx + 1;
+    for (var i = start; i < body.rows.length; i++) {
+      var row = body.rows[i];
+      if (!row.cells || row.cells.length <= Math.max(grid.col.number, grid.col.name)) continue;
+      var numText = cellLabel(row.cells[grid.col.number]);
+      var nameText = cellLabel(row.cells[grid.col.name]);
+      // 헤더 잔상 스킵
+      if (numText === "번호" || nameText === "성명") continue;
       if (numText === wantNum && nameText === wantName) return { row: row, rowIndex: i };
     }
     return null;
