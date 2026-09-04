@@ -40,9 +40,21 @@
     return false;
   }
 
+  /** 제목 「출결마감구분」이 blob에 있는지 — 루트·폴백 확정용 */
+  function hasPopupTitleInText(blob) {
+    var t = normText(blob);
+    if (!t) return false;
+    return t.indexOf("출결마감구분") >= 0;
+  }
+
+  /**
+   * 본문이 출결마감구분 레이어처럼 보이는지.
+   * 제목 「출결마감구분」필수 + 구분 + 종류.
+   */
   function looksLikeClosePopupText(blob) {
     var t = normText(blob);
     if (!t) return false;
+    if (!hasPopupTitleInText(t)) return false;
     var hasCat = false;
     var hasType = false;
     for (var i = 0; i < CATEGORY_LABELS.length; i++) {
@@ -64,18 +76,14 @@
   function fallbackPopupNeedsTitle(blob) {
     var t = normText(blob);
     if (!t) return false;
-    if (t.indexOf("출결마감구분") < 0) return false;
+    if (!hasPopupTitleInText(t)) return false;
     if (t.indexOf("질병") < 0) return false;
     return true;
   }
 
+  /** @deprecated alias */
   function blobHasPopupTitle(blob) {
-    var t = normText(blob);
-    if (!t) return false;
-    if (t.indexOf("출결마감구분") >= 0) return true;
-    if (t.indexOf("출결 구분 선택") >= 0) return true;
-    if (t.indexOf("출결마감") >= 0 && t.indexOf("구분") >= 0) return true;
-    return false;
+    return hasPopupTitleInText(blob);
   }
 
   function isEnabledState(flags) {
@@ -91,7 +99,7 @@
     var op = flags.opacity;
     if (op != null && op !== "") {
       var n = typeof op === "number" ? op : parseFloat(op);
-      if (!isNaN(n) && n < 0.45) return false;
+      if (!isNaN(n) && n < 0.55) return false;
     }
     return true;
   }
@@ -212,8 +220,12 @@
     var absenceHit = countLabelHits(list, "결석");
     var resultHit = countLabelHits(list, "결과");
     var joined = list.map(normText).join(" ");
+    var hasTitle = hasPopupTitleInText(joined) ? 1 : 0;
+    var popupLike = looksLikeClosePopupText(joined) ? 1 : 0;
+    var titleRequiredOk = fallbackPopupNeedsTitle(joined) ? 1 : 0;
     return {
       titleHit: titleHit,
+      hasTitle: hasTitle,
       illnessHit: illnessHit,
       unexcusedHit: unexcusedHit,
       otherHit: otherHit,
@@ -225,8 +237,8 @@
       applyHit: applyHit,
       closeAllHit: closeAllHit,
       reasonHit: reasonHit,
-      popupLike: looksLikeClosePopupText(joined) ? 1 : 0,
-      titleRequiredOk: fallbackPopupNeedsTitle(joined) ? 1 : 0,
+      popupLike: popupLike,
+      titleRequiredOk: titleRequiredOk,
       textCount: list.length,
     };
   }
@@ -239,6 +251,7 @@
     OPTION_LABELS: OPTION_LABELS,
     normText: normText,
     isPopupTitleText: isPopupTitleText,
+    hasPopupTitleInText: hasPopupTitleInText,
     looksLikeClosePopupText: looksLikeClosePopupText,
     fallbackPopupNeedsTitle: fallbackPopupNeedsTitle,
     blobHasPopupTitle: blobHasPopupTitle,

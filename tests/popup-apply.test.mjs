@@ -31,11 +31,19 @@ check("isPopupTitleText contains", () => {
   assert.equal(P.isPopupTitleText("출결마감"), false);
 });
 
-check("looksLikeClosePopupText needs cat+type", () => {
-  assert.equal(P.looksLikeClosePopupText("질병 지각 적용"), true);
-  assert.equal(P.looksLikeClosePopupText("질병 미인정 기타"), false);
-  assert.equal(P.looksLikeClosePopupText("지각 조퇴 결석"), false);
-  assert.equal(P.looksLikeClosePopupText("질병 조퇴 사유 적용"), true);
+check("hasPopupTitleInText", () => {
+  assert.equal(P.hasPopupTitleInText("출결마감구분"), true);
+  assert.equal(P.hasPopupTitleInText("레이어 출결마감구분"), true);
+  assert.equal(P.hasPopupTitleInText("질병 지각 적용"), false);
+  assert.equal(P.hasPopupTitleInText("출결마감"), false);
+});
+
+check("looksLikeClosePopupText requires title+cat+type", () => {
+  assert.equal(P.looksLikeClosePopupText("질병 지각 적용"), false);
+  assert.equal(P.looksLikeClosePopupText("출결마감구분 질병 지각 적용"), true);
+  assert.equal(P.looksLikeClosePopupText("출결마감구분 질병 미인정 기타"), false);
+  assert.equal(P.looksLikeClosePopupText("출결마감구분 지각 조퇴 결석"), false);
+  assert.equal(P.looksLikeClosePopupText("출결마감구분 질병 조퇴 사유 적용"), true);
 });
 
 check("fallbackPopupNeedsTitle requires title+illness", () => {
@@ -112,6 +120,7 @@ check("popupDiagFromTexts anonymous counts", () => {
   ];
   const d = P.popupDiagFromTexts(fixtureTexts);
   assert.equal(d.titleHit, 1);
+  assert.equal(d.hasTitle, 1);
   assert.equal(d.illnessHit, 1);
   assert.equal(d.lateHit, 1);
   assert.equal(d.applyHit, 1);
@@ -145,9 +154,10 @@ check("popupDiag decoy unexcused without title fails titleRequiredOk", () => {
   const decoy = ["미인정", "미인정", "지각", "조퇴"];
   const d = P.popupDiagFromTexts(decoy);
   assert.equal(d.titleHit, 0);
+  assert.equal(d.hasTitle, 0);
   assert.equal(d.illnessHit, 0);
   assert.ok(d.unexcusedHit >= 1);
-  assert.equal(d.popupLike, 1);
+  assert.equal(d.popupLike, 0); // title required for popupLike
   assert.equal(d.titleRequiredOk, 0);
 });
 

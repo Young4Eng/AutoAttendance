@@ -21,4 +21,4 @@
 
 - #35/0.4.3: 적용 UI 통짜(Nexacro). 마감 셀·contentsbox 재시도로 팝업 오픈, 출결마감구분/질병+지각 레이어 탐지, 라벨 텍스트로 구분·종류·적용(출결마감 제외), P칸 좌표 1회 클릭. popup_not_found/popup_no_apply/period_cell_missing 익명 diag. popup-apply 순수헬퍼+픽스처. 권한 추가 없음.
 
-- #37/0.4.4: sparse 리프/토큰 라벨 + `selectRadioIn`(contentsbox/부모 셀·팝업 스코프). 제목+질병으로 팝업 확정(popupLike 단독 거부). 구분 후 종류 enable 대기·비활성 스킵. 적용만·출결마감 거부. 권한 추가 없음.
+- #37/0.4.4 follow-up: hasPopupTitleInText·looksLike 제목필수·hasTitle·TreeWalker·waitTypeEnabled(opacity<0.55). Orig #37/0.4.4: sparse 리프/토큰 라벨 + `selectRadioIn`(contentsbox/부모 셀·팝업 스코프). 제목+질병으로 팝업 확정(popupLike 단독 거부). 구분 후 종류 enable 대기·비활성 스킵. 적용만·출결마감 거부. 권한 추가 없음.

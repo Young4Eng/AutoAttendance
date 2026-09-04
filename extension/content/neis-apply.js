@@ -1318,7 +1318,7 @@
         flags.pointerEvents === "none"
       ) {
         return true;
-      } else if (flags.opacity !== "" && parseFloat(flags.opacity) < 0.45) {
+      } else if (flags.opacity !== "" && parseFloat(flags.opacity) < 0.55) {
         return true;
       }
     }
@@ -1454,6 +1454,26 @@
         if (!childTitle) titleEls.push(el);
       }
     }
+
+    // TreeWalker: text nodes equal/containing 출결마감구분
+    try {
+      var rootTw = document.body || document.documentElement;
+      if (rootTw && document.createTreeWalker) {
+        var tw = document.createTreeWalker(rootTw, NodeFilter.SHOW_TEXT, null);
+        var n;
+        while ((n = tw.nextNode())) {
+          var tx = normText(n.textContent);
+          if (!tx) continue;
+          var hit = (api && api.hasPopupTitleInText)
+            ? api.hasPopupTitleInText(tx)
+            : tx.indexOf("출결마감구분") >= 0;
+          if (!hit) continue;
+          var pel = n.parentElement;
+          if (pel && visible(pel) && titleEls.indexOf(pel) < 0) titleEls.push(pel);
+        }
+      }
+    } catch (eTw) {}
+
     for (var j = 0; j < titleEls.length; j++) {
       var root = climbPopupRoot(titleEls[j]);
       if (root && visible(root)) return root;
@@ -1476,7 +1496,9 @@
       var titleOk =
         api && api.fallbackPopupNeedsTitle
           ? api.fallbackPopupNeedsTitle(blob)
-          : blob.indexOf("출결마감구분") >= 0 && blob.indexOf("질병") >= 0;
+          : api && api.hasPopupTitleInText
+            ? api.hasPopupTitleInText(blob) && blob.indexOf("질병") >= 0
+            : blob.indexOf("출결마감구분") >= 0 && blob.indexOf("질병") >= 0;
       if (!titleOk) continue;
       var shortTexts = collectVisibleShortTexts(box);
       var diag = api ? api.popupDiagFromTexts(shortTexts) : null;
@@ -1761,10 +1783,10 @@
   }
 
   /** 종류 라벨이 활성(회색 해제)될 때까지 대기 */
-  async function waitForTypeEnabled(popup, typeLabel, maxMs) {
+  async function waitTypeEnabled(popup, typeLabel, maxMs) {
     var want = normText(typeLabel);
     var api = PA();
-    var deadline = Date.now() + (maxMs || 2800);
+    var deadline = Date.now() + (maxMs || 2000);
     while (Date.now() < deadline) {
       if (!popup || !popup.querySelectorAll) return false;
       var all = popup.querySelectorAll("*");
@@ -1792,7 +1814,7 @@
       return { ok: false, code: "category_not_found", diag: popupDiag(popup) };
     }
     // 종류는 구분 선택 전 회색 — enable 대기 후 클릭
-    var enabled = await waitForTypeEnabled(popup, typeLabel, 2800);
+    var enabled = await waitTypeEnabled(popup, typeLabel, 2000);
     if (!enabled) {
       return { ok: false, code: "type_not_enabled", diag: popupDiag(popup) };
     }
