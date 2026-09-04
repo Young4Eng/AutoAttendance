@@ -43,6 +43,13 @@
     return r.width > 0 && r.height > 0;
   }
 
+  function normText(s) {
+    return String(s || "")
+      .replace(/[\u200b-\u200d\ufeff]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
   function findElementsByExactText(root, text) {
     const out = [];
     function walk(node) {
@@ -52,13 +59,62 @@
       var own = "";
       for (var i = 0; i < el.childNodes.length; i++) {
         var n = el.childNodes[i];
-        if (n.nodeType === Node.TEXT_NODE) own += (n.textContent || "").trim();
+        if (n.nodeType === Node.TEXT_NODE) own += n.textContent || "";
       }
+      own = normText(own);
       if (own === text) out.push(el);
       for (var j = 0; j < el.children.length; j++) walk(el.children[j]);
     }
     walk(root);
     return out.filter(visible);
+  }
+
+  /** 짧은 라벨 노드(넥사크로 contentsbox 등). 긴 행 텍스트는 제외. */
+  function findLabelHits(root, label) {
+    var out = [];
+    var all = root.querySelectorAll("*");
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      if (!visible(el)) continue;
+      if (el.tagName === "SCRIPT" || el.tagName === "STYLE") continue;
+      var full = normText(el.textContent);
+      if (full !== label && full.indexOf(label) !== 0) continue;
+      if (full.length > label.length + 14) continue;
+      var childHit = false;
+      for (var c = 0; c < el.children.length; c++) {
+        var cf = normText(el.children[c].textContent);
+        if (cf === label || (cf.indexOf(label) === 0 && cf.length <= label.length + 14)) {
+          childHit = true;
+          break;
+        }
+      }
+      if (childHit) continue;
+      out.push(el);
+    }
+    return out;
+  }
+
+  function findPeriodHits(root) {
+    var out = [];
+    var all = root.querySelectorAll("*");
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      if (!visible(el)) continue;
+      var full = normText(el.textContent);
+      if (full.length > 28) continue;
+      var pm = full.match(/^(\d+)\s*교시/);
+      if (!pm) continue;
+      var childHas = false;
+      for (var c = 0; c < el.children.length; c++) {
+        if (/^\d+\s*교시/.test(normText(el.children[c].textContent))) {
+          childHas = true;
+          break;
+        }
+      }
+      if (childHas) continue;
+      out.push({ el: el, period: Number(pm[1]), rect: el.getBoundingClientRect() });
+    }
+    return out;
   }
 
   function findClickableByText(root, text) {
@@ -96,11 +152,13 @@
   }
 
   function cellLabel(cell) {
-    return ((cell && cell.textContent) || "").replace(/\s+/g, " ").trim();
+    return normText((cell && cell.textContent) || "");
   }
 
   function gridDiag(root) {
-    var text = ((root && root.body && root.body.innerText) || (root && root.innerText) || "").replace(/\s+/g, " ");
+    var text = normText(
+      (root && root.body && root.body.innerText) || (root && root.innerText) || "",
+    );
     return {
       tables: root.querySelectorAll ? root.querySelectorAll("table").length : 0,
       hasNum: text.indexOf("번호") >= 0,
@@ -108,6 +166,10 @@
       hasClose: text.indexOf("마감") >= 0,
       hasPeriod: /\d+\s*교시/.test(text),
       hasMorning: text.indexOf("조회") >= 0,
+      hitNum: findLabelHits(root, "번호").length,
+      hitName: findLabelHits(root, "성명").length,
+      hitClose: findLabelHits(root, "마감").length,
+      hitPeriod: findPeriodHits(root).length,
     };
   }
 
@@ -209,9 +271,10 @@
     }
 
     if (!headerMap) {
-      // div/role 행 폴백: 번호·성명·마감 라벨이 한 줄에 있는 경우
       var divGrid = findDivAttendanceGrid(root);
       if (divGrid) return divGrid;
+      var spatial0 = findSpatialAttendanceGrid(root);
+      if (spatial0) return spatial0;
       return null;
     }
 
@@ -233,6 +296,8 @@
     if (!best) {
       var divGrid2 = findDivAttendanceGrid(root);
       if (divGrid2) return divGrid2;
+      var spatial1 = findSpatialAttendanceGrid(root);
+      if (spatial1) return spatial1;
       return null;
     }
     return {
@@ -247,9 +312,143 @@
     };
   }
 
-  function leafLabelEls(root, text) {
-    return findElementsByExactText(root, text);
+  function sameBand(a, b, tol) {
+    return Math.abs(a.getBoundingClientRect().top - b.getBoundingClientRect().top) <= tol;
   }
+
+  function pickNearBand(list, headerTop, maxDelta) {
+    var best = null;
+    var bestD = 1e9;
+    for (var x = 0; x < list.length; x++) {
+      var r = list[x].getBoundingClientRect();
+      var d = Math.abs(r.top - headerTop);
+      if (d > maxDelta) continue;
+      if (d < bestD) {
+        bestD = d;
+        best = list[x];
+      }
+    }
+    return best;
+  }
+
+  /**
+   * 넥사크로류: table/공통 행 없이 화면 좌표로 번호·성명·마감·N교시 열을 묶는다.
+   */
+  function findSpatialAttendanceGrid(root) {
+    var nums = findLabelHits(root, "번호");
+    var names = findLabelHits(root, "성명");
+    var closes = findLabelHits(root, "마감");
+    if (!nums.length || !names.length || !closes.length) return null;
+
+    var periods = findPeriodHits(root);
+    var mornings = findLabelHits(root, "조회");
+    var afternoons = findLabelHits(root, "종례");
+    var reasons = findLabelHits(root, "사유");
+
+    for (var i = 0; i < nums.length; i++) {
+      for (var j = 0; j < names.length; j++) {
+        if (!sameBand(nums[i], names[j], 30)) continue;
+        for (var k = 0; k < closes.length; k++) {
+          if (!sameBand(nums[i], closes[k], 30)) continue;
+          var nR = nums[i].getBoundingClientRect();
+          var aR = names[j].getBoundingClientRect();
+          var cR = closes[k].getBoundingClientRect();
+          if (Math.abs(nR.left - aR.left) < 6) continue;
+          var headerTop = (nR.top + aR.top + cR.top) / 3;
+          var headerBottom = Math.max(nR.bottom, aR.bottom, cR.bottom);
+
+          var colHits = [
+            { key: "number", el: nums[i] },
+            { key: "name", el: names[j] },
+            { key: "close", el: closes[k] },
+          ];
+          var periodCount = 0;
+          for (var p = 0; p < periods.length; p++) {
+            var pr = periods[p].rect;
+            if (pr.top < headerTop - 12) continue;
+            if (pr.top > headerBottom + 80) continue;
+            colHits.push({ key: "period", el: periods[p].el, period: periods[p].period });
+            periodCount = Math.max(periodCount, periods[p].period);
+          }
+          if (periodCount === 0) continue;
+
+          var morningEl = pickNearBand(mornings, headerTop, 80);
+          var afternoonEl = pickNearBand(afternoons, headerTop, 80);
+          var reasonEl = pickNearBand(reasons, headerTop, 80);
+          if (morningEl) colHits.push({ key: "morning", el: morningEl });
+          if (afternoonEl) colHits.push({ key: "afternoon", el: afternoonEl });
+          if (reasonEl) colHits.push({ key: "reason", el: reasonEl });
+
+          colHits.sort(function (A, B) {
+            return A.el.getBoundingClientRect().left - B.el.getBoundingClientRect().left;
+          });
+
+          var col = {};
+          var periodColsIdx = {};
+          var centers = [];
+          for (var h = 0; h < colHits.length; h++) {
+            var hit = colHits[h];
+            var rr = hit.el.getBoundingClientRect();
+            centers.push(rr.left + rr.width / 2);
+            if (hit.key === "number") col.number = h;
+            else if (hit.key === "name") col.name = h;
+            else if (hit.key === "close") col.close = h;
+            else if (hit.key === "morning") col.morning = h;
+            else if (hit.key === "afternoon") col.afternoon = h;
+            else if (hit.key === "reason") col.reason = h;
+            else if (hit.key === "period") periodColsIdx[hit.period] = h;
+          }
+          if (col.number == null || col.name == null || col.close == null) continue;
+
+          return {
+            kind: "spatial",
+            table: null,
+            bodyTable: null,
+            headerIdx: -1,
+            dataStart: 0,
+            col: col,
+            periodCols: periodColsIdx,
+            periodCount: periodCount,
+            headerCenters: centers,
+            headerBottom: headerBottom,
+            root: root,
+          };
+        }
+      }
+    }
+    return null;
+  }
+
+  function findCellNear(root, centerX, rowTop, rowBottom, headerBottom) {
+    var best = null;
+    var bestScore = 1e15;
+    var all = root.querySelectorAll("div, span, td, th, input, a, button, li");
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      if (!visible(el)) continue;
+      var r = el.getBoundingClientRect();
+      if (r.bottom <= headerBottom + 1) continue;
+      if (r.top > rowBottom + 6 || r.bottom < rowTop - 6) continue;
+      var cx = r.left + r.width / 2;
+      var dx = Math.abs(cx - centerX);
+      if (dx > Math.max(48, r.width * 0.9)) continue;
+      if (r.width > 480 || r.height > 100) continue;
+      var midY = (rowTop + rowBottom) / 2;
+      var score = dx + Math.abs((r.top + r.bottom) / 2 - midY) * 0.4 + r.width * 0.01;
+      if (score < bestScore) {
+        bestScore = score;
+        best = el;
+      }
+    }
+    return best;
+  }
+
+  function leafLabelEls(root, text) {
+    var exact = findElementsByExactText(root, text);
+    if (exact.length) return exact;
+    return findLabelHits(root, text);
+  }
+
 
   function findDivAttendanceGrid(root) {
     var nums = leafLabelEls(root, "번호");
@@ -334,6 +533,40 @@
   function findRowByNumberName(grid, number, name) {
     var wantNum = String(number).trim();
     var wantName = String(name).trim();
+    if (grid.kind === "spatial" && grid.headerCenters) {
+      var root = grid.root || document;
+      var numCenter = grid.headerCenters[grid.col.number];
+      var candidates = findLabelHits(root, wantNum);
+      if (!candidates.length) {
+        // 숫자만 있는 칸
+        var all = root.querySelectorAll("*");
+        for (var i = 0; i < all.length; i++) {
+          var el = all[i];
+          if (!visible(el)) continue;
+          if (normText(el.textContent) === wantNum) candidates.push(el);
+        }
+      }
+      for (var c = 0; c < candidates.length; c++) {
+        var eln = candidates[c];
+        var rn = eln.getBoundingClientRect();
+        if (rn.bottom <= grid.headerBottom + 2) continue;
+        var cx = rn.left + rn.width / 2;
+        if (Math.abs(cx - numCenter) > 48) continue;
+        var rowTop = rn.top;
+        var rowBottom = rn.bottom;
+        var cells = [];
+        for (var h = 0; h < grid.headerCenters.length; h++) {
+          cells.push(findCellNear(root, grid.headerCenters[h], rowTop, rowBottom, grid.headerBottom));
+        }
+        if (!cells[grid.col.number] || !cells[grid.col.name]) continue;
+        var numText = cellLabel(cells[grid.col.number]);
+        var nameText = cellLabel(cells[grid.col.name]);
+        if (numText === wantNum && nameText === wantName) {
+          return { row: eln, rowIndex: c, cells: cells };
+        }
+      }
+      return null;
+    }
     if (grid.kind === "div-row" && grid.bodyParent) {
       var kids = Array.prototype.slice.call(grid.bodyParent.children).filter(visible);
       for (var i = 0; i < kids.length; i++) {

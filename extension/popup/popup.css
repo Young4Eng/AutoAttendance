@@ -30,3 +30,10 @@ button.primary { background: #e8f5ee; border-color: #0b7a45; }
 button.danger { background: #fff4f0; border-color: #c44; }
 button.ghost { background: #fff; }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+#result {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 11px;
+  max-width: 320px;
+}
