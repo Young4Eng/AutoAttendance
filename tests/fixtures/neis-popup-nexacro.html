@@ -21,7 +21,10 @@ body{margin:0;font:12px sans-serif}
   <div id="decoyChrome" class="contentsbox" data-decoy="title">출결마감구분</div>
   <div id="grid">
     <div class="contentsbox">번호</div><div class="contentsbox">성명</div><div class="contentsbox">마감</div>
-    <div>9</div><div>학생01</div><div id="closeCell" class="contentsbox">미마감</div>
+    <div>9</div><div>학생01</div>
+    <div id="closeCellWrap" class="GridCellControl cell" data-nexa="gridcell">
+      <div id="closeCell" class="nexacontentsbox contentsbox" data-nexa="contentsbox">미마감</div>
+    </div>
     <div id="decoyUnexcused" class="contentsbox">미인정</div>
   </div>
   <div id="decoyGrid" aria-hidden="true">
@@ -610,6 +613,7 @@ body{margin:0;font:12px sans-serif}
 (function(){
   var layer = document.getElementById("popupLayer");
   var closeCell = document.getElementById("closeCell");
+  var closeWrap = document.getElementById("closeCellWrap");
   function openPopup(){
     if (!layer) return;
     layer.classList.remove("hidden");
@@ -620,7 +624,12 @@ body{margin:0;font:12px sans-serif}
       el.addEventListener(type, function(){ openPopup(); });
     });
   }
-  bindOpen(closeCell);
+  // Nexacro: parent GridCellControl click opens; leaf may need bubble/parent target
+  bindOpen(closeWrap);
+  // nexacontentsbox: dblclick also opens (stronger clickNexa path)
+  if (closeCell) {
+    closeCell.addEventListener("dblclick", function(){ openPopup(); });
+  }
   // hidden input inside close cell (Nexacro-like)
   if (closeCell && !closeCell.querySelector("input")) {
     var hi = document.createElement("input");
