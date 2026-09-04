@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "출결메이트",
+  "version": "0.1.0",
+  "description": "나이스 일일출결관리(담임용) 화면 감지 뼈대. 저장·로그인 자동화 없음.",
+  "minimum_chrome_version": "116",
+  "permissions": [
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "출결메이트",
+    "default_popup": "popup/popup.html"
+  },
+  "host_permissions": [
+    "*://*.neis.go.kr/*",
+    "http://localhost:5173/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.neis.go.kr/*"
+      ],
+      "js": [
+        "content/detect.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
