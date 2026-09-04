@@ -48,7 +48,17 @@ function run(dryRun) {
         (res.dryRun ? "저장 안 함" : "저장함") +
         " · synced 미설정";
     } else {
-      elResult.textContent = "중단: " + (res.code || "error");
+      var msg = "중단: " + (res.code || "error");
+      if (res.diag && typeof res.diag === "object") {
+        var parts = [];
+        Object.keys(res.diag).forEach(function (k) {
+          parts.push(k + "=" + res.diag[k]);
+        });
+        if (parts.length) msg += " · " + parts.join(" ");
+      }
+      if (res.frames != null) msg += " · frames=" + res.frames;
+      if (res.reachable != null) msg += " · reachable=" + res.reachable;
+      elResult.textContent = msg;
     }
     refresh();
   });
