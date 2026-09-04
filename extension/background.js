@@ -36,16 +36,70 @@ async function findNeisTab() {
   return active || null;
 }
 
-async function listFrameIds(tabId) {
+async function listFrames(tabId) {
   try {
     const frames = await chrome.webNavigation.getAllFrames({ tabId });
-    if (!Array.isArray(frames) || !frames.length) return [0];
-    // Prefer child frames first (나이스 그리드가 iframe인 경우), then top.
-    const ids = frames.map((f) => f.frameId);
-    const children = ids.filter((id) => id !== 0);
-    return children.concat(ids.includes(0) ? [0] : []);
+    if (!Array.isArray(frames) || !frames.length) {
+      return [{ frameId: 0, url: "" }];
+    }
+    // neis 문서만. about:blank 등은 뒤로.
+    const neis = [];
+    const other = [];
+    for (const f of frames) {
+      const url = f.url || "";
+      const row = { frameId: f.frameId, url };
+      if (/\.neis\.go\.kr/i.test(url)) neis.push(row);
+      else other.push(row);
+    }
+    const rank = (rows) => {
+      const children = rows.filter((r) => r.frameId !== 0);
+      const top = rows.filter((r) => r.frameId === 0);
+      return children.concat(top);
+    };
+    return rank(neis).concat(rank(other));
   } catch {
-    return [0];
+    return [{ frameId: 0, url: "" }];
+  }
+}
+
+/** content script가 없는 iframe에 파일을 다시 싣는다. */
+async function ensureScripts(tabId, frameIds) {
+  if (!chrome.scripting || !chrome.scripting.executeScript) {
+    return { ok: false, code: "no_scripting" };
+  }
+  const files = ["content/detect.js", "content/neis-apply.js"];
+  // 1) allFrames 한 번 (host_permissions 범위)
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      files,
+    });
+  } catch {
+    // 개별 프레임으로 재시도
+  }
+  for (const frameId of frameIds) {
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId, frameIds: [frameId] },
+        files,
+      });
+    } catch {
+      // 접근 불가 프레임 스킵
+    }
+  }
+  return { ok: true };
+}
+
+async function pingFrame(tabId, frameId) {
+  try {
+    const res = await chrome.tabs.sendMessage(
+      tabId,
+      { type: "mate-ping" },
+      { frameId },
+    );
+    return Boolean(res && res.ok);
+  } catch {
+    return false;
   }
 }
 
@@ -55,15 +109,41 @@ async function runApply(dryRun) {
   if (!items.length) return { ok: false, code: "empty_queue" };
   const tab = await findNeisTab();
   if (!tab?.id) return { ok: false, code: "no_neis_tab" };
+
+  const frames = await listFrames(tab.id);
+  const frameIds = frames.map((f) => f.frameId);
+  // 익명 진단: 개수만
+  console.info(
+    "[출결메이트]",
+    "frames=",
+    frames.length,
+    "neisFrames=",
+    frames.filter((f) => /\.neis\.go\.kr/i.test(f.url || "")).length,
+  );
+
+  // 먼저 ping. 실패한 프레임만 재주입 (리스너 중복 방지 가드 있음).
+  let reachable = [];
+  for (const frameId of frameIds) {
+    if (await pingFrame(tab.id, frameId)) reachable.push(frameId);
+  }
+  if (!reachable.length) {
+    await ensureScripts(tab.id, frameIds);
+    reachable = [];
+    for (const frameId of frameIds) {
+      if (await pingFrame(tab.id, frameId)) reachable.push(frameId);
+    }
+  }
+  console.info("[출결메이트]", "reachable=", reachable.length);
+  const targets = reachable.length ? reachable : frameIds;
+
   const payload = {
     type: "apply-queue",
     items,
     dryRun: Boolean(dryRun),
   };
-  const frameIds = await listFrameIds(tab.id);
-  let lastCode = "content_unreachable";
-  let softFail = null; // grid_not_found 등 — 다른 프레임 계속
-  for (const frameId of frameIds) {
+  let lastCode = reachable.length ? "apply_no_grid" : "content_unreachable";
+  let softFail = null;
+  for (const frameId of targets) {
     try {
       const res = await chrome.tabs.sendMessage(tab.id, payload, { frameId });
       if (!res || typeof res !== "object") {
@@ -71,18 +151,16 @@ async function runApply(dryRun) {
         continue;
       }
       if (res.ok) return res;
-      // 이 프레임에 그리드 없음 → iframe 후보 계속
       if (res.code === "grid_not_found") {
         softFail = softFail || res;
         continue;
       }
-      // 그리드는 있는데 매칭·팝업 등 실패 → 그 결과 반환
       return res;
     } catch {
-      // 수신자 없는 프레임
+      // next
     }
   }
-  return softFail || { ok: false, code: lastCode };
+  return softFail || { ok: false, code: lastCode, frames: frames.length, reachable: reachable.length };
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

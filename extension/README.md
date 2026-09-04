@@ -17,6 +17,7 @@ MV3. 유저스크립트 없음. 이슈 #5 감지 · #6 메시지 · #12 라벨 �
 
 ## 사용
 
+- `scripting`: 시운전 직전 neis iframe에 content 재주입 (#18). 원격 코드 없음.
 - `webNavigation`: 시운전 시 iframe에도 `apply-queue` 전달 (URL 가로채기 없음).
 - `all_frames: true`: 나이스가 iframe 안에 그리드를 두는 경우가 있어, 라벨 탐지를 프레임마다 돌림. `<all_urls>` 아님.
 

@@ -3,6 +3,8 @@
  * 그리드·출결마감구분·P칸·저장 버튼 셀렉터는 추측하지 않는다 (#5 범위 밖).
  */
 (function () {
+  if (globalThis.__chulgyeolMateDetect) return;
+  globalThis.__chulgyeolMateDetect = true;
   const MARKERS = [
     "일일출결관리(담임용)",
     "일일출결관리（담임용）",

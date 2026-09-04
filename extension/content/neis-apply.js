@@ -3,6 +3,8 @@
  * 기본 dryRun=true (저장 전 중단).
  */
 (function () {
+  if (globalThis.__chulgyeolMateApply) return;
+  globalThis.__chulgyeolMateApply = true;
   const CATEGORY_KO = {
     illness: "질병",
     unexcused: "미인정",
@@ -413,6 +415,10 @@
   chrome.runtime.onMessage.addListener(function (message, _sender, sendResponse) {
     if (!message || typeof message !== "object") {
       sendResponse({ ok: false, code: "bad_message" });
+      return false;
+    }
+    if (message.type === "mate-ping") {
+      sendResponse({ ok: true, ping: true });
       return false;
     }
     if (message.type === "apply-queue") {
