@@ -40,6 +40,12 @@
     return false;
   }
 
+  function hasPopupTitleInText(blob) {
+    var t = normText(blob);
+    return !!t && t.indexOf("출결마감구분") >= 0;
+  }
+
+  /** cat+type. 제목은 hasTitle/titleRequiredOk 별도. */
   function looksLikeClosePopupText(blob) {
     var t = normText(blob);
     if (!t) return false;
@@ -60,48 +66,10 @@
     return hasCat && hasType;
   }
 
-  /** 폴백 수락: 제목「출결마감구분」+질병 필수. popupLike만으로는 거부. */
   function fallbackPopupNeedsTitle(blob) {
     var t = normText(blob);
-    if (!t) return false;
-    if (t.indexOf("출결마감구분") < 0) return false;
-    if (t.indexOf("질병") < 0) return false;
-    return true;
-  }
-
-  function blobHasPopupTitle(blob) {
-    var t = normText(blob);
-    if (!t) return false;
-    if (t.indexOf("출결마감구분") >= 0) return true;
-    if (t.indexOf("출결 구분 선택") >= 0) return true;
-    if (t.indexOf("출결마감") >= 0 && t.indexOf("구분") >= 0) return true;
-    return false;
-  }
-
-  function isEnabledState(flags) {
-    flags = flags || {};
-    if (flags.disabled === true) return false;
-    var aria = flags.ariaDisabled;
-    if (aria === true || aria === "true") return false;
-    var cls = String(flags.className || "").toLowerCase();
-    if (/\bdisabled\b|\bis-disabled\b|\bnexadisabled\b|\bdimmed\b|\bgrayed\b/.test(cls)) {
-      return false;
-    }
-    if (String(flags.pointerEvents || "").toLowerCase() === "none") return false;
-    var op = flags.opacity;
-    if (op != null && op !== "") {
-      var n = typeof op === "number" ? op : parseFloat(op);
-      if (!isNaN(n) && n < 0.45) return false;
-    }
-    return true;
-  }
-
-  function isDisabledControlState(opts) {
-    return !isEnabledState(opts);
-  }
-
-  function typeEnabledAfterCategory(categorySelected) {
-    return Boolean(categorySelected);
+    if (!t || !hasPopupTitleInText(t)) return false;
+    return t.indexOf("질병") >= 0;
   }
 
   function isApplyButtonText(text) {
@@ -109,8 +77,7 @@
     if (!t) return false;
     if (t.indexOf("출결마감") >= 0) return false;
     if (t === "적용") return true;
-    if (t.indexOf("적용") === 0 && t.length <= 4) return true;
-    return false;
+    return t.indexOf("적용") === 0 && t.length <= 4;
   }
 
   function isCloseAllButtonText(text) {
@@ -124,8 +91,7 @@
     if (!t || !w) return false;
     if (t === w) return true;
     if (t.indexOf(w) === 0 && t.length <= w.length + 2) {
-      var rest = t.slice(w.length);
-      return /^[\s*:：.]*$/.test(rest);
+      return /^[\s*:：.]*$/.test(t.slice(w.length));
     }
     return false;
   }
@@ -140,8 +106,7 @@
 
   function startsWithOptionLabel(s) {
     for (var i = 0; i < OPTION_LABELS.length; i++) {
-      var lab = OPTION_LABELS[i];
-      if (s.indexOf(lab) === 0) return true;
+      if (s.indexOf(OPTION_LABELS[i]) === 0) return true;
     }
     return false;
   }
@@ -159,9 +124,10 @@
     if (OPTION_LABELS.indexOf(w) < 0) return false;
     var idx = t.indexOf(w);
     if (idx < 0) return false;
-    var before = t.slice(0, idx);
-    var after = t.slice(idx + w.length);
-    return (!before || endsWithOptionLabel(before)) && (!after || startsWithOptionLabel(after));
+    return (
+      (!t.slice(0, idx) || endsWithOptionLabel(t.slice(0, idx))) &&
+      (!t.slice(idx + w.length) || startsWithOptionLabel(t.slice(idx + w.length)))
+    );
   }
 
   function findLabelTextIndex(texts, want) {
@@ -181,6 +147,30 @@
     return -1;
   }
 
+  function isEnabledState(flags) {
+    flags = flags || {};
+    if (flags.disabled === true) return false;
+    var aria = flags.ariaDisabled;
+    if (aria === true || aria === "true") return false;
+    if (flags.pointerEvents === "none") return false;
+    var cls = String(flags.className || "").toLowerCase();
+    if (/\bdisabled\b|\bis-disabled\b|\bnexadisabled\b|\bdimmed\b|\bgrayed\b/.test(cls)) return false;
+    var op = flags.opacity;
+    if (op != null && op !== "") {
+      var n = typeof op === "number" ? op : parseFloat(op);
+      if (!isNaN(n) && n < 0.55) return false;
+    }
+    return true;
+  }
+
+  function isDisabledControlState(opts) {
+    return !isEnabledState(opts);
+  }
+
+  function typeEnabledAfterCategory(categorySelected) {
+    return !!categorySelected;
+  }
+
   function countLabelHits(list, want) {
     var n = 0;
     for (var i = 0; i < list.length; i++) {
@@ -192,41 +182,36 @@
   function popupDiagFromTexts(texts) {
     var list = texts || [];
     var titleHit = 0;
+    for (var i = 0; i < list.length; i++) {
+      if (isPopupTitleText(list[i])) titleHit++;
+    }
     var applyHit = 0;
     var closeAllHit = 0;
     var reasonHit = 0;
-    for (var i = 0; i < list.length; i++) {
-      var t = normText(list[i]);
-      if (!t) continue;
-      if (isPopupTitleText(t)) titleHit++;
-      if (isApplyButtonText(t)) applyHit++;
-      if (isCloseAllButtonText(t)) closeAllHit++;
-      if (t === "사유" || t.indexOf("사유") === 0) reasonHit++;
+    for (var j = 0; j < list.length; j++) {
+      var u = normText(list[j]);
+      if (!u) continue;
+      if (isApplyButtonText(u)) applyHit++;
+      if (isCloseAllButtonText(u)) closeAllHit++;
+      if (u === "사유" || u.indexOf("사유") === 0) reasonHit++;
     }
-    var illnessHit = countLabelHits(list, "질병");
-    var unexcusedHit = countLabelHits(list, "미인정");
-    var otherHit = countLabelHits(list, "기타");
-    var recognizedHit = countLabelHits(list, "출석인정");
-    var lateHit = countLabelHits(list, "지각");
-    var earlyHit = countLabelHits(list, "조퇴");
-    var absenceHit = countLabelHits(list, "결석");
-    var resultHit = countLabelHits(list, "결과");
     var joined = list.map(normText).join(" ");
     return {
       titleHit: titleHit,
-      illnessHit: illnessHit,
-      unexcusedHit: unexcusedHit,
-      otherHit: otherHit,
-      recognizedHit: recognizedHit,
-      lateHit: lateHit,
-      earlyHit: earlyHit,
-      absenceHit: absenceHit,
-      resultHit: resultHit,
+      hasTitle: hasPopupTitleInText(joined) ? 1 : 0,
+      titleRequiredOk: fallbackPopupNeedsTitle(joined) ? 1 : 0,
+      illnessHit: countLabelHits(list, "질병"),
+      unexcusedHit: countLabelHits(list, "미인정"),
+      otherHit: countLabelHits(list, "기타"),
+      recognizedHit: countLabelHits(list, "출석인정"),
+      lateHit: countLabelHits(list, "지각"),
+      earlyHit: countLabelHits(list, "조퇴"),
+      absenceHit: countLabelHits(list, "결석"),
+      resultHit: countLabelHits(list, "결과"),
       applyHit: applyHit,
       closeAllHit: closeAllHit,
       reasonHit: reasonHit,
       popupLike: looksLikeClosePopupText(joined) ? 1 : 0,
-      titleRequiredOk: fallbackPopupNeedsTitle(joined) ? 1 : 0,
       textCount: list.length,
     };
   }
@@ -239,17 +224,17 @@
     OPTION_LABELS: OPTION_LABELS,
     normText: normText,
     isPopupTitleText: isPopupTitleText,
+    hasPopupTitleInText: hasPopupTitleInText,
     looksLikeClosePopupText: looksLikeClosePopupText,
     fallbackPopupNeedsTitle: fallbackPopupNeedsTitle,
-    blobHasPopupTitle: blobHasPopupTitle,
-    isEnabledState: isEnabledState,
-    isDisabledControlState: isDisabledControlState,
-    typeEnabledAfterCategory: typeEnabledAfterCategory,
     isApplyButtonText: isApplyButtonText,
     isCloseAllButtonText: isCloseAllButtonText,
     isLeafOptionText: isLeafOptionText,
     labelTokenMatch: labelTokenMatch,
     findLabelTextIndex: findLabelTextIndex,
+    isEnabledState: isEnabledState,
+    isDisabledControlState: isDisabledControlState,
+    typeEnabledAfterCategory: typeEnabledAfterCategory,
     popupDiagFromTexts: popupDiagFromTexts,
   };
 })(typeof globalThis !== "undefined" ? globalThis : this);
