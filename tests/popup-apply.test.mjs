@@ -283,3 +283,102 @@ check("fixture closeCell opens popup; decoy title alone is not enough", () => {
   // decoy title present while layer starts hidden
   assert.ok(html.includes('id="popupLayer" class="hidden"') || html.includes('id="popupLayer" class="hidden" data-popup'));
 });
+
+check("classNameTokens / anonRect / anonClickCandidate anonymized", () => {
+  const toks = P.classNameTokens("GridCellControl nexacontentsbox cell foo");
+  assert.ok(toks.includes("GridCellControl"));
+  assert.ok(toks.includes("nexacontentsbox"));
+  const r = P.anonRect({ left: 10.2, top: 20.6, width: 40.4, height: 18.9 });
+  assert.equal(r.x, 10);
+  assert.equal(r.y, 21);
+  assert.equal(r.w, 40);
+  assert.equal(r.h, 19);
+  const cand = P.anonClickCandidate({
+    tagName: "div",
+    className: "nexacontentsbox contentsbox",
+    rect: { left: 1, top: 2, width: 3, height: 4 },
+    kind: "contentsbox",
+    textContent: "학생01", // must NOT appear in output
+  });
+  assert.equal(cand.tag, "DIV");
+  assert.ok(cand.cls.includes("nexacontentsbox"));
+  assert.equal(cand.kind, "contentsbox");
+  assert.equal(cand.rect.w, 3);
+  assert.ok(!JSON.stringify(cand).includes("학생"));
+  assert.ok(!("textContent" in cand));
+});
+
+check("popupNewlyOpenedOk distinguishes decoy titleHit vs newly visible", () => {
+  // field: decoy title before, illness appears after click
+  assert.equal(
+    P.popupNewlyOpenedOk(
+      { titleVisible: true, illnessVisible: false },
+      { titleVisible: true, illnessVisible: true },
+    ),
+    true,
+  );
+  // both newly appear
+  assert.equal(
+    P.popupNewlyOpenedOk(
+      { titleVisible: false, illnessVisible: false },
+      { titleVisible: true, illnessVisible: true },
+    ),
+    true,
+  );
+  // titleHit alone after (no illness) — fail
+  assert.equal(
+    P.popupNewlyOpenedOk(
+      { titleVisible: true, illnessVisible: false },
+      { titleVisible: true, illnessVisible: false },
+    ),
+    false,
+  );
+  // both already visible before (decoy pair) — not newly opened
+  assert.equal(
+    P.popupNewlyOpenedOk(
+      { titleVisible: true, illnessVisible: true },
+      { titleVisible: true, illnessVisible: true },
+    ),
+    false,
+  );
+});
+
+check("normalizeCloseCellFailDump strips names and keeps visibility flags", () => {
+  const dump = P.normalizeCloseCellFailDump({
+    candidates: [
+      {
+        tagName: "DIV",
+        className: "GridCellControl nexacontentsbox",
+        rect: { left: 5, top: 6, width: 50, height: 20 },
+        kind: "parent",
+        text: "학생01",
+      },
+    ],
+    before: { titleVisible: true, illnessVisible: false },
+    after: { titleVisible: true, illnessVisible: false },
+    modes: ["full", "dblclick"],
+  });
+  assert.equal(dump.before.decoyTitle, 1);
+  assert.equal(dump.before.titleVisible, 1);
+  assert.equal(dump.before.illnessVisible, 0);
+  assert.equal(dump.after.titleNewly, 0);
+  assert.equal(dump.after.illnessNewly, 0);
+  assert.equal(dump.candidateCount, 1);
+  assert.ok(dump.modes.includes("dblclick"));
+  const s = JSON.stringify(dump);
+  assert.ok(!s.includes("학생"));
+  assert.ok(!s.includes("미마감"));
+  assert.ok(s.includes("GridCellControl") || s.includes("nexacontentsbox"));
+});
+
+check("fixture has GridCell parent + nexacontentsbox + dblclick open path", () => {
+  const html = readFileSync(new URL("./fixtures/neis-popup-nexacro.html", import.meta.url), "utf8");
+  assert.ok(html.includes('id="closeCellWrap"'));
+  assert.ok(html.includes("GridCellControl"));
+  assert.ok(html.includes("nexacontentsbox"));
+  assert.ok(html.includes("dblclick"));
+  assert.ok(html.includes('id="closeCell"'));
+  assert.ok(html.includes('data-decoy="title"'));
+  assert.ok(html.includes("학생01"));
+});
+

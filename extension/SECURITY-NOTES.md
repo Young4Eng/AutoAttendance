@@ -24,3 +24,4 @@
 - #37/0.4.4: sparse 리프/토큰 라벨 + `selectRadioIn`(contentsbox/부모 셀·팝업 스코프). 제목+질병으로 팝업 확정(popupLike 단독 거부). 구분 후 종류 enable 대기·비활성 스킵. 적용만·출결마감 거부. 권한 추가 없음.
 - #42/0.4.5: climbPopupRoot가 제목 앵커에서 조상 중 제목+(적용|닫기)+구분 라벨·titleRequiredOk를 만족하는 **가장 작은** visible 루트만 채택(거대 outer/layer·textCount 상한 거부). 픽스처 decoy outer+단위테스트. 권한 추가 없음.
 - #44/0.4.6: 마감 셀 Nexacro 클릭 강화(focus·mousedown/mouseup/click·cell input·중심 elementFromPoint). 클릭 후 「출결마감구분」+구분(질병 등) **가시** poll — titleHit(decoy) 단독 성공 금지. 픽스처 closeCell→popup 오픈. 권한 추가 없음.
+- #46/0.4.7: dry-run·openClosePopup 실패 시 마감 셀 **비식별** DOM/이벤트 dump(tag·class tokens·rect·클릭 후보·클릭 전후 제목/질병 가시). decoy titleHit≠신규 가시. clickNexa 강화(parent/nexacontentsbox·fireEvent·dblclick). 권한 추가 없음.

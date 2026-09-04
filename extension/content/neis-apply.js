@@ -172,6 +172,7 @@
 
   /**
    * Nexacro 친화 클릭: focus → pointer/mouse down-up-click (좌표 포함).
+   * fireEvent 레거시·dblclick·mousedown→mouseup→click 순서 변형 지원.
    * usePoint 시 셀 중심 elementFromPoint 대상에도 동일 시퀀스.
    */
   function clickNexa(el, opts) {
@@ -194,34 +195,59 @@
         screenY: cy,
         button: 0,
         buttons: buttons == null ? (type === "mousedown" || type === "pointerdown" ? 1 : 0) : buttons,
+        detail: type === "dblclick" ? 2 : type === "click" ? 1 : 0,
       };
       try {
         target.dispatchEvent(new MouseEventCtor(type, evInit));
       } catch (eFire) {
         try {
           var ev = doc.createEvent("MouseEvents");
-          ev.initMouseEvent(type, true, true, view, 1, cx, cy, cx, cy, false, false, false, false, 0, null);
+          ev.initMouseEvent(type, true, true, view, type === "dblclick" ? 2 : 1, cx, cy, cx, cy, false, false, false, false, 0, null);
           target.dispatchEvent(ev);
         } catch (e2) {}
       }
+      // Nexacro/IE 레거시 fireEvent
+      try {
+        if (typeof target.fireEvent === "function") {
+          var ieType = type.indexOf("pointer") === 0 ? null : "on" + type;
+          if (ieType) target.fireEvent(ieType);
+        }
+      } catch (eIe) {}
     }
-    function seq(target) {
+    function seq(target, mode) {
       if (!target) return;
+      mode = mode || "full";
       try {
         if (typeof target.focus === "function") target.focus();
       } catch (eF) {}
-      fire("pointerdown", target, 1);
-      fire("mousedown", target, 1);
-      fire("pointerup", target, 0);
-      fire("mouseup", target, 0);
-      fire("click", target, 0);
+      if (mode === "mouseOnly") {
+        fire("mousedown", target, 1);
+        fire("mouseup", target, 0);
+        fire("click", target, 0);
+      } else if (mode === "dblclick") {
+        fire("mousedown", target, 1);
+        fire("mouseup", target, 0);
+        fire("click", target, 0);
+        fire("mousedown", target, 1);
+        fire("mouseup", target, 0);
+        fire("click", target, 0);
+        fire("dblclick", target, 0);
+      } else {
+        // full: pointer → mouse → click
+        fire("pointerdown", target, 1);
+        fire("mousedown", target, 1);
+        fire("pointerup", target, 0);
+        fire("mouseup", target, 0);
+        fire("click", target, 0);
+      }
       if (typeof target.click === "function") {
         try {
           target.click();
         } catch (eC) {}
       }
     }
-    seq(el);
+    var mode = opts.mode || "full";
+    seq(el, mode);
     if (opts.usePoint !== false && r && r.width > 0 && r.height > 0) {
       var at = null;
       try {
@@ -229,16 +255,15 @@
       } catch (eP) {
         at = null;
       }
-      if (at && at !== el && (el.contains(at) || (at.contains && at.contains(el)) || true)) {
-        // 중심 좌표 히트 대상에도 시퀀스 (Nexacro 히트테스트)
-        seq(at);
+      if (at && at !== el) {
+        seq(at, mode);
       }
     }
     return true;
   }
 
   /** 셀 중심 좌표만으로 elementFromPoint 클릭 */
-  function clickNexaAtCenter(el) {
+  function clickNexaAtCenter(el, mode) {
     if (!el || !el.getBoundingClientRect) return false;
     var doc = el.ownerDocument || document;
     var r = el.getBoundingClientRect();
@@ -252,7 +277,7 @@
       at = null;
     }
     if (!at) at = el;
-    return clickNexa(at, { usePoint: false });
+    return clickNexa(at, { usePoint: false, mode: mode || "full" });
   }
 
   function log(row, type, result, code) {
@@ -1849,6 +1874,15 @@
       if (out.indexOf(el) >= 0) return;
       out.push(el);
     }
+    function clsBlob(el) {
+      try {
+        var c = el.className;
+        if (c && typeof c === "object" && c.baseVal != null) c = c.baseVal;
+        return String(c || "").toLowerCase();
+      } catch (e) {
+        return "";
+      }
+    }
     push(cell);
     // Nexacro: cell 내부 input/edit 를 우선 후보에 포함
     var inputs = cell.querySelectorAll(
@@ -1858,7 +1892,7 @@
       if (visible(inputs[ii]) || inputs[ii].tagName === "INPUT") push(inputs[ii]);
     }
     var inners = cell.querySelectorAll(
-      "a, button, input, [onclick], [role='button'], [class*='contentsbox'], [class*='ContentsBox'], [class*='cell'], [class*='GridCell'], div, span",
+      "a, button, input, [onclick], [role='button'], [class*='contentsbox'], [class*='ContentsBox'], [class*='nexacontentsbox'], [class*='nexa'], [class*='cell'], [class*='GridCell'], div, span",
     );
     for (var i = 0; i < inners.length; i++) {
       var el = inners[i];
@@ -1868,7 +1902,23 @@
       if (r.width > 240 || r.height > 80) continue;
       push(el);
     }
-    // prefer smaller inner clickables first after cell itself
+    // 부모 셀 / GridCellControl / nexacontentsbox 상승 (Nexacro 히트는 부모에 붙는 경우)
+    var cur = cell.parentElement;
+    for (var p = 0; p < 5 && cur; p++, cur = cur.parentElement) {
+      if (!(cur instanceof Element)) break;
+      var tag = (cur.tagName || "").toUpperCase();
+      if (tag === "BODY" || tag === "HTML" || tag === "TR" || tag === "TABLE") break;
+      var cb = clsBlob(cur);
+      var isNexa =
+        /contentsbox|nexacontentsbox|gridcell|cellcontrol|gridband|nexa/.test(cb) ||
+        tag === "TD";
+      if (!isNexa) continue;
+      var pr = cur.getBoundingClientRect();
+      if (pr.width < 2 || pr.height < 2) continue;
+      if (pr.width > 480 || pr.height > 120) continue;
+      push(cur);
+    }
+    // prefer smaller inner clickables; inputs ahead of divs; parents after leaf
     out.sort(function (a, b) {
       if (a === cell) return -1;
       if (b === cell) return 1;
@@ -1877,6 +1927,9 @@
       var aIn = atag === "INPUT" || atag === "TEXTAREA" ? 0 : 1;
       var bIn = btag === "INPUT" || btag === "TEXTAREA" ? 0 : 1;
       if (aIn !== bIn) return aIn - bIn;
+      var aNexa = /nexacontentsbox|contentsbox|gridcell/i.test(clsBlob(a)) ? 0 : 1;
+      var bNexa = /nexacontentsbox|contentsbox|gridcell/i.test(clsBlob(b)) ? 0 : 1;
+      if (aNexa !== bNexa) return aNexa - bNexa;
       var ar = a.getBoundingClientRect();
       var br = b.getBoundingClientRect();
       return ar.width * ar.height - br.width * br.height;
@@ -1935,6 +1988,119 @@
     return false;
   }
 
+  /** 루트(또는 document) 안 「질병」리프 가시 — decoy 구분 탐지용 */
+  function illnessVisibleIn(root) {
+    if (!root || !root.querySelectorAll) return false;
+    var api = PA();
+    var all = root.querySelectorAll("*");
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      if (el.tagName === "SCRIPT" || el.tagName === "STYLE") continue;
+      if (!visible(el)) continue;
+      var r = el.getBoundingClientRect();
+      if (!(r.width > 0 && r.height > 0)) continue;
+      var own = ownText(el);
+      var full = normText(el.textContent);
+      var match = api
+        ? api.isLeafOptionText(own, "질병") ||
+          (full.length <= 16 && api.labelTokenMatch(full, "질병"))
+        : own === "질병" || full === "질병";
+      if (match) return true;
+    }
+    return false;
+  }
+
+  /** 문서 전역 제목·질병 가시 스냅샷 (decoy titleHit 구분) */
+  function probeTitleIllnessVisible(scope) {
+    var root = scope || document.body || document.documentElement;
+    if (!root) return { titleVisible: false, illnessVisible: false };
+    // title: document-wide short visible title (decoy chrome 포함)
+    var titleVis = false;
+    var illnessVis = false;
+    try {
+      titleVis = titleVisibleIn(root);
+    } catch (eT) {
+      titleVis = false;
+    }
+    try {
+      illnessVis = illnessVisibleIn(root);
+    } catch (eI) {
+      illnessVis = false;
+    }
+    return { titleVisible: !!titleVis, illnessVisible: !!illnessVis };
+  }
+
+  /**
+   * 마감 셀 클릭 실패 익명 dump — tag/class tokens/rect/후보·전후 가시만.
+   * 성명·번호·cell text 값 금지. console.info 익명.
+   */
+  function buildCloseCellFailDump(cell, targets, before, after, modes) {
+    var api = PA();
+    var cands = [];
+    var list = targets && targets.length ? targets : cell ? [cell] : [];
+    for (var i = 0; i < list.length && i < 20; i++) {
+      var el = list[i];
+      if (!el || !el.getBoundingClientRect) continue;
+      var r = el.getBoundingClientRect();
+      var kind = "node";
+      var tag = (el.tagName || "").toUpperCase();
+      var cls = "";
+      try {
+        cls = el.className && el.className.baseVal != null ? el.className.baseVal : el.className || "";
+      } catch (eC) {
+        cls = "";
+      }
+      if (el === cell) kind = "cell";
+      else if (tag === "INPUT" || tag === "TEXTAREA") kind = "input";
+      else if (/nexacontentsbox|contentsbox/i.test(String(cls))) kind = "contentsbox";
+      else if (/gridcell|cellcontrol/i.test(String(cls))) kind = "gridcell";
+      else if (cell && cell.contains && !cell.contains(el)) kind = "parent";
+      var rec = { tagName: tag, className: cls, rect: r, kind: kind };
+      if (api && api.anonClickCandidate) cands.push(api.anonClickCandidate(rec));
+      else
+        cands.push({
+          tag: tag,
+          cls: String(cls).split(/\s+/).filter(Boolean).slice(0, 8),
+          rect: {
+            x: Math.round(r.left),
+            y: Math.round(r.top),
+            w: Math.round(r.width),
+            h: Math.round(r.height),
+          },
+          kind: kind,
+        });
+    }
+    var raw = {
+      candidates: cands,
+      before: before || {},
+      after: after || {},
+      modes: modes || [],
+    };
+    if (api && api.normalizeCloseCellFailDump) return api.normalizeCloseCellFailDump(raw);
+    return raw;
+  }
+
+  function logCloseCellFailDump(dump) {
+    try {
+      var d = dump || {};
+      console.info(
+        "[출결메이트]",
+        "close_cell_dump",
+        "cand=" + (d.candidateCount != null ? d.candidateCount : (d.candidates && d.candidates.length) || 0),
+        "beforeTitle=" + ((d.before && d.before.titleVisible) || 0),
+        "beforeIllness=" + ((d.before && d.before.illnessVisible) || 0),
+        "afterTitle=" + ((d.after && d.after.titleVisible) || 0),
+        "afterIllness=" + ((d.after && d.after.illnessVisible) || 0),
+        "titleNewly=" + ((d.after && d.after.titleNewly) || 0),
+        "illnessNewly=" + ((d.after && d.after.illnessNewly) || 0),
+        "decoyTitle=" + ((d.before && d.before.decoyTitle) || 0),
+        "modes=" + ((d.modes && d.modes.join(",")) || ""),
+      );
+      // 구조화 익명 객체(성명·번호 없음)
+      console.info("[출결메이트]", "close_cell_dump_json", d);
+    } catch (eLog) {}
+  }
+
   /**
    * 성공: visible 팝업 루트 AND 제목 가시 AND 구분 컨트롤 가시.
    * titleHit(decoy) 단독 성공 금지.
@@ -1973,45 +2139,71 @@
     var beforeOpen = findOpenPopupVisible();
     if (beforeOpen) return { ok: true, popup: beforeOpen };
 
-    var titleBefore = false;
-    try {
-      // decoy 제목은 있어도 진짜 오픈(구분 동반)은 아님
-      titleBefore = !!findOpenPopupVisible();
-    } catch (eB) {
-      titleBefore = false;
-    }
-
+    // decoy titleHit vs 신규: 클릭 전 문서 전역 제목·질병 가시 스냅샷
+    var beforeProbe = probeTitleIllnessVisible(document.body || document.documentElement);
     var targets = closeClickTargets(cell);
     if (!targets.length) targets = [cell];
+    var modes = ["full", "mouseOnly", "dblclick"];
+    var modesTried = [];
     var popup = null;
-    var attempts = Math.max(4, targets.length + 1);
+    var attempts = Math.max(6, targets.length * modes.length);
     for (var attempt = 0; attempt < attempts; attempt++) {
       var target = targets[attempt % targets.length];
-      clickNexa(target, { usePoint: true });
+      var mode = modes[Math.floor(attempt / targets.length) % modes.length];
+      if (modesTried.indexOf(mode) < 0) modesTried.push(mode);
+
+      clickNexa(target, { usePoint: true, mode: mode });
       // cell 내부 input 별도 시도
       var inp =
         cell.querySelector &&
         cell.querySelector("input, textarea, [contenteditable='true']");
       if (inp && inp !== target) {
-        clickNexa(inp, { usePoint: true });
+        clickNexa(inp, { usePoint: true, mode: mode });
       }
-      // 셀 중심 coordinate / elementFromPoint
-      clickNexaAtCenter(cell);
+      // nexacontentsbox / contentsbox 자식 우선 재시도
+      var nexaBox =
+        cell.querySelector &&
+        cell.querySelector(
+          "[class*='nexacontentsbox'], [class*='nexaContentsBox'], [class*='contentsbox'], [class*='ContentsBox']",
+        );
+      if (nexaBox && nexaBox !== target && nexaBox !== inp) {
+        clickNexa(nexaBox, { usePoint: true, mode: mode });
+      }
+      // 셀·부모 중심 coordinate / elementFromPoint
+      clickNexaAtCenter(cell, mode);
+      if (target !== cell) clickNexaAtCenter(target, mode);
 
-      popup = await waitForVisiblePopup(2200);
+      popup = await waitForVisiblePopup(1800);
       if (popup) {
-        var api = PA();
-        // 성공 조건: 클릭 전 비가시 → 후 가시 (decoy titleHit 단독 배제)
-        var newly =
-          !api || !api.titleBecameNewlyVisible
-            ? true
-            : api.titleBecameNewlyVisible(titleBefore, true);
-        if (newly) break;
-        popup = null;
+        var afterInPopup = {
+          titleVisible: titleVisibleIn(popup),
+          illnessVisible: illnessVisibleIn(popup) || categoryVisibleIn(popup),
+        };
+        // titleHit(decoy) 단독 금지: 팝업 루트 안 제목+질병(구분) 가시 필수
+        if (!afterInPopup.titleVisible || !afterInPopup.illnessVisible) {
+          popup = null;
+          continue;
+        }
+        // decoy titleHit 단독은 여기 도달 불가 — 제목+질병 가시 쌍이 게이트.
+        // beforeProbe는 실패 dump에서 decoy vs 신규 구분에 사용.
+        break;
       }
     }
     if (!popup) {
-      return { ok: false, code: "popup_not_found", diag: popupDiag(document) };
+      var afterProbe = probeTitleIllnessVisible(document.body || document.documentElement);
+      var dump = buildCloseCellFailDump(cell, targets, beforeProbe, afterProbe, modesTried);
+      logCloseCellFailDump(dump);
+      var diag = popupDiag(document);
+      diag.closeCellDump = dump;
+      diag.beforeTitleVisible = beforeProbe.titleVisible ? 1 : 0;
+      diag.beforeIllnessVisible = beforeProbe.illnessVisible ? 1 : 0;
+      diag.afterTitleVisible = afterProbe.titleVisible ? 1 : 0;
+      diag.afterIllnessVisible = afterProbe.illnessVisible ? 1 : 0;
+      diag.titleNewly =
+        beforeProbe.titleVisible === false && afterProbe.titleVisible ? 1 : 0;
+      diag.illnessNewly =
+        beforeProbe.illnessVisible === false && afterProbe.illnessVisible ? 1 : 0;
+      return { ok: false, code: "popup_not_found", diag: diag };
     }
     return { ok: true, popup: popup };
   }

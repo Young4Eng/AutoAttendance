@@ -312,6 +312,113 @@
     return !beforeVisible && !!afterVisible;
   }
 
+  /** 클래스 문자열 → 토큰 배열(실명·번호 없음). SVGAnimatedString 대응. */
+  function classNameTokens(className) {
+    var raw = className;
+    try {
+      if (raw && typeof raw === "object" && raw.baseVal != null) raw = raw.baseVal;
+    } catch (e) {
+      raw = "";
+    }
+    var s = String(raw || "");
+    if (!s) return [];
+    return s
+      .split(/\s+/)
+      .map(function (t) {
+        return t.replace(/[^A-Za-z0-9_\-]/g, "");
+      })
+      .filter(function (t) {
+        return t.length > 0 && t.length <= 64;
+      })
+      .slice(0, 12);
+  }
+
+  /** rect 익명 숫자만 */
+  function anonRect(r) {
+    r = r || {};
+    function n(v) {
+      var x = Number(v);
+      if (isNaN(x)) return 0;
+      return Math.round(x);
+    }
+    return {
+      x: n(r.x != null ? r.x : r.left),
+      y: n(r.y != null ? r.y : r.top),
+      w: n(r.width != null ? r.width : r.w),
+      h: n(r.height != null ? r.height : r.h),
+    };
+  }
+
+  /**
+   * 클릭 후보 익명 레코드 — tag / class tokens / rect / kind 만.
+   * text·value·이름·번호 금지.
+   */
+  function anonClickCandidate(rec) {
+    rec = rec || {};
+    return {
+      tag: String(rec.tagName || rec.tag || "").toUpperCase().slice(0, 24),
+      cls: classNameTokens(rec.className || rec.cls || ""),
+      rect: anonRect(rec.rect || rec),
+      kind: String(rec.kind || "node").slice(0, 24),
+    };
+  }
+
+  /**
+   * decoy titleHit vs 클릭 후 신규 가시.
+   * after에 제목+질병(illness) 가시 필수.
+   * 성공: 질병이 새로 뜸(현장 decoy titleHit=1·illness=0) 또는 제목이 새로 뜸.
+   * titleHit 단독·before에 이미 제목+질병 둘 다 가시인데 after만 같은 경우(팝업 미오픈)는 거부하지 않되
+   *   — 둘 다 before부터 가시면 false (페이지 decoy 쌍 오탐 방지; 실제 루트는 호출측 findOpenPopupVisible).
+   */
+  function popupNewlyOpenedOk(before, after) {
+    before = before || {};
+    after = after || {};
+    if (!after.titleVisible || !after.illnessVisible) return false;
+    var titleNew = titleBecameNewlyVisible(before.titleVisible, after.titleVisible);
+    var illnessNew = titleBecameNewlyVisible(before.illnessVisible, after.illnessVisible);
+    if (titleNew || illnessNew) return true;
+    // 둘 다 클릭 전부터 가시 → decoy 잔여로 간주, 신규 오픈 아님
+    return false;
+  }
+
+  /**
+   * dry-run/openClosePopup 실패용 익명 dump 형태 검증·정규화.
+   * 허용 키만. 문자열 text/name/번호 값 없음.
+   */
+  function normalizeCloseCellFailDump(dump) {
+    dump = dump || {};
+    var cands = Array.isArray(dump.candidates) ? dump.candidates : [];
+    var outCands = [];
+    for (var i = 0; i < cands.length && i < 24; i++) {
+      outCands.push(anonClickCandidate(cands[i]));
+    }
+    function vis(v) {
+      return v ? 1 : 0;
+    }
+    var before = dump.before || {};
+    var after = dump.after || {};
+    return {
+      candidates: outCands,
+      before: {
+        titleVisible: vis(before.titleVisible),
+        illnessVisible: vis(before.illnessVisible),
+        decoyTitle: vis(before.decoyTitle != null ? before.decoyTitle : before.titleVisible && !before.illnessVisible),
+      },
+      after: {
+        titleVisible: vis(after.titleVisible),
+        illnessVisible: vis(after.illnessVisible),
+        titleNewly: vis(after.titleNewly != null ? after.titleNewly : titleBecameNewlyVisible(before.titleVisible, after.titleVisible)),
+        illnessNewly: vis(after.illnessNewly != null ? after.illnessNewly : titleBecameNewlyVisible(before.illnessVisible, after.illnessVisible)),
+      },
+      modes: Array.isArray(dump.modes)
+        ? dump.modes.map(function (m) {
+            return String(m || "").slice(0, 32);
+          }).slice(0, 16)
+        : [],
+      candidateCount: outCands.length,
+    };
+  }
+
   function popupDiagFromTexts(texts) {
     var list = texts || [];
     var titleHit = 0;
@@ -376,6 +483,11 @@
     isClientRectVisible: isClientRectVisible,
     popupOpenVisibleOk: popupOpenVisibleOk,
     titleBecameNewlyVisible: titleBecameNewlyVisible,
+    classNameTokens: classNameTokens,
+    anonRect: anonRect,
+    anonClickCandidate: anonClickCandidate,
+    popupNewlyOpenedOk: popupNewlyOpenedOk,
+    normalizeCloseCellFailDump: normalizeCloseCellFailDump,
     isEnabledState: isEnabledState,
     isDisabledControlState: isDisabledControlState,
     typeEnabledAfterCategory: typeEnabledAfterCategory,
