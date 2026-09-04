@@ -99,39 +99,73 @@
     return ((cell && cell.textContent) || "").replace(/\s+/g, " ").trim();
   }
 
-  function parseHeaderCells(cells) {
-    var texts = [];
-    for (var c = 0; c < cells.length; c++) texts.push(cellLabel(cells[c]));
-    var idxNum = -1, idxName = -1, idxClose = -1;
-    for (var h = 0; h < texts.length; h++) {
-      var tx = texts[h];
-      if (idxNum < 0 && (tx === "번호" || tx.indexOf("번호") === 0)) idxNum = h;
-      if (idxName < 0 && (tx === "성명" || tx.indexOf("성명") === 0)) idxName = h;
-      if (idxClose < 0 && (tx === "마감" || tx.indexOf("마감") === 0)) idxClose = h;
+  function gridDiag(root) {
+    var text = ((root && root.body && root.body.innerText) || (root && root.innerText) || "").replace(/\s+/g, " ");
+    return {
+      tables: root.querySelectorAll ? root.querySelectorAll("table").length : 0,
+      hasNum: text.indexOf("번호") >= 0,
+      hasName: text.indexOf("성명") >= 0,
+      hasClose: text.indexOf("마감") >= 0,
+      hasPeriod: /\d+\s*교시/.test(text),
+      hasMorning: text.indexOf("조회") >= 0,
+    };
+  }
+
+  function labelIndex(texts, names) {
+    for (var i = 0; i < texts.length; i++) {
+      for (var n = 0; n < names.length; n++) {
+        if (texts[i] === names[n] || texts[i].indexOf(names[n]) === 0) return i;
+      }
     }
+    return -1;
+  }
+
+  /** 헤더가 1~2줄로 갈라져도 번호·성명·마감 + N교시를 모은다. */
+  function parseHeaderBlock(rows, startIdx) {
+    if (!rows || startIdx >= rows.length) return null;
+    var baseCells = rows[startIdx].cells;
+    if (!baseCells || !baseCells.length) return null;
+    var baseTexts = [];
+    for (var c = 0; c < baseCells.length; c++) baseTexts.push(cellLabel(baseCells[c]));
+    var idxNum = labelIndex(baseTexts, ["번호"]);
+    var idxName = labelIndex(baseTexts, ["성명"]);
+    var idxClose = labelIndex(baseTexts, ["마감"]);
     if (idxNum < 0 || idxName < 0 || idxClose < 0) return null;
+
     var col = { number: idxNum, name: idxName, close: idxClose };
     var periodCols = {};
     var periodCount = 0;
-    for (var p = 0; p < texts.length; p++) {
-      var tx = texts[p];
-      if (tx === "조회" || tx.indexOf("조회") === 0) col.morning = p;
-      if (tx === "종례" || tx.indexOf("종례") === 0) col.afternoon = p;
-      if (tx === "사유" || tx.indexOf("사유") === 0) col.reason = p;
-      var pm = tx.match(/^(\d+)\s*교시/);
-      if (pm) {
-        periodCols[Number(pm[1])] = p;
-        periodCount = Math.max(periodCount, Number(pm[1]));
+    var maxCols = baseCells.length;
+
+    for (var r = startIdx; r < Math.min(rows.length, startIdx + 3); r++) {
+      var cells = rows[r].cells;
+      if (!cells) continue;
+      maxCols = Math.max(maxCols, cells.length);
+      for (var p = 0; p < cells.length; p++) {
+        var tx = cellLabel(cells[p]);
+        if (!tx) continue;
+        if (col.morning == null && (tx === "조회" || tx.indexOf("조회") === 0)) col.morning = p;
+        if (col.afternoon == null && (tx === "종례" || tx.indexOf("종례") === 0)) col.afternoon = p;
+        if (col.reason == null && (tx === "사유" || tx.indexOf("사유") === 0)) col.reason = p;
+        var pm = tx.match(/^(\d+)\s*교시/) || tx.match(/^(\d+)$/);
+        // 순수 숫자만은 2번째 헤더 줄의 교시 번호일 수 있음 — 같은 줄에 '교시'가 있을 때만 숫자 단독 허용은 위험
+        pm = tx.match(/^(\d+)\s*교시/);
+        if (pm) {
+          periodCols[Number(pm[1])] = p;
+          periodCount = Math.max(periodCount, Number(pm[1]));
+        }
       }
     }
     if (periodCount === 0) return null;
-    return { col: col, periodCols: periodCols, periodCount: periodCount, colCount: cells.length };
+    return {
+      col: col,
+      periodCols: periodCols,
+      periodCount: periodCount,
+      colCount: maxCols,
+      headerRows: 1,
+    };
   }
 
-  /**
-   * 나이스는 헤더 테이블 / 본문 테이블이 갈라진 경우가 많음.
-   * 같은 테이블에 헤더+데이터가 있으면 그걸 쓰고, 없으면 헤더 맵 + 다른 본문 테이블.
-   */
   function findAttendanceGrid(root) {
     var tables = Array.prototype.slice.call(root.querySelectorAll("table")).filter(visible);
     var headerMap = null;
@@ -142,70 +176,191 @@
       var table = tables[t];
       var rows = table.rows;
       if (!rows || !rows.length) continue;
-      var limit = Math.min(rows.length, 12);
-      for (var i = 0; i < limit; i++) {
-        var parsed = parseHeaderCells(rows[i].cells);
+      for (var i = 0; i < Math.min(rows.length, 15); i++) {
+        var parsed = parseHeaderBlock(rows, i);
         if (!parsed) continue;
         headerMap = parsed;
         headerTable = table;
         headerIdx = i;
-        // 같은 테이블에 데이터 행이 있으면 바로 사용
-        if (rows.length > i + 1) {
+        var dataStart = i + 1;
+        // 다음 줄이 교시 서브헤더일 수 있음 → 데이터는 더 아래
+        if (i + 1 < rows.length) {
+          var nextTexts = [];
+          for (var c = 0; c < rows[i + 1].cells.length; c++) nextTexts.push(cellLabel(rows[i + 1].cells[c]));
+          var subHeader = nextTexts.some(function (tx) { return /^(\d+)\s*교시/.test(tx) || tx === "조회" || tx === "종례"; });
+          var looksData = nextTexts.some(function (tx) { return /^\d+$/.test(tx); });
+          if (subHeader && !looksData) dataStart = i + 2;
+        }
+        if (rows.length > dataStart) {
           return {
             table: table,
             bodyTable: table,
             headerIdx: i,
+            dataStart: dataStart,
             col: parsed.col,
             periodCols: parsed.periodCols,
             periodCount: parsed.periodCount,
+            kind: "table-combined",
           };
         }
         break;
       }
       if (headerMap) break;
     }
-    if (!headerMap) return null;
 
-    // 본문만 있는 테이블: 열 수가 비슷하고 숫자·이름이 있는 행
+    if (!headerMap) {
+      // div/role 행 폴백: 번호·성명·마감 라벨이 한 줄에 있는 경우
+      var divGrid = findDivAttendanceGrid(root);
+      if (divGrid) return divGrid;
+      return null;
+    }
+
     var best = null;
     for (var u = 0; u < tables.length; u++) {
       var bt = tables[u];
-      if (bt === headerTable && bt.rows.length <= headerIdx + 1) continue;
       if (!bt.rows || bt.rows.length < 1) continue;
-      var sample = bt.rows[0].cells;
-      if (!sample || sample.length < headerMap.colCount - 2) continue;
-      var dataStart = bt === headerTable ? headerIdx + 1 : 0;
-      if (bt.rows.length <= dataStart) continue;
-      var score = bt.rows.length;
-      if (!best || score > best.score) {
-        best = { table: bt, dataStart: dataStart, score: score };
+      var dataStart2 = bt === headerTable ? headerIdx + 1 : 0;
+      if (bt === headerTable && bt.rows.length > headerIdx + 1) {
+        var nt = cellLabel(bt.rows[headerIdx + 1].cells[0] || {});
+        if (/교시|조회|종례/.test(cellLabel(bt.rows[headerIdx + 1]))) dataStart2 = headerIdx + 2;
       }
+      if (bt.rows.length <= dataStart2) continue;
+      var sample = bt.rows[Math.min(dataStart2, bt.rows.length - 1)].cells;
+      if (!sample || sample.length < 3) continue;
+      var score = bt.rows.length;
+      if (!best || score > best.score) best = { table: bt, dataStart: dataStart2, score: score };
     }
-    if (!best) return null;
+    if (!best) {
+      var divGrid2 = findDivAttendanceGrid(root);
+      if (divGrid2) return divGrid2;
+      return null;
+    }
     return {
       table: best.table,
       bodyTable: best.table,
-      headerIdx: best.dataStart - 1,
+      headerIdx: headerIdx,
       dataStart: best.dataStart,
       col: headerMap.col,
       periodCols: headerMap.periodCols,
       periodCount: headerMap.periodCount,
+      kind: "table-split",
     };
+  }
+
+  function leafLabelEls(root, text) {
+    return findElementsByExactText(root, text);
+  }
+
+  function findDivAttendanceGrid(root) {
+    var nums = leafLabelEls(root, "번호");
+    var names = leafLabelEls(root, "성명");
+    var closes = leafLabelEls(root, "마감");
+    if (!nums.length || !names.length || !closes.length) return null;
+    // 공통 조상 행 후보
+    for (var i = 0; i < nums.length; i++) {
+      for (var j = 0; j < names.length; j++) {
+        for (var k = 0; k < closes.length; k++) {
+          var a = nums[i], b = names[j], c = closes[k];
+          var row = commonRow(a, b, c);
+          if (!row) continue;
+          var cells = Array.prototype.slice.call(row.children).filter(visible);
+          if (cells.length < 3) {
+            cells = Array.prototype.slice.call(row.querySelectorAll(":scope > *")).filter(visible);
+          }
+          if (cells.length < 3) continue;
+          var parsed = parseHeaderCellsFromEls(cells);
+          if (!parsed || parsed.periodCount === 0) continue;
+          var bodyParent = row.parentElement;
+          if (!bodyParent) continue;
+          return {
+            table: null,
+            bodyTable: null,
+            headerRow: row,
+            bodyParent: bodyParent,
+            dataStart: 0,
+            col: parsed.col,
+            periodCols: parsed.periodCols,
+            periodCount: parsed.periodCount,
+            kind: "div-row",
+            headerIdx: -1,
+          };
+        }
+      }
+    }
+    return null;
+  }
+
+  function commonRow(a, b, c) {
+    var p = a.parentElement;
+    for (var d = 0; d < 6 && p; d++, p = p.parentElement) {
+      if (p.contains(b) && p.contains(c)) {
+        // 너무 큰 body/html 제외
+        if (p === document.body || p === document.documentElement) continue;
+        return p;
+      }
+    }
+    return null;
+  }
+
+  function parseHeaderCellsFromEls(cells) {
+    var texts = cells.map(cellLabel);
+    var idxNum = labelIndex(texts, ["번호"]);
+    var idxName = labelIndex(texts, ["성명"]);
+    var idxClose = labelIndex(texts, ["마감"]);
+    if (idxNum < 0 || idxName < 0 || idxClose < 0) return null;
+    var col = { number: idxNum, name: idxName, close: idxClose };
+    var periodCols = {};
+    var periodCount = 0;
+    for (var p = 0; p < texts.length; p++) {
+      var tx = texts[p];
+      if (col.morning == null && (tx === "조회" || tx.indexOf("조회") === 0)) col.morning = p;
+      if (col.afternoon == null && (tx === "종례" || tx.indexOf("종례") === 0)) col.afternoon = p;
+      if (col.reason == null && (tx === "사유" || tx.indexOf("사유") === 0)) col.reason = p;
+      var pm = tx.match(/^(\d+)\s*교시/);
+      if (pm) {
+        periodCols[Number(pm[1])] = p;
+        periodCount = Math.max(periodCount, Number(pm[1]));
+      }
+    }
+    return { col: col, periodCols: periodCols, periodCount: periodCount, colCount: cells.length };
+  }
+
+  function rowCells(row) {
+    if (!row) return [];
+    if (row.cells && row.cells.length) return Array.prototype.slice.call(row.cells);
+    return Array.prototype.slice.call(row.children || []).filter(visible);
   }
 
   function findRowByNumberName(grid, number, name) {
     var wantNum = String(number).trim();
     var wantName = String(name).trim();
+    if (grid.kind === "div-row" && grid.bodyParent) {
+      var kids = Array.prototype.slice.call(grid.bodyParent.children).filter(visible);
+      for (var i = 0; i < kids.length; i++) {
+        if (kids[i] === grid.headerRow) continue;
+        var cells = rowCells(kids[i]);
+        if (cells.length <= Math.max(grid.col.number, grid.col.name)) continue;
+        var numText = cellLabel(cells[grid.col.number]);
+        var nameText = cellLabel(cells[grid.col.name]);
+        if (numText === "번호" || nameText === "성명") continue;
+        if (numText === wantNum && nameText === wantName) {
+          return { row: kids[i], rowIndex: i, cells: cells };
+        }
+      }
+      return null;
+    }
     var body = grid.bodyTable || grid.table;
     var start = grid.dataStart != null ? grid.dataStart : grid.headerIdx + 1;
-    for (var i = start; i < body.rows.length; i++) {
-      var row = body.rows[i];
-      if (!row.cells || row.cells.length <= Math.max(grid.col.number, grid.col.name)) continue;
-      var numText = cellLabel(row.cells[grid.col.number]);
-      var nameText = cellLabel(row.cells[grid.col.name]);
-      // 헤더 잔상 스킵
-      if (numText === "번호" || nameText === "성명") continue;
-      if (numText === wantNum && nameText === wantName) return { row: row, rowIndex: i };
+    for (var r = start; r < body.rows.length; r++) {
+      var row = body.rows[r];
+      var cells2 = rowCells(row);
+      if (cells2.length <= Math.max(grid.col.number, grid.col.name)) continue;
+      var numText2 = cellLabel(cells2[grid.col.number]);
+      var nameText2 = cellLabel(cells2[grid.col.name]);
+      if (numText2 === "번호" || nameText2 === "성명") continue;
+      if (numText2 === wantNum && nameText2 === wantName) {
+        return { row: row, rowIndex: r, cells: cells2 };
+      }
     }
     return null;
   }
@@ -338,8 +493,9 @@
     return !(reason && String(reason).trim());
   }
 
-  async function openClosePopup(row, closeIdx) {
-    var cell = row.cells[closeIdx];
+  async function openClosePopup(row, closeIdx, cellsOpt) {
+    var cells = cellsOpt || rowCells(row);
+    var cell = cells[closeIdx];
     if (!cell) return { ok: false, code: "no_close_cell" };
     var target = cell.querySelector("a, button, input, [onclick], div, span") || cell;
     clickEl(target);
@@ -364,47 +520,46 @@
     return { ok: true };
   }
 
-  function clickPeriodCell(row, grid, period) {
+  function clickPeriodCell(row, grid, period, cellsOpt) {
     var idx = grid.periodCols[period];
     if (idx == null) return { ok: false, code: "period_col_missing" };
-    var cell = row.cells[idx];
+    var cells = cellsOpt || rowCells(row);
+    var cell = cells[idx];
     if (!cell) return { ok: false, code: "period_cell_missing" };
     var target = cell.querySelector("a, button, input, [onclick], div, span") || cell;
     clickEl(target);
     return { ok: true };
   }
 
-  function hasSlash(cell) {
-    return cellText(cell).indexOf("/") >= 0;
-  }
-
-  function verifyRow(row, grid, item) {
+    function verifyRow(row, grid, item, cellsOpt) {
+    var cells = cellsOpt || rowCells(row);
     var wantClose = closeLabel(item.category, item.type);
-    var closeText = cellText(row.cells[grid.col.close]);
+    var closeText = cellLabel(cells[grid.col.close]);
     if (closeText.indexOf(wantClose) < 0) return { ok: false, code: "close_label_mismatch" };
     var expect = expectedSlashMap(item.type, item.period, grid.periodCount);
     function check(cell, should) {
       if (!cell) return !should;
-      var t = cellText(cell);
+      var t = cellLabel(cell);
       var slash = t.indexOf("/") >= 0;
       if (should) return slash;
       return !slash || t.indexOf("미마감") >= 0;
     }
-    if (grid.col.morning != null && !check(row.cells[grid.col.morning], expect.morning)) {
+    if (grid.col.morning != null && !check(cells[grid.col.morning], expect.morning)) {
       return { ok: false, code: "slash_morning" };
     }
     for (var p = 1; p <= grid.periodCount; p++) {
       var idx = grid.periodCols[p];
       if (idx == null) continue;
-      if (!check(row.cells[idx], expect["period:" + p])) {
+      if (!check(cells[idx], expect["period:" + p])) {
         return { ok: false, code: "slash_period_" + p };
       }
     }
-    if (grid.col.afternoon != null && !check(row.cells[grid.col.afternoon], expect.afternoon)) {
+    if (grid.col.afternoon != null && !check(cells[grid.col.afternoon], expect.afternoon)) {
       return { ok: false, code: "slash_afternoon" };
     }
     return { ok: true };
   }
+
 
   function clickSaveOnly() {
     var btn = findClickableByText(document, "저장");
@@ -423,8 +578,15 @@
     if (!items.length) return { ok: false, code: "empty_items" };
 
     var filters = readFilters();
-    var grid = findAttendanceGrid(document);
-    if (!grid) return { ok: false, code: "grid_not_found" };
+    var grid = null;
+    for (var attempt = 0; attempt < 6; attempt++) {
+      grid = findAttendanceGrid(document);
+      if (grid) break;
+      await sleep(400);
+    }
+    if (!grid) {
+      return { ok: false, code: "grid_not_found", diag: gridDiag(document) };
+    }
 
     var applied = 0;
     for (var row = 0; row < items.length; row++) {
@@ -439,7 +601,7 @@
         log(row, item.type || "?", "stop", "row_not_found");
         return { ok: false, code: "row_not_found", applied: applied, dryRun: dryRun };
       }
-      var pop = await openClosePopup(hit.row, grid.col.close);
+      var pop = await openClosePopup(hit.row, grid.col.close, hit.cells);
       if (!pop.ok) {
         log(row, item.type || "?", "stop", pop.code);
         return { ok: false, code: pop.code, applied: applied, dryRun: dryRun };
@@ -449,13 +611,13 @@
         log(row, item.type || "?", "stop", ap.code);
         return { ok: false, code: ap.code, applied: applied, dryRun: dryRun };
       }
-      var cp = clickPeriodCell(hit.row, grid, item.period);
+      var cp = clickPeriodCell(hit.row, grid, item.period, hit.cells);
       if (!cp.ok) {
         log(row, item.type || "?", "stop", cp.code);
         return { ok: false, code: cp.code, applied: applied, dryRun: dryRun };
       }
       await sleep(500);
-      var ver = verifyRow(hit.row, grid, item);
+      var ver = verifyRow(hit.row, grid, item, hit.cells);
       if (!ver.ok) {
         log(row, item.type || "?", "stop", ver.code);
         return { ok: false, code: ver.code, applied: applied, dryRun: dryRun };
