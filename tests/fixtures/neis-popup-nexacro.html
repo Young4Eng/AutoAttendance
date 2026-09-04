@@ -22,8 +22,10 @@ body{margin:0;font:12px sans-serif}
   <div id="grid">
     <div class="contentsbox">번호</div><div class="contentsbox">성명</div><div class="contentsbox">마감</div>
     <div>9</div><div>학생01</div>
-    <div id="closeCellWrap" class="GridCellControl cell" data-nexa="gridcell">
-      <div id="closeCell" class="nexacontentsbox contentsbox" data-nexa="contentsbox">미마감</div>
+    <div id="closeCellWrap" class="GridCellControl cell" data-nexa="gridcell" style="width:120px;height:28px">
+      <div id="closeCell" class="nexacontentsbox contentsbox" data-nexa="contentsbox" style="width:110px;height:24px">
+        <div id="closePlaceholder" class="cl-textcl-placeholdercl-unselectable" data-nexa="placeholder" style="width:100px;height:19px">미마감</div>
+      </div>
     </div>
     <div id="decoyUnexcused" class="contentsbox">미인정</div>
   </div>
@@ -614,6 +616,7 @@ body{margin:0;font:12px sans-serif}
   var layer = document.getElementById("popupLayer");
   var closeCell = document.getElementById("closeCell");
   var closeWrap = document.getElementById("closeCellWrap");
+  var closePh = document.getElementById("closePlaceholder");
   function openPopup(){
     if (!layer) return;
     layer.classList.remove("hidden");
@@ -624,11 +627,19 @@ body{margin:0;font:12px sans-serif}
       el.addEventListener(type, function(){ openPopup(); });
     });
   }
-  // Nexacro: parent GridCellControl click opens; leaf may need bubble/parent target
+  // Nexacro: parent GridCellControl click opens; placeholder leaf alone does not
   bindOpen(closeWrap);
   // nexacontentsbox: dblclick also opens (stronger clickNexa path)
   if (closeCell) {
     closeCell.addEventListener("dblclick", function(){ openPopup(); });
+  }
+  // placeholder: stopImmediate — leaf click alone must not open (climb required)
+  if (closePh) {
+    ["mousedown","mouseup","click","dblclick"].forEach(function(type){
+      closePh.addEventListener(type, function(ev){
+        if (ev && ev.stopPropagation) ev.stopPropagation();
+      });
+    });
   }
   // hidden input inside close cell (Nexacro-like)
   if (closeCell && !closeCell.querySelector("input")) {

@@ -312,7 +312,11 @@
     return !beforeVisible && !!afterVisible;
   }
 
-  /** 클래스 문자열 → 토큰 배열(실명·번호 없음). SVGAnimatedString 대응. */
+  /**
+   * 클래스 문자열 → 토큰 배열(실명·번호 없음). SVGAnimatedString 대응.
+   * Nexacro 현장: classList 없이 className이 'cl-textcl-placeholdercl-unselectable'
+   * 처럼 공백 없이 이어 붙는 경우 → cl- 접두로 분리.
+   */
   function classNameTokens(className) {
     var raw = className;
     try {
@@ -322,15 +326,150 @@
     }
     var s = String(raw || "");
     if (!s) return [];
-    return s
-      .split(/\s+/)
-      .map(function (t) {
-        return t.replace(/[^A-Za-z0-9_\-]/g, "");
-      })
-      .filter(function (t) {
-        return t.length > 0 && t.length <= 64;
-      })
-      .slice(0, 12);
+    var chunks = s.split(/\s+/);
+    var out = [];
+    function pushTok(t) {
+      t = String(t || "").replace(/[^A-Za-z0-9_\-]/g, "");
+      if (!t || t.length > 64) return;
+      if (out.indexOf(t) >= 0) return;
+      out.push(t);
+    }
+    for (var i = 0; i < chunks.length; i++) {
+      var chunk = chunks[i];
+      if (!chunk) continue;
+      var clCount = (chunk.match(/cl-/gi) || []).length;
+      if (clCount >= 2) {
+        // 'cl-textcl-placeholder' → split before each cl- (char class alone is greedy)
+        var clParts = chunk.split(/(?=cl-)/i).filter(function (p) {
+          return !!p;
+        });
+        for (var c = 0; c < clParts.length; c++) pushTok(clParts[c]);
+      } else {
+        pushTok(chunk);
+      }
+      if (out.length >= 12) break;
+    }
+    return out.slice(0, 12);
+  }
+
+  /** placeholder/text 리프(작은 rect·cl-text/cl-placeholder) 여부 — 익명 토큰·rect만. */
+  function isPlaceholderCloseLeaf(tokens, rect, kind) {
+    tokens = tokens || [];
+    rect = anonRect(rect || {});
+    var blob = tokens.join(" ").toLowerCase();
+    var hasPh =
+      /\bcl-text\b/.test(blob) ||
+      /\bcl-placeholder\b/.test(blob) ||
+      /\bunselectable\b/.test(blob);
+    var small = rect.w > 0 && rect.h > 0 && rect.w <= 140 && rect.h <= 32;
+    var kindCell = !kind || kind === "cell" || kind === "node" || kind === "placeholder";
+    if (hasPh && (small || kindCell)) return true;
+    if (kind === "placeholder") return true;
+    if (kindCell && small && rect.h <= 22 && rect.w <= 120) return true;
+    return false;
+  }
+
+  /** GridCellControl / nexacontentsbox / GridCell / contentsbox 컨테이너 토큰. */
+  function isCloseCellContainerTokens(tokens) {
+    var blob = (tokens || []).join(" ").toLowerCase();
+    return /gridcell|cellcontrol|nexacontentsbox|contentsbox/.test(blob);
+  }
+
+  /** 후보 centerX − 「마감」헤더 centerX (익명 숫자). */
+  function closeHeaderDx(cellCenterX, headerCenterX) {
+    var a = Number(cellCenterX);
+    var b = Number(headerCenterX);
+    if (isNaN(a) || isNaN(b)) return null;
+    return Math.round(a - b);
+  }
+
+  /** 마감 열 정렬: |dx| ≤ maxDx (기본 64). */
+  function alignsWithCloseHeader(cellCenterX, headerCenterX, maxDx) {
+    var dx = closeHeaderDx(cellCenterX, headerCenterX);
+    if (dx == null) return false;
+    var lim = maxDx == null ? 64 : Number(maxDx);
+    if (isNaN(lim) || lim < 0) lim = 64;
+    return Math.abs(dx) <= lim;
+  }
+
+  /**
+   * placeholder 리프 + 조상 디스크립터 → 클릭 우선순위.
+   * 부모 GridCell/contentsbox를 리프보다 앞에 둠. 먼 열 후보는 reject.
+   * 각 항목: { id, tokens, rect, kind, centerX? }
+   * headerCenterX 있으면 dx 필터. 반환: 정렬된 id 배열(+ meta는 테스트용 별도).
+   */
+  function orderCloseClimbTargets(leaf, ancestors, headerCenterX, maxDx) {
+    leaf = leaf || {};
+    ancestors = Array.isArray(ancestors) ? ancestors : [];
+    var leafTok = leaf.tokens || classNameTokens(leaf.className || leaf.cls || "");
+    var leafRect = anonRect(leaf.rect || {});
+    var leafKind = leaf.kind || "cell";
+    var leafIsPh = isPlaceholderCloseLeaf(leafTok, leafRect, leafKind);
+    var items = [];
+    function centerOf(rec, rect) {
+      if (rec.centerX != null && !isNaN(Number(rec.centerX))) return Number(rec.centerX);
+      return rect.x + rect.w / 2;
+    }
+    function consider(rec, role) {
+      if (!rec) return;
+      var tok = rec.tokens || classNameTokens(rec.className || rec.cls || "");
+      var rect = anonRect(rec.rect || {});
+      var cx = centerOf(rec, rect);
+      var dx = headerCenterX != null ? closeHeaderDx(cx, headerCenterX) : null;
+      var aligned =
+        headerCenterX == null || headerCenterX === undefined
+          ? true
+          : alignsWithCloseHeader(cx, headerCenterX, maxDx);
+      items.push({
+        id: rec.id != null ? rec.id : role,
+        tokens: tok,
+        rect: rect,
+        kind: String(rec.kind || role || "node").slice(0, 24),
+        role: role,
+        centerX: cx,
+        dx: dx,
+        aligned: aligned,
+        isContainer: isCloseCellContainerTokens(tok),
+        area: Math.max(0, rect.w) * Math.max(0, rect.h),
+      });
+    }
+    consider(leaf, "leaf");
+    for (var i = 0; i < ancestors.length && i < 8; i++) {
+      consider(ancestors[i], "parent");
+    }
+    var kept = items.filter(function (it) {
+      return it.aligned;
+    });
+    if (!kept.length) kept = items.slice();
+    // placeholder면 컨테이너·더 큰 부모를 앞세움
+    kept.sort(function (a, b) {
+      if (leafIsPh) {
+        var aCont = a.isContainer || (a.role === "parent" && a.area > leafRect.w * leafRect.h * 1.15) ? 0 : 1;
+        var bCont = b.isContainer || (b.role === "parent" && b.area > leafRect.w * leafRect.h * 1.15) ? 0 : 1;
+        if (aCont !== bCont) return aCont - bCont;
+        if (a.role !== b.role) return a.role === "parent" ? -1 : 1;
+        // larger parent preferred among containers
+        if (a.isContainer && b.isContainer && a.area !== b.area) return b.area - a.area;
+      } else {
+        if (a.role === "leaf" && b.role !== "leaf") return -1;
+        if (b.role === "leaf" && a.role !== "leaf") return 1;
+      }
+      var aDx = a.dx == null ? 0 : Math.abs(a.dx);
+      var bDx = b.dx == null ? 0 : Math.abs(b.dx);
+      if (aDx !== bDx) return aDx - bDx;
+      return a.area - b.area;
+    });
+    return kept;
+  }
+
+  /** closeCellDump를 JSON 문자열로 — console/[object Object] 방지. 성명·번호 없음. */
+  function stringifyCloseCellDump(dump) {
+    var norm = normalizeCloseCellFailDump(dump || {});
+    try {
+      return JSON.stringify(norm);
+    } catch (e) {
+      return '{"candidateCount":0,"modes":[]}';
+    }
   }
 
   /** rect 익명 숫자만 */
@@ -397,6 +536,17 @@
     }
     var before = dump.before || {};
     var after = dump.after || {};
+    var dxRaw = dump.closeHeaderDx;
+    var dxNum = dxRaw == null || dxRaw === "" ? null : Number(dxRaw);
+    if (dxNum != null && isNaN(dxNum)) dxNum = null;
+    var aligned =
+      dump.closeHeaderAligned != null
+        ? vis(dump.closeHeaderAligned)
+        : dxNum == null
+          ? 0
+          : Math.abs(dxNum) <= 64
+            ? 1
+            : 0;
     return {
       candidates: outCands,
       before: {
@@ -416,6 +566,8 @@
           }).slice(0, 16)
         : [],
       candidateCount: outCands.length,
+      closeHeaderDx: dxNum,
+      closeHeaderAligned: aligned,
     };
   }
 
@@ -484,6 +636,12 @@
     popupOpenVisibleOk: popupOpenVisibleOk,
     titleBecameNewlyVisible: titleBecameNewlyVisible,
     classNameTokens: classNameTokens,
+    isPlaceholderCloseLeaf: isPlaceholderCloseLeaf,
+    isCloseCellContainerTokens: isCloseCellContainerTokens,
+    closeHeaderDx: closeHeaderDx,
+    alignsWithCloseHeader: alignsWithCloseHeader,
+    orderCloseClimbTargets: orderCloseClimbTargets,
+    stringifyCloseCellDump: stringifyCloseCellDump,
     anonRect: anonRect,
     anonClickCandidate: anonClickCandidate,
     popupNewlyOpenedOk: popupNewlyOpenedOk,
