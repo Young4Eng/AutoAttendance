@@ -161,6 +161,7 @@ check("fixture html disabled types until category (no real names)", () => {
   assert.ok(html.includes("RadioItemControl"));
   assert.ok(html.includes("is-disabled"));
   assert.ok(html.includes("decoyUnexcused"));
+  assert.ok(html.includes('id="hugeOuter"'));
   assert.ok(html.includes("data-section=\"type\""));
   assert.ok(html.includes("classList.remove(\"is-disabled\")") || html.includes("classList.remove('is-disabled')"));
   assert.ok(!html.includes('role="dialog"'));
@@ -172,4 +173,78 @@ check("CATEGORY/TYPE maps", () => {
   assert.equal(P.CATEGORY_KO.illness, "질병");
   assert.equal(P.TYPE_KO.late, "지각");
   assert.ok(P.OPTION_LABELS.includes("적용"));
+});
+
+check("isClimbPopupRootContent requires title+action+category", () => {
+  assert.equal(P.isClimbPopupRootContent("출결마감구분 질병 적용"), true);
+  assert.equal(P.isClimbPopupRootContent("출결마감구분 미인정 닫기"), true);
+  assert.equal(P.isClimbPopupRootContent("출결마감구분 질병"), false); // no action
+  assert.equal(P.isClimbPopupRootContent("질병 적용 닫기"), false); // no title
+  assert.equal(P.isClimbPopupRootContent("출결마감구분 적용"), false); // no category
+});
+
+check("pickSmallestPopupRoot prefers inner over huge decoy outer", () => {
+  const innerText = "출결마감구분 질병 미인정 기타 출석인정 지각 조퇴 결석 결과 사유 적용 닫기";
+  const outerPad = Array.from({ length: 80 }, (_, i) => `미인정${i} 지각${i} 미마감${i}`).join(" ");
+  const outerText = `출결마감구분 ${outerPad} ${innerText}`;
+  const candidates = [
+    { id: 0, text: "출결마감구분", textCount: 1, width: 200, height: 24, tagName: "DIV" },
+    {
+      id: 1,
+      text: innerText,
+      textCount: 12,
+      width: 340,
+      height: 280,
+      tagName: "DIV",
+    },
+    {
+      id: 2,
+      text: outerText,
+      textCount: 345,
+      width: 1280,
+      height: 900,
+      tagName: "DIV",
+    },
+  ];
+  const pick = P.pickSmallestPopupRoot(candidates);
+  assert.ok(pick, "pick");
+  assert.equal(pick.id, 1);
+  assert.ok(pick.textLen < P.POPUP_ROOT_MAX_TEXT_LEN);
+  assert.ok(pick.textCount <= P.POPUP_ROOT_MAX_TEXT_COUNT);
+});
+
+check("pickSmallestPopupRoot rejects body/html and oversize-only", () => {
+  const good = "출결마감구분 질병 미인정 적용 닫기";
+  assert.equal(
+    P.pickSmallestPopupRoot([
+      { id: 0, text: good, textCount: 10, width: 400, height: 300, tagName: "BODY" },
+    ]),
+    null,
+  );
+  assert.equal(
+    P.pickSmallestPopupRoot([
+      { id: 0, text: good + " " + "x".repeat(1000), textCount: 20, width: 400, height: 300, tagName: "DIV" },
+    ]),
+    null,
+  );
+  assert.equal(
+    P.pickSmallestPopupRoot([
+      { id: 0, text: good, textCount: 100, width: 400, height: 300, tagName: "DIV" },
+    ]),
+    null,
+  );
+});
+
+check("fixture has decoy outer + inner dialog markers", () => {
+  const html = readFileSync(new URL("./fixtures/neis-popup-nexacro.html", import.meta.url), "utf8");
+  assert.ok(html.includes('id="hugeOuter"'));
+  assert.ok(html.includes('data-decoy="outer"'));
+  assert.ok(html.includes('id="decoyChrome"'));
+  assert.ok(html.includes('id="popupLayer"'));
+  assert.ok(html.includes("출결마감구분"));
+  assert.ok(html.includes("질병"));
+  assert.ok(html.includes(">적용<"));
+  assert.ok(html.includes(">닫기<"));
+  assert.ok(html.includes("decoyUnexcused"));
+  assert.ok(html.includes("학생01"));
 });
