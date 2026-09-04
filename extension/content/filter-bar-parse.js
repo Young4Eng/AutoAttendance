@@ -53,6 +53,32 @@
     };
   }
 
+  /** 현장 DIV: "2학년 3반 2026.09.04.Total" 등 — 라벨 문자열 없이 학년·반·일자 */
+  var BAND_COMPACT_RE =
+    /(\d+)학년\s*(\d+)반\s*((?:19|20)\d{2}[.\-/]\d{1,2}[.\-/]\d{1,2}\.?)/;
+
+  function parseBandCompact(text) {
+    var out = emptyParsed();
+    var t = normText(text);
+    if (!t) return out;
+    var m = t.match(BAND_COMPACT_RE);
+    if (!m) return out;
+    out.raw.grade = m[1];
+    out.grade = Number(m[1]);
+    out.raw.class = m[2];
+    out.class = Number(m[2]);
+    var dn = normalizeDate(m[3]);
+    if (dn) {
+      out.raw.date = dn;
+      out.date = dn;
+      out.year = Number(dn.slice(0, 4));
+      out.raw.year = String(out.year);
+    } else {
+      out.raw.date = String(m[3]).slice(0, 32);
+    }
+    return out;
+  }
+
   function applyRawToOut(out, key, rawJoined) {
     var joined = normText(rawJoined);
     if (!joined) return;
@@ -108,6 +134,23 @@
     var out = emptyParsed();
     if (!t) return out;
 
+    // 밴드 압축형(「2학년 3반 2026.09.04.」)이 있으면 라벨 파싱보다 우선·시드
+    var bandSeed = parseBandCompact(t);
+    if (bandSeed.grade != null) {
+      out.grade = bandSeed.grade;
+      out.raw.grade = bandSeed.raw.grade;
+      out.class = bandSeed.class;
+      out.raw.class = bandSeed.raw.class;
+      if (bandSeed.date) {
+        out.date = bandSeed.date;
+        out.raw.date = bandSeed.raw.date;
+      }
+      if (bandSeed.year != null) {
+        out.year = bandSeed.year;
+        out.raw.year = bandSeed.raw.year;
+      }
+    }
+
     var iY = t.indexOf("학년도");
     if (iY >= 0) {
       var ys = t.slice(iY + 3, iY + 64);
@@ -120,7 +163,7 @@
 
     // 학년도 다음의 '학년 N' (학년도에 흡수되지 않게)
     var gm = t.match(/학년도[\s\S]{0,72}?학년\s*[:：]?\s*(\d{1,2})/);
-    if (gm) {
+    if (gm && out.grade == null) {
       out.raw.grade = gm[1];
       out.grade = Number(gm[1]);
     }
@@ -129,7 +172,8 @@
     var region = iY >= 0 ? t.slice(iY, iY + 220) : t;
     var cm = region.match(/반\s*[:：]?\s*(\d{1,2})/);
     if (!cm) cm = t.match(/반\s*[:：]?\s*(\d{1,2})/);
-    if (cm) {
+    // 밴드 압축이 이미 class를 채웠으면 「반 2026」오탐으로 덮지 않음
+    if (cm && out.class == null) {
       out.raw.class = cm[1];
       out.class = Number(cm[1]);
     }
@@ -162,6 +206,27 @@
           out.raw.date = n;
           out.date = n;
         }
+      }
+    }
+
+    // 라벨(학년도/학년/일자) 없을 때 밴드 압축형 폴백
+    if (out.grade == null || out.class == null || !out.date || out.year == null) {
+      var band = parseBandCompact(t);
+      if (out.grade == null && band.grade != null) {
+        out.grade = band.grade;
+        out.raw.grade = band.raw.grade;
+      }
+      if (out.class == null && band.class != null) {
+        out.class = band.class;
+        out.raw.class = band.raw.class;
+      }
+      if (!out.date && band.date) {
+        out.date = band.date;
+        out.raw.date = band.raw.date;
+      }
+      if (out.year == null && band.year != null) {
+        out.year = band.year;
+        out.raw.year = band.raw.year;
       }
     }
 
@@ -249,10 +314,14 @@
     return out;
   }
 
-  function mergeFilterValues(domRaw, textParsed, orderParsed) {
+  function mergeFilterValues(domRaw, textParsed, orderParsed, extras) {
     domRaw = domRaw || {};
     textParsed = textParsed || emptyParsed();
     orderParsed = orderParsed || null;
+    extras = extras || {};
+    var bandParsed = extras.band || null;
+    var dateInput = extras.dateInput || "";
+    var labelPathEmpty = Boolean(extras.labelPathEmpty);
 
     var yearRaw = "";
     var gradeRaw = "";
@@ -260,35 +329,58 @@
     var dateRaw = "";
     var src = { year: "", grade: "", class: "", date: "" };
 
-    function takeOrder(field, parsedVal, rawVal) {
+    function takeFrom(field, parsedVal, rawVal, srcName) {
       if (field === "year") {
-        if (parsedVal != null) {
+        if (parsedVal != null && !parseYear(yearRaw)) {
           yearRaw = String(rawVal || parsedVal);
-          src.year = "order";
+          src.year = srcName;
         }
       } else if (field === "grade") {
-        if (parsedVal != null) {
+        if (parsedVal != null && !parseIntLoose(gradeRaw)) {
           gradeRaw = String(rawVal || parsedVal);
-          src.grade = "order";
+          src.grade = srcName;
         }
       } else if (field === "class") {
-        if (parsedVal != null) {
+        if (parsedVal != null && !parseIntLoose(classRaw)) {
           classRaw = String(rawVal || parsedVal);
-          src.class = "order";
+          src.class = srcName;
         }
       } else if (field === "date") {
-        if (parsedVal) {
+        if (parsedVal && !normalizeDate(dateRaw)) {
           dateRaw = String(parsedVal);
-          src.date = "order";
+          src.date = srcName;
         }
       }
     }
 
+    function applyBandAndInput() {
+      if (dateInput && !normalizeDate(dateRaw)) {
+        dateRaw = String(dateInput);
+        src.date = "input";
+        if (!parseYear(yearRaw)) {
+          var yi = parseYear(dateInput);
+          if (yi != null) {
+            yearRaw = String(yi);
+            src.year = src.year || "input";
+          }
+        }
+      }
+      if (bandParsed) {
+        takeFrom("grade", bandParsed.grade, bandParsed.raw && bandParsed.raw.grade, "band");
+        takeFrom("class", bandParsed.class, bandParsed.raw && bandParsed.raw.class, "band");
+        takeFrom("date", bandParsed.date, bandParsed.raw && bandParsed.raw.date, "band");
+        takeFrom("year", bandParsed.year, bandParsed.raw && bandParsed.raw.year, "band");
+      }
+    }
+
+    // 라벨 경로 비었으면 band/input을 먼저 (현장 dump: 학년도/학년/일자=0)
+    if (labelPathEmpty) applyBandAndInput();
+
     if (orderParsed) {
-      takeOrder("year", orderParsed.year, orderParsed.raw && orderParsed.raw.year);
-      takeOrder("grade", orderParsed.grade, orderParsed.raw && orderParsed.raw.grade);
-      takeOrder("class", orderParsed.class, orderParsed.raw && orderParsed.raw.class);
-      takeOrder("date", orderParsed.date, orderParsed.raw && orderParsed.raw.date);
+      takeFrom("year", orderParsed.year, orderParsed.raw && orderParsed.raw.year, "order");
+      takeFrom("grade", orderParsed.grade, orderParsed.raw && orderParsed.raw.grade, "order");
+      takeFrom("class", orderParsed.class, orderParsed.raw && orderParsed.raw.class, "order");
+      takeFrom("date", orderParsed.date, orderParsed.raw && orderParsed.raw.date, "order");
     }
 
     if (!parseYear(yearRaw) && domRaw.year) {
@@ -307,6 +399,9 @@
       dateRaw = String(domRaw.date);
       src.date = "dom";
     }
+
+    // 라벨 경로가 있어도 빈 칸은 band/input으로 채움 (동등 merge)
+    if (!labelPathEmpty) applyBandAndInput();
 
     if (!parseYear(yearRaw) && textParsed.year != null) {
       yearRaw = String(textParsed.raw.year || textParsed.year);
@@ -343,6 +438,13 @@
         orderGrade: String((orderParsed && orderParsed.raw && orderParsed.raw.grade) || "").slice(0, 4),
         orderClass: String((orderParsed && orderParsed.raw && orderParsed.raw.class) || "").slice(0, 4),
         orderDate: String((orderParsed && orderParsed.date) || "").slice(0, 24),
+        bandYear: String((bandParsed && bandParsed.raw && bandParsed.raw.year) || "").slice(0, 8),
+        bandGrade: String((bandParsed && bandParsed.raw && bandParsed.raw.grade) || "").slice(0, 4),
+        bandClass: String((bandParsed && bandParsed.raw && bandParsed.raw.class) || "").slice(0, 4),
+        bandDate: String((bandParsed && bandParsed.date) || "").slice(0, 24),
+        hasDateInput: Boolean(extras.hasDateInput),
+        bandHit: Boolean(extras.bandHit),
+        bandHitCount: Number(extras.bandHitCount) || 0,
         filterSrc: [src.year, src.grade, src.class, src.date].filter(Boolean).join("+") || "none",
         srcYear: src.year || "none",
         srcGrade: src.grade || "none",
@@ -357,6 +459,8 @@
     normalizeDate: normalizeDate,
     parseYear: parseYear,
     parseIntLoose: parseIntLoose,
+    BAND_COMPACT_RE: BAND_COMPACT_RE,
+    parseBandCompact: parseBandCompact,
     parseFilterBarText: parseFilterBarText,
     parseFilterBarByOrder: parseFilterBarByOrder,
     mergeFilterValues: mergeFilterValues,

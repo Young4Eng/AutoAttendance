@@ -201,4 +201,94 @@ check("merge order beats conflicting innerText", () => {
   assert.equal(m._raw.srcGrade, "order");
 });
 
+
+check("parseBandCompact basic trailing-dot Total", () => {
+  const p = F.parseBandCompact("2학년 3반 2026.09.04.Total");
+  assert.equal(p.grade, 2);
+  assert.equal(p.class, 3);
+  assert.equal(p.date, "2026-09-04");
+  assert.equal(p.year, 2026);
+});
+
+check("parseBandCompact dashed date", () => {
+  const p = F.parseBandCompact("1학년 5반 2026-09-04");
+  assert.equal(p.grade, 1);
+  assert.equal(p.class, 5);
+  assert.equal(p.date, "2026-09-04");
+  assert.equal(p.year, 2026);
+});
+
+check("parseBandCompact slash date", () => {
+  const p = F.parseBandCompact("3학년 1반 2026/3/4");
+  assert.equal(p.grade, 3);
+  assert.equal(p.class, 1);
+  assert.equal(p.date, "2026-03-04");
+  assert.equal(p.year, 2026);
+});
+
+check("parseBandCompact no match", () => {
+  const p = F.parseBandCompact("메시지함 반 알림");
+  assert.equal(p.grade, null);
+  assert.equal(p.class, null);
+  assert.equal(p.date, "");
+});
+
+check("parseFilterBarText uses band when labels missing", () => {
+  const p = F.parseFilterBarText("출석부 2학년 3반 2026.09.04. 기타");
+  assert.equal(p.grade, 2);
+  assert.equal(p.class, 3);
+  assert.equal(p.date, "2026-09-04");
+  assert.equal(p.year, 2026);
+});
+
+check("merge band+input first when labelPathEmpty", () => {
+  const band = F.parseBandCompact("2학년 3반 2026.09.04.");
+  const text = F.parseFilterBarText("");
+  const m = F.mergeFilterValues(
+    { year: "", grade: "", class: "", date: "" },
+    text,
+    null,
+    {
+      band,
+      dateInput: "2026-09-04",
+      hasDateInput: true,
+      bandHit: true,
+      bandHitCount: 2,
+      labelPathEmpty: true,
+    },
+  );
+  assert.equal(m.year, 2026);
+  assert.equal(m.grade, 2);
+  assert.equal(m.class, 3);
+  assert.equal(m.date, "2026-09-04");
+  assert.equal(m._raw.srcGrade, "band");
+  assert.equal(m._raw.srcDate, "input");
+  assert.equal(m._raw.hasDateInput, true);
+  assert.equal(m._raw.bandHit, true);
+});
+
+check("merge fills empty fields from band when labels partial", () => {
+  const order = {
+    year: 2026,
+    grade: null,
+    class: null,
+    date: "",
+    raw: { year: "2026", grade: "", class: "", date: "" },
+  };
+  const band = F.parseBandCompact("2학년 3반 2026.09.04.");
+  const m = F.mergeFilterValues(
+    { year: "2026", grade: "", class: "", date: "" },
+    F.parseFilterBarText(""),
+    order,
+    { band, dateInput: "", hasDateInput: false, bandHit: true, bandHitCount: 1, labelPathEmpty: false },
+  );
+  assert.equal(m.year, 2026);
+  assert.equal(m.grade, 2);
+  assert.equal(m.class, 3);
+  assert.equal(m.date, "2026-09-04");
+  assert.equal(m._raw.srcYear, "order");
+  assert.equal(m._raw.srcGrade, "band");
+});
+
+
 if (!process.exitCode) console.log("all filter-bar-parse tests passed");
