@@ -154,3 +154,97 @@ export async function listAttendance(ownerSub: string): Promise<AttendanceRecord
   db.close();
   return rows;
 }
+
+function ownerDateRange(ownerSub: string, date: string): IDBKeyRange {
+  const prefix = `${ownerSub}|${date}|`;
+  return IDBKeyRange.bound(prefix, `${prefix}\uffff`, false, false);
+}
+
+export async function listAttendanceByDate(
+  ownerSub: string,
+  date: string,
+): Promise<AttendanceRecord[]> {
+  const owner = requireOwnerSub(ownerSub);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error('invalid_date');
+  }
+  const db = await openDb();
+  const rows = await new Promise<AttendanceRecord[]>((resolve, reject) => {
+    const tx = db.transaction(STORE_ATTENDANCE, 'readonly');
+    const store = tx.objectStore(STORE_ATTENDANCE);
+    const req = store.openCursor(ownerDateRange(owner, date));
+    const out: AttendanceRecord[] = [];
+    req.onerror = () => reject(req.error ?? new Error("idb_list_att_date"));
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (!cursor) {
+        resolve(out);
+        return;
+      }
+      const value = cursor.value as AttendanceRecord;
+      if (value.ownerSub === owner && value.date === date) {
+        out.push(value);
+      }
+      cursor.continue();
+    };
+  });
+  db.close();
+  return rows.sort((a, b) => a.number - b.number || a.period - b.period);
+}
+
+export async function deleteAttendance(
+  ownerSub: string,
+  date: string,
+  options?: { onlyDraft?: boolean },
+): Promise<number> {
+  const owner = requireOwnerSub(ownerSub);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error('invalid_date');
+  }
+  const onlyDraft = options?.onlyDraft ?? false;
+  const db = await openDb();
+  const deleted = await new Promise<number>((resolve, reject) => {
+    const tx = db.transaction(STORE_ATTENDANCE, 'readwrite');
+    const store = tx.objectStore(STORE_ATTENDANCE);
+    const req = store.openCursor(ownerDateRange(owner, date));
+    let count = 0;
+    req.onerror = () => reject(req.error ?? new Error("idb_del_att"));
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (!cursor) {
+        return;
+      }
+      const value = cursor.value as AttendanceRecord;
+      if (value.ownerSub === owner && value.date === date) {
+        if (!onlyDraft || value.status === 'draft') {
+          cursor.delete();
+          count += 1;
+        }
+      }
+      cursor.continue();
+    };
+    tx.oncomplete = () => resolve(count);
+    tx.onerror = () => reject(tx.error ?? new Error("idb_del_tx"));
+  });
+  db.close();
+  return deleted;
+}
+
+export async function deleteAttendanceRecord(
+  ownerSub: string,
+  record: Pick<
+    AttendanceRecord,
+    'date' | 'grade' | 'class' | 'number' | 'period' | 'type'
+  >,
+): Promise<void> {
+  const owner = requireOwnerSub(ownerSub);
+  const key = attendanceKey({ ...record, ownerSub: owner });
+  const db = await openDb();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE_ATTENDANCE, 'readwrite');
+    tx.objectStore(STORE_ATTENDANCE).delete(key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error ?? new Error("idb_del_one"));
+  });
+  db.close();
+}
