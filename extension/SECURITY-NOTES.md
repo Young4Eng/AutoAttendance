@@ -9,3 +9,5 @@
 - 로그인·인증서 자동화 없음.
 
 - #20: 자식 iframe이 pageKind를 other로 덮지 않음. 그리드는 헤더/본문 테이블 분리 대응. 권한 추가 없음(0.3.3).
+
+- #22/0.3.4: 그리드 헤더 2줄·분리 table·div 행 라벨 탐색. grid_not_found 시 tables/hasNumLabel 등 익명 diag만. 권한 추가 없음.
