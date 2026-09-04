@@ -1,6 +1,6 @@
 /**
- * 일일출결관리(담임용) 화면인지 감지만 한다.
- * 그리드·출결마감구분·P칸·저장 버튼 셀렉터는 추측하지 않는다 (#5 범위 밖).
+ * 일일출결관리(담임용) 감지만.
+ * 마커 없는 iframe이 pageKind를 other로 덮지 않게 함 (#20).
  */
 (function () {
   if (globalThis.__chulgyeolMateDetect) return;
@@ -21,30 +21,40 @@
     return MARKERS.some((m) => hay.includes(m));
   }
 
-  function detect() {
-    if (!hostIsNeis()) {
-      return "other";
+  function isTop() {
+    try {
+      return window === window.top;
+    } catch {
+      return false;
     }
-    return textLooksLikeHomeroomDaily() ? "homeroom-daily" : "other";
   }
 
   function report() {
-    const kind = detect();
-    chrome.runtime.sendMessage({ type: "page-kind", kind }, () => {
+    if (!hostIsNeis()) return;
+    const hit = textLooksLikeHomeroomDaily();
+    if (hit) {
+      chrome.runtime.sendMessage({ type: "page-kind", kind: "homeroom-daily" }, () => {
+        void chrome.runtime.lastError;
+      });
+      return;
+    }
+    // 마커 없음: 자식 iframe은 침묵. 탑만 other 보고(메뉴 이탈).
+    if (!isTop()) return;
+    chrome.runtime.sendMessage({ type: "page-kind", kind: "other" }, () => {
       void chrome.runtime.lastError;
     });
   }
 
   report();
-
-  // SPA·메뉴 전환 대비: 짧은 주기로 재감지 (DOM 셀렉터 없음)
-  let last = "";
-  const tick = () => {
-    const kind = detect();
-    if (kind !== last) {
-      last = kind;
+  let lastHit = textLooksLikeHomeroomDaily();
+  setInterval(() => {
+    const hit = textLooksLikeHomeroomDaily();
+    if (hit !== lastHit) {
+      lastHit = hit;
+      report();
+    } else if (hit) {
+      // 주기적으로 유지(덮어쓰기 복구)
       report();
     }
-  };
-  setInterval(tick, 2000);
+  }, 2000);
 })();
