@@ -1,0 +1,177 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { AttendanceRecord, Owner } from '../types/models';
+import {
+  deleteAttendance,
+  listAttendanceByDate,
+  putAttendance,
+} from '../db/idb';
+import { PreviewList } from '../components/PreviewList';
+import { SlashRangeHint } from '../components/SlashRangeHint';
+import { ConfirmSendDialog } from '../components/ConfirmSendDialog';
+import { ConfirmClearDialog } from '../components/ConfirmClearDialog';
+
+interface Props {
+  owner: Owner;
+  date: string;
+  periodCount: number;
+  onBack: () => void;
+}
+
+/** Non-present rows only — present never appears in queue. */
+function isQueueCandidate(r: AttendanceRecord): boolean {
+  return r.status === 'draft' || r.status === 'queued' || r.status === 'error';
+}
+
+export function SendPreviewScreen({ owner, date, periodCount, onBack }: Props) {
+  const [records, setRecords] = useState<AttendanceRecord[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+  const [sendOpen, setSendOpen] = useState(false);
+  const [sendStep, setSendStep] = useState<1 | 2>(1);
+  const [clearOpen, setClearOpen] = useState(false);
+  const [clearStep, setClearStep] = useState<1 | 2>(1);
+
+  const load = useCallback(async () => {
+    const rows = await listAttendanceByDate(owner.ownerSub, date);
+    setRecords(rows.filter(isQueueCandidate));
+  }, [owner.ownerSub, date]);
+
+  useEffect(() => {
+    void load().catch(() => setError('미리보기 불러오기 실패'));
+  }, [load]);
+
+  const drafts = useMemo(
+    () => records.filter((r) => r.status === 'draft' || r.status === 'error'),
+    [records],
+  );
+  const draftCount = drafts.length;
+
+  const openSend = () => {
+    if (draftCount === 0) {
+      setError('대기열에 넣을 draft가 없습니다');
+      return;
+    }
+    const bad = drafts.filter(
+      (r) => r.category === 'other' && !r.reason.trim(),
+    );
+    if (bad.length > 0) {
+      setError('기타 사유 공란인 행은 대기열에 넣을 수 없습니다');
+      return;
+    }
+    setError(null);
+    setSendStep(1);
+    setSendOpen(true);
+  };
+
+  const confirmSend = async () => {
+    if (sendStep === 1) {
+      setSendStep(2);
+      return;
+    }
+    setSendOpen(false);
+    setError(null);
+    try {
+      for (const r of drafts) {
+        if (r.category === 'other' && !r.reason.trim()) {
+          throw new Error('reason_required_for_other');
+        }
+        const { ownerSub: _o, ...rest } = r;
+        await putAttendance(owner.ownerSub, { ...rest, status: 'queued' });
+      }
+      setStatus(`${drafts.length}건을 대기(queued)로 표시했습니다`);
+      await load();
+    } catch (e) {
+      const code = e instanceof Error ? e.message : 'queue_error';
+      setError(`대기열 반영 실패: ${code}`);
+    }
+  };
+
+  const openClear = () => {
+    if (draftCount === 0) {
+      setError('지울 draft가 없습니다');
+      return;
+    }
+    setError(null);
+    setClearStep(1);
+    setClearOpen(true);
+  };
+
+  const confirmClear = async () => {
+    if (clearStep === 1) {
+      setClearStep(2);
+      return;
+    }
+    setClearOpen(false);
+    setError(null);
+    try {
+      const n = await deleteAttendance(owner.ownerSub, date, { onlyDraft: true });
+      setStatus(`draft ${n}건 삭제`);
+      await load();
+    } catch {
+      setError('삭제 실패');
+    }
+  };
+
+  return (
+    <div className="app">
+      <header className="header row">
+        <div>
+          <h1>전송 미리보기</h1>
+          <p className="muted">
+            {date} · 비출석 {records.length}건 · queued만 확장 준비
+          </p>
+        </div>
+        <button type="button" className="btn ghost" onClick={onBack}>
+          출결로 돌아가기
+        </button>
+      </header>
+
+      <section className="card">
+        {status ? <p className="ok">{status}</p> : null}
+        {error ? (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <PreviewList records={records} periodCount={periodCount} />
+        {/* SlashRangeHint also rendered per-row inside PreviewList */}
+        {records[0] ? (
+          <div className="preview-legend" aria-hidden={records.length === 0}>
+            <SlashRangeHint
+              category={records[0].category}
+              type={records[0].type}
+              period={records[0].period}
+              periodCount={periodCount}
+            />
+          </div>
+        ) : null}
+        <div className="toolbar">
+          <button type="button" className="btn secondary" onClick={openSend}>
+            대기열에 넣기 ({draftCount})
+          </button>
+          <button type="button" className="btn danger" onClick={openClear}>
+            draft 지우기
+          </button>
+        </div>
+        <p className="muted tiny">
+          일괄 전송·삭제는 두 번 확인합니다. 출석 행은 대기열에 넣지 않습니다.
+        </p>
+      </section>
+
+      <ConfirmSendDialog
+        open={sendOpen}
+        step={sendStep}
+        count={draftCount}
+        onCancel={() => setSendOpen(false)}
+        onConfirm={() => void confirmSend()}
+      />
+      <ConfirmClearDialog
+        open={clearOpen}
+        step={clearStep}
+        count={draftCount}
+        onCancel={() => setClearOpen(false)}
+        onConfirm={() => void confirmClear()}
+      />
+    </div>
+  );
+}
