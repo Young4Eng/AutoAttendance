@@ -18,7 +18,7 @@ body{margin:0;font:12px sans-serif}
 <body>
 <!-- decoy large outer: class hints + fake title/content; real dialog is INNER #popupLayer -->
 <div id="hugeOuter" class="MainFrame layerWrap popupHost" data-decoy="outer">
-  <div id="decoyChrome" class="contentsbox">출결마감구분</div>
+  <div id="decoyChrome" class="contentsbox" data-decoy="title">출결마감구분</div>
   <div id="grid">
     <div class="contentsbox">번호</div><div class="contentsbox">성명</div><div class="contentsbox">마감</div>
     <div>9</div><div>학생01</div><div id="closeCell" class="contentsbox">미마감</div>
@@ -607,13 +607,39 @@ body{margin:0;font:12px sans-serif}
 </div>
 </div>
 <script>
-document.querySelectorAll('[data-section="category"] .RadioItemControl').forEach(function(el){
-  el.addEventListener('click', function(){
-    document.querySelectorAll('#typeRow .RadioItemControl').forEach(function(t){
-      t.classList.remove('is-disabled');
-      t.removeAttribute('aria-disabled');
+(function(){
+  var layer = document.getElementById("popupLayer");
+  var closeCell = document.getElementById("closeCell");
+  function openPopup(){
+    if (!layer) return;
+    layer.classList.remove("hidden");
+  }
+  function bindOpen(el){
+    if (!el) return;
+    ["mousedown","mouseup","click"].forEach(function(type){
+      el.addEventListener(type, function(){ openPopup(); });
+    });
+  }
+  bindOpen(closeCell);
+  // hidden input inside close cell (Nexacro-like)
+  if (closeCell && !closeCell.querySelector("input")) {
+    var hi = document.createElement("input");
+    hi.type = "text";
+    hi.id = "closeCellInput";
+    hi.value = "미마감";
+    hi.setAttribute("aria-label", "마감");
+    hi.style.width = "40px";
+    closeCell.appendChild(hi);
+    bindOpen(hi);
+  }
+  document.querySelectorAll('[data-section="category"] .RadioItemControl').forEach(function(el){
+    el.addEventListener('click', function(){
+      document.querySelectorAll('#typeRow .RadioItemControl').forEach(function(t){
+        t.classList.remove('is-disabled');
+        t.removeAttribute('aria-disabled');
+      });
     });
   });
-});
+})();
 </script>
 </body></html>

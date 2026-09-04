@@ -167,12 +167,92 @@
   }
 
   function clickEl(el) {
-    if (!el) return false;
-    el.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
-    el.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, cancelable: true }));
-    el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
-    if (typeof el.click === "function") el.click();
+    return clickNexa(el, { usePoint: false });
+  }
+
+  /**
+   * Nexacro 친화 클릭: focus → pointer/mouse down-up-click (좌표 포함).
+   * usePoint 시 셀 중심 elementFromPoint 대상에도 동일 시퀀스.
+   */
+  function clickNexa(el, opts) {
+    if (!el || !(el instanceof Element)) return false;
+    opts = opts || {};
+    var doc = el.ownerDocument || document;
+    var view = doc.defaultView || window;
+    var r = el.getBoundingClientRect ? el.getBoundingClientRect() : null;
+    var cx = r ? r.left + r.width / 2 : 0;
+    var cy = r ? r.top + r.height / 2 : 0;
+    var MouseEventCtor = view.MouseEvent || MouseEvent;
+    function fire(type, target, buttons) {
+      var evInit = {
+        bubbles: true,
+        cancelable: true,
+        view: view,
+        clientX: cx,
+        clientY: cy,
+        screenX: cx,
+        screenY: cy,
+        button: 0,
+        buttons: buttons == null ? (type === "mousedown" || type === "pointerdown" ? 1 : 0) : buttons,
+      };
+      try {
+        target.dispatchEvent(new MouseEventCtor(type, evInit));
+      } catch (eFire) {
+        try {
+          var ev = doc.createEvent("MouseEvents");
+          ev.initMouseEvent(type, true, true, view, 1, cx, cy, cx, cy, false, false, false, false, 0, null);
+          target.dispatchEvent(ev);
+        } catch (e2) {}
+      }
+    }
+    function seq(target) {
+      if (!target) return;
+      try {
+        if (typeof target.focus === "function") target.focus();
+      } catch (eF) {}
+      fire("pointerdown", target, 1);
+      fire("mousedown", target, 1);
+      fire("pointerup", target, 0);
+      fire("mouseup", target, 0);
+      fire("click", target, 0);
+      if (typeof target.click === "function") {
+        try {
+          target.click();
+        } catch (eC) {}
+      }
+    }
+    seq(el);
+    if (opts.usePoint !== false && r && r.width > 0 && r.height > 0) {
+      var at = null;
+      try {
+        at = doc.elementFromPoint(cx, cy);
+      } catch (eP) {
+        at = null;
+      }
+      if (at && at !== el && (el.contains(at) || (at.contains && at.contains(el)) || true)) {
+        // 중심 좌표 히트 대상에도 시퀀스 (Nexacro 히트테스트)
+        seq(at);
+      }
+    }
     return true;
+  }
+
+  /** 셀 중심 좌표만으로 elementFromPoint 클릭 */
+  function clickNexaAtCenter(el) {
+    if (!el || !el.getBoundingClientRect) return false;
+    var doc = el.ownerDocument || document;
+    var r = el.getBoundingClientRect();
+    if (!(r.width > 0 && r.height > 0)) return false;
+    var cx = r.left + r.width / 2;
+    var cy = r.top + r.height / 2;
+    var at = null;
+    try {
+      at = doc.elementFromPoint(cx, cy);
+    } catch (e) {
+      at = null;
+    }
+    if (!at) at = el;
+    return clickNexa(at, { usePoint: false });
   }
 
   function log(row, type, result, code) {
@@ -1770,8 +1850,15 @@
       out.push(el);
     }
     push(cell);
+    // Nexacro: cell 내부 input/edit 를 우선 후보에 포함
+    var inputs = cell.querySelectorAll(
+      "input, textarea, [contenteditable='true'], [class*='Edit'], [class*='edit']",
+    );
+    for (var ii = 0; ii < inputs.length; ii++) {
+      if (visible(inputs[ii]) || inputs[ii].tagName === "INPUT") push(inputs[ii]);
+    }
     var inners = cell.querySelectorAll(
-      "a, button, input, [onclick], [role='button'], [class*='contentsbox'], [class*='ContentsBox'], [class*='cell'], div, span",
+      "a, button, input, [onclick], [role='button'], [class*='contentsbox'], [class*='ContentsBox'], [class*='cell'], [class*='GridCell'], div, span",
     );
     for (var i = 0; i < inners.length; i++) {
       var el = inners[i];
@@ -1785,6 +1872,11 @@
     out.sort(function (a, b) {
       if (a === cell) return -1;
       if (b === cell) return 1;
+      var atag = (a.tagName || "").toUpperCase();
+      var btag = (b.tagName || "").toUpperCase();
+      var aIn = atag === "INPUT" || atag === "TEXTAREA" ? 0 : 1;
+      var bIn = btag === "INPUT" || btag === "TEXTAREA" ? 0 : 1;
+      if (aIn !== bIn) return aIn - bIn;
       var ar = a.getBoundingClientRect();
       var br = b.getBoundingClientRect();
       return ar.width * ar.height - br.width * br.height;
@@ -1796,21 +1888,127 @@
     return out;
   }
 
+  /** 루트 안 제목「출결마감구분」가시 여부 (rect+visible) */
+  function titleVisibleIn(root) {
+    if (!root || !root.querySelectorAll) return false;
+    var api = PA();
+    var all = root.querySelectorAll("*");
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      if (el.tagName === "SCRIPT" || el.tagName === "STYLE") continue;
+      if (!visible(el)) continue;
+      var r = el.getBoundingClientRect();
+      if (api && api.isClientRectVisible && !api.isClientRectVisible(r)) continue;
+      if (!(r.width > 0 && r.height > 0)) continue;
+      var own = ownText(el);
+      var full = normText(el.textContent);
+      var cand = own || (full.length <= 48 ? full : "");
+      if (!cand) continue;
+      var ok = api ? api.isPopupTitleText(cand) : cand.indexOf("출결마감구분") >= 0;
+      if (ok) return true;
+    }
+    return false;
+  }
+
+  /** 루트 안 구분(질병|미인정|기타|출석인정) 컨트롤 가시 */
+  function categoryVisibleIn(root) {
+    if (!root || !root.querySelectorAll) return false;
+    var api = PA();
+    var labels = (api && api.CATEGORY_LABELS) || ["질병", "미인정", "기타", "출석인정"];
+    var all = root.querySelectorAll("*");
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      if (el.tagName === "SCRIPT" || el.tagName === "STYLE") continue;
+      if (!visible(el)) continue;
+      var r = el.getBoundingClientRect();
+      if (!(r.width > 0 && r.height > 0)) continue;
+      var own = ownText(el);
+      var full = normText(el.textContent);
+      for (var j = 0; j < labels.length; j++) {
+        var want = labels[j];
+        var match = api
+          ? api.isLeafOptionText(own, want) || api.labelTokenMatch(full.length <= 64 ? full : own, want)
+          : own === want || full === want;
+        if (match) return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * 성공: visible 팝업 루트 AND 제목 가시 AND 구분 컨트롤 가시.
+   * titleHit(decoy) 단독 성공 금지.
+   */
+  function findOpenPopupVisible() {
+    var api = PA();
+    var root = findPopup();
+    if (!root || !visible(root)) return null;
+    var rr = root.getBoundingClientRect();
+    if (!(rr.width > 0 && rr.height > 0)) return null;
+    var titleVis = titleVisibleIn(root);
+    var catVis = categoryVisibleIn(root);
+    var ok = api && api.popupOpenVisibleOk
+      ? api.popupOpenVisibleOk({ titleVisible: titleVis, categoryVisible: catVis, titleHit: 0 })
+      : titleVis && catVis;
+    if (!ok) return null;
+    return root;
+  }
+
+  /** 클릭 후 제목·구분이 새로 가시화될 때까지 poll */
+  async function waitForVisiblePopup(maxMs) {
+    var deadline = Date.now() + (maxMs || 3600);
+    while (Date.now() < deadline) {
+      var popup = findOpenPopupVisible();
+      if (popup) return popup;
+      await sleep(120);
+    }
+    return null;
+  }
+
   async function openClosePopup(row, closeIdx, cellsOpt) {
     var cells = cellsOpt || rowCells(row);
     var cell = cells[closeIdx];
     if (!cell) return { ok: false, code: "no_close_cell", diag: popupDiag(document) };
+
+    var beforeOpen = findOpenPopupVisible();
+    if (beforeOpen) return { ok: true, popup: beforeOpen };
+
+    var titleBefore = false;
+    try {
+      // decoy 제목은 있어도 진짜 오픈(구분 동반)은 아님
+      titleBefore = !!findOpenPopupVisible();
+    } catch (eB) {
+      titleBefore = false;
+    }
+
     var targets = closeClickTargets(cell);
+    if (!targets.length) targets = [cell];
     var popup = null;
-    for (var attempt = 0; attempt < Math.max(3, targets.length); attempt++) {
+    var attempts = Math.max(4, targets.length + 1);
+    for (var attempt = 0; attempt < attempts; attempt++) {
       var target = targets[attempt % targets.length];
-      clickEl(target);
-      for (var w = 0; w < 5; w++) {
-        await sleep(180);
-        popup = findPopup();
-        if (popup) break;
+      clickNexa(target, { usePoint: true });
+      // cell 내부 input 별도 시도
+      var inp =
+        cell.querySelector &&
+        cell.querySelector("input, textarea, [contenteditable='true']");
+      if (inp && inp !== target) {
+        clickNexa(inp, { usePoint: true });
       }
-      if (popup) break;
+      // 셀 중심 coordinate / elementFromPoint
+      clickNexaAtCenter(cell);
+
+      popup = await waitForVisiblePopup(2200);
+      if (popup) {
+        var api = PA();
+        // 성공 조건: 클릭 전 비가시 → 후 가시 (decoy titleHit 단독 배제)
+        var newly =
+          !api || !api.titleBecameNewlyVisible
+            ? true
+            : api.titleBecameNewlyVisible(titleBefore, true);
+        if (newly) break;
+        popup = null;
+      }
     }
     if (!popup) {
       return { ok: false, code: "popup_not_found", diag: popupDiag(document) };
