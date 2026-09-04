@@ -598,31 +598,125 @@
     return null;
   }
 
-  function readNearbyValue(labelText) {
-    var labels = findElementsByExactText(document, labelText);
-    for (var i = 0; i < labels.length; i++) {
-      var lab = labels[i];
-      var wrap = lab.closest("td, th, label, div, span, li") || lab.parentElement;
-      if (!wrap) continue;
-      var box = wrap.parentElement || wrap;
-      var sel = box.querySelector("select");
-      if (sel && visible(sel)) {
-        return (sel.options[sel.selectedIndex] && sel.options[sel.selectedIndex].text || sel.value || "").trim();
-      }
-      var inp = box.querySelector("input:not([type='hidden']):not([type='button']):not([type='submit'])");
-      if (inp && visible(inp)) return (inp.value || "").trim();
-      var sib = wrap.nextElementSibling;
-      for (var k = 0; k < 3 && sib; k++, sib = sib.nextElementSibling) {
-        var s2 = sib.querySelector && sib.querySelector("select");
-        if (sib.tagName === "SELECT") s2 = sib;
-        if (s2 && visible(s2)) {
-          return (s2.options[s2.selectedIndex] && s2.options[s2.selectedIndex].text || s2.value || "").trim();
-        }
-        var i2 = sib.querySelector && sib.querySelector("input:not([type='hidden'])");
-        if (i2 && visible(i2)) return (i2.value || "").trim();
-      }
+  function controlValue(el) {
+    if (!el) return "";
+    if (el.tagName === "SELECT") {
+      var opt = el.options && el.options[el.selectedIndex];
+      return normText((opt && opt.text) || el.value || "");
+    }
+    if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+      return normText(el.value || el.getAttribute("value") || "");
     }
     return "";
+  }
+
+  function exactLabelEls(labelText) {
+    var hits = findLabelHits(document, labelText).filter(function (el) {
+      return normText(el.textContent) === labelText;
+    });
+    if (hits.length) return hits;
+    return findElementsByExactText(document, labelText);
+  }
+
+  /** 라벨 오른쪽·같은 줄의 콤보/입력/짧은 표시 텍스트 (넥사크로 Combo 포함). */
+  function readValueRightOf(lab) {
+    var r = lab.getBoundingClientRect();
+    var best = "";
+    var bestScore = 1e15;
+    var nodes = document.querySelectorAll("input, select, textarea, div, span");
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (!visible(el)) continue;
+      if (el === lab || lab.contains(el) || el.contains(lab)) continue;
+      var er = el.getBoundingClientRect();
+      if (er.left < r.right - 8) continue;
+      if (er.left - r.right > 420) continue;
+      if (Math.abs(er.top - r.top) > 28) continue;
+      if (er.width > 360 || er.height > 60) continue;
+
+      var val = controlValue(el);
+      if (!val) {
+        var tx = normText(el.textContent);
+        if (!tx || tx.length > 24) continue;
+        if (tx === normText(lab.textContent)) continue;
+        // 자식에 더 짧은 동일 텍스트 있으면 스킵(컨테이너)
+        var childShorter = false;
+        for (var c = 0; c < el.children.length; c++) {
+          var ct = normText(el.children[c].textContent);
+          if (ct && ct.length < tx.length && ct.length <= 24) {
+            childShorter = true;
+            break;
+          }
+        }
+        if (childShorter) continue;
+        val = tx;
+      }
+      if (!val) continue;
+      var score = er.left - r.right + Math.abs(er.top - r.top) * 2;
+      if (score < bestScore) {
+        bestScore = score;
+        best = val;
+      }
+    }
+    return best;
+  }
+
+  function readNearbyValue(labelText) {
+    var labels = exactLabelEls(labelText);
+    for (var i = 0; i < labels.length; i++) {
+      var lab = labels[i];
+      var climb = lab;
+      for (var d = 0; d < 6 && climb; d++, climb = climb.parentElement) {
+        if (!climb.querySelector) continue;
+        var sel = climb.querySelector("select");
+        if (sel && visible(sel)) {
+          var sv = controlValue(sel);
+          if (sv) return sv;
+        }
+        var inputs = climb.querySelectorAll(
+          "input:not([type='hidden']):not([type='button']):not([type='submit']):not([type='checkbox']):not([type='radio'])",
+        );
+        for (var u = 0; u < inputs.length; u++) {
+          if (!visible(inputs[u])) continue;
+          // 라벨 왼쪽 입력은 다른 필드일 수 있음 → 라벨 오른쪽만
+          var ir = inputs[u].getBoundingClientRect();
+          var lr = lab.getBoundingClientRect();
+          if (ir.left + ir.width / 2 < lr.left) continue;
+          var iv = controlValue(inputs[u]);
+          if (iv) return iv;
+        }
+      }
+      var wrap = lab.closest("td, th, label, div, span, li") || lab.parentElement;
+      if (wrap) {
+        var sib = wrap.nextElementSibling;
+        for (var k = 0; k < 4 && sib; k++, sib = sib.nextElementSibling) {
+          if (sib.tagName === "SELECT" && visible(sib)) {
+            var s2 = controlValue(sib);
+            if (s2) return s2;
+          }
+          var nested = sib.querySelector && sib.querySelector("select, input:not([type='hidden']):not([type='button'])");
+          if (nested && visible(nested)) {
+            var nv = controlValue(nested);
+            if (nv) return nv;
+          }
+          var st = normText(sib.textContent);
+          if (st && st.length <= 24 && st !== labelText) return st;
+        }
+      }
+      var right = readValueRightOf(lab);
+      if (right) return right;
+    }
+    return "";
+  }
+
+  function parseYear(raw) {
+    var m = String(raw || "").match(/(?:19|20)\d{2}/);
+    return m ? Number(m[0]) : null;
+  }
+
+  function parseIntLoose(raw) {
+    var m = String(raw || "").match(/\d+/);
+    return m ? Number(m[0]) : null;
   }
 
   function readFilters() {
@@ -631,20 +725,61 @@
     var classRaw = readNearbyValue("반");
     var dateRaw = readNearbyValue("일자");
     return {
-      year: Number((String(yearRaw).match(/\d{4}/) || [])[0] || NaN),
-      grade: Number((String(gradeRaw).match(/\d+/) || [])[0] || NaN),
-      class: Number((String(classRaw).match(/\d+/) || [])[0] || NaN),
+      year: parseYear(yearRaw),
+      grade: parseIntLoose(gradeRaw),
+      class: parseIntLoose(classRaw),
       date: normalizeDate(dateRaw),
+      _raw: {
+        year: String(yearRaw || "").slice(0, 24),
+        grade: String(gradeRaw || "").slice(0, 12),
+        class: String(classRaw || "").slice(0, 12),
+        date: String(dateRaw || "").slice(0, 24),
+      },
     };
   }
 
   function filtersMatchItem(filters, item) {
-    if (filters.year !== item.year) return { ok: false, code: "year_mismatch" };
-    if (filters.grade !== item.grade) return { ok: false, code: "grade_mismatch" };
-    if (filters.class !== item.class) return { ok: false, code: "class_mismatch" };
-    if (filters.date !== item.date) return { ok: false, code: "date_mismatch" };
+    var diagBase = {
+      year: filters.year,
+      grade: filters.grade,
+      class: filters.class,
+      date: filters.date,
+      rawYear: filters._raw && filters._raw.year,
+      rawGrade: filters._raw && filters._raw.grade,
+      rawClass: filters._raw && filters._raw.class,
+      rawDate: filters._raw && filters._raw.date,
+      itemYear: item.year,
+      itemGrade: item.grade,
+      itemClass: item.class,
+      itemDate: item.date,
+    };
+    if (filters.year == null || !Number.isFinite(filters.year)) {
+      return { ok: false, code: "year_unreadable", diag: diagBase };
+    }
+    if (Number(filters.year) !== Number(item.year)) {
+      return { ok: false, code: "year_mismatch", diag: diagBase };
+    }
+    if (filters.grade == null || !Number.isFinite(filters.grade)) {
+      return { ok: false, code: "grade_unreadable", diag: diagBase };
+    }
+    if (Number(filters.grade) !== Number(item.grade)) {
+      return { ok: false, code: "grade_mismatch", diag: diagBase };
+    }
+    if (filters.class == null || !Number.isFinite(filters.class)) {
+      return { ok: false, code: "class_unreadable", diag: diagBase };
+    }
+    if (Number(filters.class) !== Number(item.class)) {
+      return { ok: false, code: "class_mismatch", diag: diagBase };
+    }
+    if (!filters.date) {
+      return { ok: false, code: "date_unreadable", diag: diagBase };
+    }
+    if (filters.date !== normalizeDate(item.date)) {
+      return { ok: false, code: "date_mismatch", diag: diagBase };
+    }
     return { ok: true };
   }
+
 
   function cellText(cell) {
     return ((cell && cell.textContent) || "").replace(/\s+/g, " ").trim();

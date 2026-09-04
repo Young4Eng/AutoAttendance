@@ -12,3 +12,4 @@
 
 - #22/0.3.4: 그리드 헤더 2줄·분리 table·div 행 라벨 탐색. grid_not_found 시 tables/hasNumLabel 등 익명 diag만. 권한 추가 없음.
 - #24/0.3.5: 넥사크로류 좌표·라벨 그리드 + 팝업 익명 diag(hitNum 등). 권한 추가 없음.
+- #26/0.3.6: 학년도 등 필터 라벨 우측 콤보/표시값 읽기. year_unreadable 구분. raw는 짧은 숫자·날짜만. 권한 추가 없음.
