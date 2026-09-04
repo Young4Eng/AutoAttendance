@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>filter-bar nexacro-like fixture</title>
+    <style>
+      /* 넥사크로류: absolute 좌표 라벨+표시값. select/input 없음 */
+      #filter-bar {
+        position: relative;
+        width: 720px;
+        height: 36px;
+        font: 13px/1.2 sans-serif;
+        color: #111;
+      }
+      #filter-bar .lab,
+      #filter-bar .val {
+        position: absolute;
+        top: 8px;
+        white-space: nowrap;
+      }
+      #filter-bar .lab { font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <div id="filter-bar" aria-label="조회조건">
+      <div class="lab" style="left: 12px">학년도</div>
+      <div class="val" style="left: 58px">2026</div>
+      <div class="lab" style="left: 120px">학년</div>
+      <div class="val" style="left: 152px">1</div>
+      <div class="lab" style="left: 190px">반</div>
+      <div class="val" style="left: 214px">3</div>
+      <div class="lab" style="left: 260px">일자</div>
+      <div class="val" style="left: 292px">2026.09.04.</div>
+      <div class="lab" style="left: 400px">조회</div>
+    </div>
+  </body>
+</html>

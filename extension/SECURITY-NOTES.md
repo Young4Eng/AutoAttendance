@@ -14,3 +14,4 @@
 - #24/0.3.5: 넥사크로류 좌표·라벨 그리드 + 팝업 익명 diag(hitNum 등). 권한 추가 없음.
 - #26/0.3.6: 학년도 등 필터 라벨 우측 콤보/표시값 읽기. year_unreadable 구분. raw는 짧은 숫자·날짜만. 권한 추가 없음.
 - #28/0.3.7: 필터 innerText·전방향 근접·숨은 input. softYear/filterSrc diag. 권한 추가 없음.
+- #30/0.4.0: 조회조건 4칸 동일 전략(밴드 좌표 순서·DOM 근접·innerText). 끝점 일자 normalize. unreadable/mismatch 유지. 픽스처+단위테스트. 권한 추가 없음.
