@@ -36,22 +36,44 @@ async function findNeisTab() {
   return active || null;
 }
 
+async function listFrameIds(tabId) {
+  try {
+    const frames = await chrome.webNavigation.getAllFrames({ tabId });
+    if (!Array.isArray(frames) || !frames.length) return [0];
+    // Prefer child frames first (나이스 그리드가 iframe인 경우), then top.
+    const ids = frames.map((f) => f.frameId);
+    const children = ids.filter((id) => id !== 0);
+    return children.concat(ids.includes(0) ? [0] : []);
+  } catch {
+    return [0];
+  }
+}
+
 async function runApply(dryRun) {
   const data = await chrome.storage.session.get(QUEUE_KEY);
   const items = Array.isArray(data[QUEUE_KEY]) ? data[QUEUE_KEY] : [];
   if (!items.length) return { ok: false, code: "empty_queue" };
   const tab = await findNeisTab();
   if (!tab?.id) return { ok: false, code: "no_neis_tab" };
-  try {
-    const res = await chrome.tabs.sendMessage(tab.id, {
-      type: "apply-queue",
-      items,
-      dryRun: Boolean(dryRun),
-    });
-    return res || { ok: false, code: "no_response" };
-  } catch {
-    return { ok: false, code: "content_unreachable" };
+  const payload = {
+    type: "apply-queue",
+    items,
+    dryRun: Boolean(dryRun),
+  };
+  const frameIds = await listFrameIds(tab.id);
+  let lastCode = "content_unreachable";
+  for (const frameId of frameIds) {
+    try {
+      const res = await chrome.tabs.sendMessage(tab.id, payload, { frameId });
+      if (res && typeof res === "object") {
+        return res;
+      }
+      lastCode = "no_response";
+    } catch {
+      // try next frame
+    }
   }
+  return { ok: false, code: lastCode };
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
