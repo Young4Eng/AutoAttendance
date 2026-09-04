@@ -9,7 +9,14 @@
     <main>
       <h1>출결메이트</h1>
       <p id="status" class="status">확인 중…</p>
-      <p class="hint">감지·권한만. 저장·로그인·P칸은 아직 없음.</p>
+      <p id="queue" class="muted">대기열: …</p>
+      <div class="actions">
+        <button type="button" id="btnDry" class="primary">시운전 (저장 전 중단)</button>
+        <button type="button" id="btnSave" class="danger">적용 후 저장</button>
+        <button type="button" id="btnClear" class="ghost">대기열 비우기</button>
+      </div>
+      <p id="result" class="muted"></p>
+      <p class="hint">출결마감은 누르지 않음. 로그에 이름·번호 없음. synced는 육안 후.</p>
     </main>
     <script src="popup.js"></script>
   </body>

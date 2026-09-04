@@ -1,6 +1,6 @@
 /**
- * #5 감지 + #6 웹앱 대기열 수신.
- * P칸·저장·로그인 자동화 없음. 부분 실패를 synced로 표시하지 않음.
+ * 감지 + 대기열 수신 + 적용 지시.
+ * synced 자동 표시 없음. 출결마감·로그인 자동화 없음.
  */
 import {
   originAllowed,
@@ -24,11 +24,34 @@ async function setBadge(kind, tabId) {
   }
 }
 
-/** 로그: 이름·번호 금지. row·type·code만. */
 function logRow(row, type, result, code) {
   const parts = [`row=${row}`, `type=${type}`, `result=${result}`];
   if (code) parts.push(`code=${code}`);
   console.info("[출결메이트]", parts.join(" "));
+}
+
+async function findNeisTab() {
+  const tabs = await chrome.tabs.query({ url: ["*://*.neis.go.kr/*"] });
+  const active = tabs.find((t) => t.active) || tabs[0];
+  return active || null;
+}
+
+async function runApply(dryRun) {
+  const data = await chrome.storage.session.get(QUEUE_KEY);
+  const items = Array.isArray(data[QUEUE_KEY]) ? data[QUEUE_KEY] : [];
+  if (!items.length) return { ok: false, code: "empty_queue" };
+  const tab = await findNeisTab();
+  if (!tab?.id) return { ok: false, code: "no_neis_tab" };
+  try {
+    const res = await chrome.tabs.sendMessage(tab.id, {
+      type: "apply-queue",
+      items,
+      dryRun: Boolean(dryRun),
+    });
+    return res || { ok: false, code: "no_response" };
+  } catch {
+    return { ok: false, code: "content_unreachable" };
+  }
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -40,13 +63,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "page-kind") {
     const kind = message.kind === "homeroom-daily" ? "homeroom-daily" : "other";
     const hostOk = Boolean(
-      sender.tab?.url && /\.neis\.go\.kr(\/|$|\?|#)/i.test(sender.tab.url)
+      sender.tab?.url && /\.neis\.go\.kr(\/|$|\?|#)/i.test(sender.tab.url),
     );
     const next = hostOk ? kind : "other";
-    const tabId = sender.tab?.id;
     chrome.storage.session.set({ [PAGE_KEY]: next });
-    setBadge(next, tabId).catch(() => {});
-    console.info("[출결메이트]", "page=", next, "badge=", next === "homeroom-daily" ? "ON" : "off");
+    setBadge(next, sender.tab?.id).catch(() => {});
+    console.info(
+      "[출결메이트]",
+      "page=",
+      next,
+      "badge=",
+      next === "homeroom-daily" ? "ON" : "off",
+    );
     sendResponse({ ok: true, kind: next });
     return false;
   }
@@ -66,14 +94,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.type === "clear-queue") {
+    chrome.storage.session.set({ [QUEUE_KEY]: [] }).then(() => {
+      sendResponse({ ok: true });
+    });
+    return true;
+  }
+
+  if (message.type === "run-apply") {
+    // dryRun 기본 true
+    const dryRun = message.dryRun !== false;
+    runApply(dryRun).then((res) => sendResponse(res));
+    return true;
+  }
+
   sendResponse({ ok: false, code: "unknown_type" });
   return false;
 });
 
-/**
- * 웹앱(localhost:5173)만. 타 origin·타 확장 sender.id 거부.
- * synced로 바꾸지 않음 — 수신·보관만.
- */
 chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
   const origin = sender.origin || sender.url || "";
   if (!originAllowed(origin)) {
@@ -81,7 +119,6 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
     sendResponse({ ok: false, code: "forbidden_origin" });
     return false;
   }
-  // 다른 확장이 위장하면 sender.id가 있음. 웹 페이지만 허용.
   if (sender.id) {
     console.info("[출결메이트]", "reject sender_id");
     sendResponse({ ok: false, code: "forbidden_sender" });
@@ -109,7 +146,6 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
     accepted.push(v.item);
   });
 
-  // 부분 실패: 받은 것만 보관. synced 표시 없음.
   chrome.storage.session.get(QUEUE_KEY).then((data) => {
     const prev = Array.isArray(data[QUEUE_KEY]) ? data[QUEUE_KEY] : [];
     const next = prev.concat(accepted);
@@ -119,7 +155,6 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
         accepted: accepted.length,
         rejected: errors.length,
         errors,
-        // status는 queued 유지. synced 금지.
       });
     });
   });
