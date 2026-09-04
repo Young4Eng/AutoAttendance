@@ -43,8 +43,11 @@ Drive, Gmail, Contacts, 캘린더 권한은 받지 않는다.
 
 ```json
 {
-  "ownerSub": "google-sub-value",
+  "ownerSub": "test-owner-aaa",
   "date": "2026-08-28",
+  "year": 2026,
+  "grade": 2,
+  "class": 3,
   "number": 1,
   "name": "학생01",
   "category": "illness",
@@ -54,6 +57,8 @@ Drive, Gmail, Contacts, 캘린더 권한은 받지 않는다.
   "status": "queued"
 }
 ```
+
+테스트 픽스처 `ownerSub`는 `test-owner-aaa`.
 
 조회·수정·삭제는 항상 `ownerSub === 지금 로그인한 sub`.  
 프론트에서 필터만 하고 끝나면 부족하다. DB 키를 `ownerSub`로 시작해 다른 칸 객체를 열지 않는다.
