@@ -1255,24 +1255,100 @@
     return m;
   }
 
+  function ownText(el) {
+    if (!el || !el.childNodes) return "";
+    var own = "";
+    for (var t = 0; t < el.childNodes.length; t++) {
+      if (el.childNodes[t].nodeType === Node.TEXT_NODE) own += el.childNodes[t].textContent || "";
+    }
+    return normText(own);
+  }
+
+  /**
+   * 팝업 안 짧은 리프 텍스트. own-text 우선(Nexacro sparse contentsbox).
+   * 긴 행은 토큰 매칭용으로 48자까지.
+   */
+  function controlClassName(el) {
+    try {
+      if (!el) return "";
+      if (el.className && el.className.baseVal != null) return String(el.className.baseVal);
+      return String(el.className || "");
+    } catch (e) {
+      return "";
+    }
+  }
+
+  /** 회색·disabled — 종류는 구분 전 비활성 */
+  function isControlDisabled(el) {
+    if (!el || !(el instanceof Element)) return true;
+    var api = PA();
+    var cur = el;
+    for (var d = 0; d < 6 && cur && cur.nodeType === 1; d++, cur = cur.parentElement) {
+      var aria = "";
+      try {
+        aria = String((cur.getAttribute && cur.getAttribute("aria-disabled")) || "");
+      } catch (e1) {
+        aria = "";
+      }
+      var disAttr = false;
+      try {
+        disAttr = cur.disabled === true || (cur.getAttribute && cur.hasAttribute("disabled"));
+      } catch (e2) {
+        disAttr = false;
+      }
+      var st = null;
+      try {
+        st = getComputedStyle(cur);
+      } catch (e3) {
+        st = null;
+      }
+      var flags = {
+        disabled: disAttr,
+        ariaDisabled: aria === "true",
+        className: controlClassName(cur),
+        pointerEvents: st ? st.pointerEvents : "",
+        opacity: st ? st.opacity : "",
+      };
+      if (api && api.isEnabledState) {
+        if (!api.isEnabledState(flags)) return true;
+      } else if (
+        flags.disabled ||
+        flags.ariaDisabled ||
+        /\bdisabled\b|\bis-disabled\b/i.test(flags.className) ||
+        flags.pointerEvents === "none"
+      ) {
+        return true;
+      } else if (flags.opacity !== "" && parseFloat(flags.opacity) < 0.45) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   function collectVisibleShortTexts(root) {
     var out = [];
     if (!root || !root.querySelectorAll) return out;
-    var all = root.querySelectorAll("div, span, td, th, label, a, p, li, button, em, b, strong");
+    var all = root.querySelectorAll("*");
     for (var i = 0; i < all.length; i++) {
       var el = all[i];
+      if (el.tagName === "SCRIPT" || el.tagName === "STYLE") continue;
       if (!visible(el)) continue;
+      var own = ownText(el);
       var full = normText(el.textContent);
-      if (!full || full.length > 40) continue;
+      var text = own;
+      if (!text && el.children.length === 0) text = full;
+      if (!text) continue;
+      if (text.length > 48) continue;
       var childSame = false;
       for (var c = 0; c < el.children.length; c++) {
-        if (normText(el.children[c].textContent) === full) {
+        var ct = normText(el.children[c].textContent);
+        if (ct === text || (own && ownText(el.children[c]) === own)) {
           childSame = true;
           break;
         }
       }
       if (childSame) continue;
-      out.push(full);
+      out.push(text);
     }
     return out;
   }
@@ -1301,6 +1377,7 @@
 
   function climbPopupRoot(el) {
     if (!el) return null;
+    var api = PA();
     var cur = el;
     for (var d = 0; d < 14 && cur; d++) {
       if (!(cur instanceof Element)) break;
@@ -1309,45 +1386,66 @@
         cur.closest(
           "[role='dialog'], .ui-dialog, .modal, .popup, .layer, [class*='popup'], [class*='Popup'], [class*='layer'], [class*='Layer']",
         );
-      if (hit && visible(hit)) return hit;
+      if (hit && visible(hit)) {
+        // 바깥 그리드 「미인정」오탐 방지: 제목 또는 구분 리프가 있을 때만
+        var texts = collectVisibleShortTexts(hit);
+        var d0 = api ? api.popupDiagFromTexts(texts) : null;
+        if (d0 && (d0.titleHit > 0 || d0.illnessHit > 0 || d0.popupLike)) return hit;
+        if (!api && normText(hit.textContent).indexOf("출결마감구분") >= 0) return hit;
+      }
       cur = cur.parentElement;
     }
     // Nexacro: climb to a reasonably sized visible container with popup-like body
     cur = el;
     var best = null;
-    for (var k = 0; k < 12 && cur && cur !== document.body; k++, cur = cur.parentElement) {
+    var bestScore = -1;
+    for (var k = 0; k < 14 && cur && cur !== document.body; k++, cur = cur.parentElement) {
       if (!visible(cur)) continue;
       var r = cur.getBoundingClientRect();
       if (r.width < 160 || r.height < 80) continue;
       if (r.width > 900 || r.height > 700) continue;
       var blob = normText(cur.textContent);
-      var api = PA();
-      if (api && api.looksLikeClosePopupText(blob)) best = cur;
-      else if (!best && blob.indexOf("적용") >= 0 && blob.indexOf("질병") >= 0) best = cur;
+      if (blob.length > 5000) continue;
+      var score = 0;
+      var shortTexts = collectVisibleShortTexts(cur);
+      var diag = api ? api.popupDiagFromTexts(shortTexts) : null;
+      if (diag) {
+        if (diag.titleHit > 0) score += 12;
+        if (diag.illnessHit > 0) score += 6;
+        if (diag.lateHit > 0) score += 4;
+        if (diag.applyHit > 0) score += 5;
+        if (diag.popupLike) score += 3;
+        // 바깥 오탐: 미인정만 있고 질병·제목 없음 → 감점
+        if (diag.unexcusedHit > 0 && diag.illnessHit === 0 && diag.titleHit === 0) score -= 4;
+      } else if (api && api.looksLikeClosePopupText(blob)) {
+        score += 3;
+      } else if (blob.indexOf("적용") >= 0 && blob.indexOf("질병") >= 0) {
+        score += 2;
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        best = cur;
+      }
     }
-    return best;
+    return bestScore > 0 ? best : null;
   }
 
   function findPopup() {
     var api = PA();
     var titleEls = [];
-    var all = document.querySelectorAll("div, span, td, th, label, a, p, li, em, b, strong");
+    var all = document.querySelectorAll("*");
     for (var i = 0; i < all.length; i++) {
       var el = all[i];
+      if (el.tagName === "SCRIPT" || el.tagName === "STYLE") continue;
       if (!visible(el)) continue;
       var full = normText(el.textContent);
       if (!full || full.length > 48) continue;
-      var own = "";
-      for (var t = 0; t < el.childNodes.length; t++) {
-        if (el.childNodes[t].nodeType === Node.TEXT_NODE) own += el.childNodes[t].textContent || "";
-      }
-      own = normText(own);
+      var own = ownText(el);
       var cand = own || full;
       if (api ? api.isPopupTitleText(cand) : cand === "출결마감구분" || cand === "출결 구분 선택") {
-        // prefer leaf-ish
         var childTitle = false;
         for (var c = 0; c < el.children.length; c++) {
-          var ct = normText(el.children[c].textContent);
+          var ct = ownText(el.children[c]) || normText(el.children[c].textContent);
           if (api ? api.isPopupTitleText(ct) : ct === "출결마감구분") {
             childTitle = true;
             break;
@@ -1361,7 +1459,7 @@
       if (root && visible(root)) return root;
     }
 
-    // Fallback: visible dialog-like with 질병+지각 (구분+종류)
+    // Fallback MUST include 「출결마감구분」+질병 — popupLike alone rejected (바깥 미인정 오탐)
     var containers = document.querySelectorAll(
       "div, [role='dialog'], section, aside, form, [class*='popup'], [class*='Popup'], [class*='layer']",
     );
@@ -1372,17 +1470,26 @@
       if (!visible(box)) continue;
       var br = box.getBoundingClientRect();
       if (br.width < 180 || br.height < 100) continue;
-      if (br.width > 920 || br.height > 720) continue;
+      if (br.width > 1200 || br.height > 900) continue;
       var blob = normText(box.textContent);
-      if (blob.length > 4000) continue;
-      if (!(api ? api.looksLikeClosePopupText(blob) : blob.indexOf("질병") >= 0 && blob.indexOf("지각") >= 0)) {
-        continue;
+      if (blob.length > 6000) continue;
+      var titleOk =
+        api && api.fallbackPopupNeedsTitle
+          ? api.fallbackPopupNeedsTitle(blob)
+          : blob.indexOf("출결마감구분") >= 0 && blob.indexOf("질병") >= 0;
+      if (!titleOk) continue;
+      var shortTexts = collectVisibleShortTexts(box);
+      var diag = api ? api.popupDiagFromTexts(shortTexts) : null;
+      var score = 10;
+      if (diag) {
+        if (diag.titleHit > 0) score += 10;
+        if (diag.illnessHit > 0) score += 6;
+        if (diag.lateHit > 0) score += 4;
+        if (diag.applyHit > 0) score += 5;
+        if (diag.reasonHit > 0) score += 2;
+        if (diag.unexcusedHit > 0 && diag.illnessHit === 0 && diag.titleHit === 0) score -= 8;
       }
-      var score = 0;
-      if (blob.indexOf("적용") >= 0) score += 5;
-      if (blob.indexOf("사유") >= 0) score += 2;
-      if (blob.indexOf("출결마감구분") >= 0 || blob.indexOf("구분 선택") >= 0) score += 4;
-      // prefer tighter containers
+      if (blob.indexOf("적용") >= 0) score += 3;
       score += Math.max(0, 40 - Math.floor(blob.length / 80));
       if (score > bestScore) {
         bestScore = score;
@@ -1392,34 +1499,63 @@
     return best;
   }
 
-  /** 보이는 라벨 텍스트로 선택 (radio 없어도 클릭). */
-  function selectByVisibleLabel(popup, labelText) {
-    if (!popup || !labelText) return false;
+  /**
+   * 팝업 루트 안에서만 구분/종류 라디오·라벨 선택 (Nexacro contentsbox).
+   * input[type=radio]만 집지 않고 contentsbox/부모 셀 클릭.
+   * 바깥 「미인정」오탐 방지 — popup 스코프 필수.
+   */
+  function selectRadioIn(popup, labelText, requireEnabled) {
+    if (!popup || !labelText || !popup.querySelectorAll) return false;
+    var api = PA();
     var want = normText(labelText);
-    var els = findElementsByExactText(popup, want);
-    if (!els.length) {
-      // soft: short nodes starting with label
-      var soft = [];
-      var all = popup.querySelectorAll("div, span, td, th, label, a, p, li, em, b, strong");
-      for (var i = 0; i < all.length; i++) {
-        var el = all[i];
-        if (!visible(el)) continue;
-        var full = normText(el.textContent);
-        if (full !== want && !(full.indexOf(want) === 0 && full.length <= want.length + 8)) continue;
-        var childHit = false;
-        for (var c = 0; c < el.children.length; c++) {
-          var cf = normText(el.children[c].textContent);
-          if (cf === want || (cf.indexOf(want) === 0 && cf.length <= want.length + 8)) {
-            childHit = true;
-            break;
-          }
+    if (!want) return false;
+    if (api && api.isCloseAllButtonText(want)) return false;
+
+    var cands = [];
+    var all = popup.querySelectorAll("*");
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      if (el.tagName === "SCRIPT" || el.tagName === "STYLE") continue;
+      if (!visible(el)) continue;
+      var own = ownText(el);
+      var full = normText(el.textContent);
+      if (full.length > 64) continue;
+      var score = 0;
+      if (own && (api ? api.isLeafOptionText(own, want) : own === want)) score = 100;
+      else if (api ? api.isLeafOptionText(full, want) : full === want) score = 90;
+      else if (own && api && api.labelTokenMatch(own, want)) score = 70;
+      else if (api && api.labelTokenMatch(full, want)) score = 50;
+      else if (!api && full.indexOf(want) === 0 && full.length <= want.length + 8) score = 60;
+      else continue;
+      // 더 깊은 자식이 더 정확한 리프면 부모 스킵
+      var childBetter = false;
+      for (var c = 0; c < el.children.length; c++) {
+        var ch = el.children[c];
+        var co = ownText(ch);
+        var cf = normText(ch.textContent);
+        if (
+          (co && (api ? api.isLeafOptionText(co, want) : co === want)) ||
+          (api ? api.isLeafOptionText(cf, want) : cf === want)
+        ) {
+          childBetter = true;
+          break;
         }
-        if (!childHit) soft.push(el);
       }
-      els = soft;
+      if (childBetter) continue;
+      if (requireEnabled && isControlDisabled(el)) continue;
+      var r = el.getBoundingClientRect();
+      cands.push({ el: el, score: score, area: r.width * r.height });
     }
-    for (var j = 0; j < els.length; j++) {
-      var node = els[j];
+    cands.sort(function (a, b) {
+      if (b.score !== a.score) return b.score - a.score;
+      return a.area - b.area;
+    });
+
+    for (var j = 0; j < cands.length; j++) {
+      var node = cands[j].el;
+      // 팝업 밖 노드 거부
+      if (!popup.contains(node)) continue;
+      if (requireEnabled && isControlDisabled(node)) continue;
       var lab = (node.closest && node.closest("label")) || node;
       var inp =
         (lab.querySelector && lab.querySelector("input[type='radio']")) ||
@@ -1427,29 +1563,52 @@
       if (!inp && lab.parentElement) {
         inp = lab.parentElement.querySelector("input[type='radio']");
       }
-      // Nexacro: nearby radio / clickable contentsbox
       if (!inp) {
         var near = node.parentElement;
-        for (var d = 0; d < 4 && near && !inp; d++, near = near.parentElement) {
-          if (near.querySelector) inp = near.querySelector("input[type='radio']");
+        for (var d = 0; d < 5 && near && near !== popup && !inp; d++, near = near.parentElement) {
+          if (!popup.contains(near)) break;
+          if (near.querySelector) {
+            var radios = near.querySelectorAll("input[type='radio']");
+            if (radios.length === 1) inp = radios[0];
+          }
         }
       }
-      if (inp) {
+      if (inp && popup.contains(inp)) {
         try {
           inp.checked = true;
           inp.dispatchEvent(new Event("change", { bubbles: true }));
         } catch (e) {}
         clickEl(inp);
       }
+      // Nexacro: contentsbox / 부모 셀 우선 (radio input만이 아님)
       var clickTarget =
-        node.closest("button, [role='button'], a, [onclick], [class*='contentsbox'], [class*='ContentsBox']") ||
-        lab ||
-        node;
-      clickEl(clickTarget);
+        (node.closest &&
+          node.closest(
+            "[class*='contentsbox'], [class*='ContentsBox'], [class*='radioitem'], [class*='RadioItem'], [class*='cell']",
+          )) ||
+        null;
+      if (clickTarget && !popup.contains(clickTarget)) clickTarget = null;
+      if (!clickTarget) {
+        clickTarget =
+          (node.closest &&
+            node.closest("button, [role='button'], a, [onclick], label, td, th, li")) ||
+          lab ||
+          node;
+      }
+      if (clickTarget && popup.contains(clickTarget)) {
+        var ctLab = normText(clickTarget.textContent || clickTarget.value || "");
+        if (api && api.isCloseAllButtonText(ctLab) && ctLab.indexOf(want) < 0) continue;
+        clickEl(clickTarget);
+      }
       clickEl(node);
       return true;
     }
     return false;
+  }
+
+  /** @deprecated alias — selectRadioIn */
+  function selectByVisibleLabel(popup, labelText, requireEnabled) {
+    return selectRadioIn(popup, labelText, requireEnabled);
   }
 
   function fillReason(popup, reason) {
@@ -1499,32 +1658,49 @@
 
   function findApplyControl(popup) {
     var api = PA();
-    // exact 적용 via clickable helpers
+    if (!popup || !popup.querySelectorAll) return null;
     var btn = findClickableByText(popup, "적용");
-    if (btn) {
+    if (btn && popup.contains(btn)) {
       var lab = (btn.textContent || btn.value || "").replace(/\s+/g, " ").trim();
-      if (api ? api.isApplyButtonText(lab) : lab === "적용") return btn;
+      if (api ? api.isApplyButtonText(lab) : lab === "적용") {
+        if (!(api && api.isCloseAllButtonText(lab))) return btn;
+      }
     }
-    var nodes = popup.querySelectorAll("div, span, a, button, input, li, td, th, label");
+    var nodes = popup.querySelectorAll("*");
+    var best = null;
+    var bestArea = 1e15;
     for (var i = 0; i < nodes.length; i++) {
       var el = nodes[i];
+      if (el.tagName === "SCRIPT" || el.tagName === "STYLE") continue;
       if (!visible(el)) continue;
+      if (!popup.contains(el)) continue;
       var t = "";
       if (el.tagName === "INPUT") t = normText(el.value);
       else {
-        var own = "";
-        for (var n = 0; n < el.childNodes.length; n++) {
-          if (el.childNodes[n].nodeType === Node.TEXT_NODE) own += el.childNodes[n].textContent || "";
-        }
-        t = normText(own) || normText(el.textContent);
+        t = ownText(el);
+        if (!t && el.children.length === 0) t = normText(el.textContent);
         if (t.length > 8) continue;
       }
-      if (api ? api.isApplyButtonText(t) : t === "적용") {
-        if (api && api.isCloseAllButtonText(t)) continue;
-        return el;
+      if (!(api ? api.isApplyButtonText(t) : t === "적용")) continue;
+      if (api && api.isCloseAllButtonText(t)) continue;
+      // contentsbox / 버튼 셀 선호
+      var target =
+        (el.closest &&
+          el.closest(
+            "[class*='contentsbox'], [class*='ContentsBox'], button, [role='button'], a, input",
+          )) ||
+        el;
+      if (!popup.contains(target)) target = el;
+      var tLab = normText(target.textContent || target.value || "");
+      if (api && api.isCloseAllButtonText(tLab) && tLab.indexOf("적용") < 0) continue;
+      var r = target.getBoundingClientRect();
+      var area = r.width * r.height;
+      if (area < bestArea) {
+        bestArea = area;
+        best = target;
       }
     }
-    return null;
+    return best;
   }
 
   function closeClickTargets(cell) {
@@ -1584,17 +1760,46 @@
     return { ok: true, popup: popup };
   }
 
+  /** 종류 라벨이 활성(회색 해제)될 때까지 대기 */
+  async function waitForTypeEnabled(popup, typeLabel, maxMs) {
+    var want = normText(typeLabel);
+    var api = PA();
+    var deadline = Date.now() + (maxMs || 2800);
+    while (Date.now() < deadline) {
+      if (!popup || !popup.querySelectorAll) return false;
+      var all = popup.querySelectorAll("*");
+      for (var i = 0; i < all.length; i++) {
+        var el = all[i];
+        if (!visible(el)) continue;
+        var own = ownText(el);
+        var full = normText(el.textContent);
+        var match =
+          (own && (api ? api.isLeafOptionText(own, want) : own === want)) ||
+          (api ? api.isLeafOptionText(full, want) : full === want);
+        if (!match) continue;
+        if (!isControlDisabled(el)) return true;
+      }
+      await sleep(90);
+    }
+    return false;
+  }
+
   async function applyPopup(popup, item) {
     var catLabel = CATEGORY_KO[item.category];
     var typeLabel = TYPE_KO[item.type];
-    if (!selectByVisibleLabel(popup, catLabel)) {
+    // 구분(질병 등) — 활성 우선
+    if (!selectRadioIn(popup, catLabel, true) && !selectRadioIn(popup, catLabel, false)) {
       return { ok: false, code: "category_not_found", diag: popupDiag(popup) };
     }
-    await sleep(140);
-    if (!selectByVisibleLabel(popup, typeLabel)) {
+    // 종류는 구분 선택 전 회색 — enable 대기 후 클릭
+    var enabled = await waitForTypeEnabled(popup, typeLabel, 2800);
+    if (!enabled) {
+      return { ok: false, code: "type_not_enabled", diag: popupDiag(popup) };
+    }
+    if (!selectRadioIn(popup, typeLabel, true)) {
       return { ok: false, code: "type_not_found", diag: popupDiag(popup) };
     }
-    await sleep(140);
+    await sleep(120);
     if (item.category === "other" || (item.reason && String(item.reason).trim())) {
       if (!fillReason(popup, item.reason || "")) {
         return { ok: false, code: "reason_field_missing", diag: popupDiag(popup) };
@@ -1602,6 +1807,12 @@
     }
     var applyBtn = findApplyControl(popup);
     if (!applyBtn) {
+      return { ok: false, code: "popup_no_apply", diag: popupDiag(popup) };
+    }
+    // 출결마감 절대 클릭 금지
+    var applyLab = normText(applyBtn.textContent || applyBtn.value || "");
+    var api = PA();
+    if (api && api.isCloseAllButtonText(applyLab) && !api.isApplyButtonText(applyLab)) {
       return { ok: false, code: "popup_no_apply", diag: popupDiag(popup) };
     }
     clickEl(applyBtn);
