@@ -348,7 +348,7 @@ check("orderCloseClimbTargets prefers parent GridCell over placeholder leaf", ()
       centerX: 880,
     },
   ];
-  const ordered = P.orderCloseClimbTargets(leaf, ancestors, 880, 64);
+  const ordered = P.orderCloseClimbTargets(leaf, ancestors, 880, 40);
   assert.ok(ordered.length >= 2);
   assert.equal(ordered[0].id, "grid"); // largest container first among parents
   assert.ok(ordered.some((x) => x.id === "ph"));
@@ -358,9 +358,13 @@ check("orderCloseClimbTargets prefers parent GridCell over placeholder leaf", ()
 });
 
 check("alignsWithCloseHeader / closeHeaderDx reject far-off candidates", () => {
+  assert.equal(P.CLOSE_HEADER_MAX_DX, 40);
+  assert.equal(P.closeHeaderMaxDx(111), 40); // half=55.5 → min(40,55.5)=40
+  assert.equal(P.closeHeaderMaxDx(60), 30); // half=30
   assert.equal(P.closeHeaderDx(881, 880), 1);
-  assert.equal(P.alignsWithCloseHeader(881, 880, 64), true);
-  assert.equal(P.alignsWithCloseHeader(200, 880, 64), false);
+  assert.equal(P.alignsWithCloseHeader(881, 880, 40), true);
+  assert.equal(P.alignsWithCloseHeader(200, 880, 40), false);
+  assert.equal(P.alignsWithCloseHeader(880 + 244, 880), false); // field #50 dx=244
   const leaf = {
     id: "far",
     tokens: ["cl-text", "cl-placeholder"],
@@ -375,10 +379,55 @@ check("alignsWithCloseHeader / closeHeaderDx reject far-off candidates", () => {
     kind: "gridcell",
     centerX: 910,
   };
-  const ordered = P.orderCloseClimbTargets(leaf, [parent], 880, 64);
+  const ordered = P.orderCloseClimbTargets(leaf, [parent], 880, 40);
   assert.ok(ordered.every((x) => x.aligned));
   assert.ok(ordered.some((x) => x.id === "near"));
   assert.ok(!ordered.some((x) => x.id === "far")); // far leaf rejected by dx
+});
+
+check("misaligned-only candidates rejected (no fallback) — field dx=244", () => {
+  // 0.4.8 field: closeHeaderDx=244 closeHeaderAligned=0 — must NOT keep candidates
+  const headerX = 637;
+  const leaf = {
+    id: "wrong",
+    tokens: ["cl-text", "cl-placeholder"],
+    rect: { x: 831, y: 581, w: 100, h: 25 },
+    kind: "cell",
+    centerX: 881,
+  };
+  const parent = {
+    id: "wrongParent",
+    tokens: ["cl-grid-cell", "cl-grid-cell-inherit"],
+    rect: { x: 826, y: 576, w: 111, h: 36 },
+    kind: "parent",
+    centerX: 881.5,
+  };
+  const ordered = P.orderCloseClimbTargets(leaf, [parent], headerX, 40);
+  assert.equal(ordered.length, 0);
+  assert.equal(P.alignsWithCloseHeader(881, headerX, 40), false);
+  assert.equal(Math.abs(P.closeHeaderDx(881, headerX)), 244);
+});
+
+check("aligned close-cell candidate accepted under 마감 header", () => {
+  const headerX = 880;
+  const leaf = {
+    id: "ph",
+    tokens: ["cl-text", "cl-placeholder"],
+    rect: { x: 831, y: 584, w: 100, h: 19 },
+    kind: "cell",
+    centerX: 881,
+  };
+  const parent = {
+    id: "grid",
+    tokens: ["GridCellControl", "cell"],
+    rect: { x: 820, y: 576, w: 120, h: 28 },
+    kind: "gridcell",
+    centerX: 880,
+  };
+  const ordered = P.orderCloseClimbTargets(leaf, [parent], headerX, 40);
+  assert.ok(ordered.length >= 1);
+  assert.ok(ordered.every((x) => x.aligned));
+  assert.ok(ordered.some((x) => x.id === "grid"));
 });
 
 check("stringifyCloseCellDump is JSON string without names/numbers", () => {
@@ -401,6 +450,8 @@ check("stringifyCloseCellDump is JSON string without names/numbers", () => {
     before: { titleVisible: true, illnessVisible: false },
     after: { titleVisible: true, illnessVisible: false },
     modes: ["full", "mouseOnly", "dblclick"],
+    headerX: 880,
+    cellX: 881,
     closeHeaderDx: 1,
   };
   const s = P.stringifyCloseCellDump(dump);
@@ -414,6 +465,8 @@ check("stringifyCloseCellDump is JSON string without names/numbers", () => {
   assert.ok(parsed.candidates[0].cls.includes("cl-placeholder"));
   assert.equal(parsed.before.decoyTitle, 1);
   assert.equal(parsed.after.illnessNewly, 0);
+  assert.equal(parsed.headerX, 880);
+  assert.equal(parsed.cellX, 881);
   assert.equal(parsed.closeHeaderDx, 1);
   assert.equal(parsed.closeHeaderAligned, 1);
 });
@@ -467,6 +520,8 @@ check("normalizeCloseCellFailDump strips names and keeps visibility flags", () =
     before: { titleVisible: true, illnessVisible: false },
     after: { titleVisible: true, illnessVisible: false },
     modes: ["full", "dblclick"],
+    headerX: 100,
+    cellX: 103,
     closeHeaderDx: 3,
   });
   assert.equal(dump.before.decoyTitle, 1);
@@ -476,12 +531,30 @@ check("normalizeCloseCellFailDump strips names and keeps visibility flags", () =
   assert.equal(dump.after.illnessNewly, 0);
   assert.equal(dump.candidateCount, 1);
   assert.ok(dump.modes.includes("dblclick"));
+  assert.equal(dump.headerX, 100);
+  assert.equal(dump.cellX, 103);
   assert.equal(dump.closeHeaderDx, 3);
   assert.equal(dump.closeHeaderAligned, 1);
   const s = JSON.stringify(dump);
   assert.ok(!s.includes("학생"));
   assert.ok(!s.includes("미마감"));
   assert.ok(s.includes("GridCellControl") || s.includes("nexacontentsbox"));
+
+  const mis = P.normalizeCloseCellFailDump({
+    candidates: [{ tagName: "DIV", className: "cl-grid-cell", rect: { left: 826, top: 576, width: 111, height: 36 }, kind: "parent" }],
+    before: { titleVisible: true, illnessVisible: false },
+    after: { titleVisible: true, illnessVisible: false },
+    modes: [],
+    headerX: 637,
+    cellX: 881,
+    closeHeaderDx: 244,
+    closeHeaderAligned: 0,
+  });
+  assert.equal(mis.closeHeaderAligned, 0);
+  assert.equal(mis.closeHeaderDx, 244);
+  assert.equal(mis.headerX, 637);
+  assert.equal(mis.cellX, 881);
+  assert.equal(mis.modes.length, 0);
 });
 
 check("fixture has GridCell parent + nexacontentsbox + dblclick open path", () => {
@@ -504,3 +577,15 @@ check("fixture placeholder leaf + parent GridCell climb path", () => {
   assert.ok(html.includes("stopPropagation")); // leaf alone must not open
 });
 
+check("fixture has aligned close cell + misaligned wrong-col candidate (#50)", () => {
+  const html = readFileSync(new URL("./fixtures/neis-popup-nexacro.html", import.meta.url), "utf8");
+  assert.ok(html.includes('id="closeHeaderLabel"'));
+  assert.ok(html.includes('data-close-header="1"'));
+  assert.ok(html.includes('data-close-aligned="1"'));
+  assert.ok(html.includes('id="misalignedCloseCand"'));
+  assert.ok(html.includes('data-close-aligned="0"'));
+  assert.ok(html.includes('data-decoy="wrong-col"'));
+  // spatial: misaligned at left 826 vs header 600 → dx large
+  assert.ok(html.includes("left:826px"));
+  assert.ok(html.includes("left:600px"));
+});

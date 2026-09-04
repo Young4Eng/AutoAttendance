@@ -20,12 +20,17 @@ body{margin:0;font:12px sans-serif}
 <div id="hugeOuter" class="MainFrame layerWrap popupHost" data-decoy="outer">
   <div id="decoyChrome" class="contentsbox" data-decoy="title">출결마감구분</div>
   <div id="grid">
-    <div class="contentsbox">번호</div><div class="contentsbox">성명</div><div class="contentsbox">마감</div>
+    <div class="contentsbox">번호</div><div class="contentsbox">성명</div><div id="closeHeaderLabel" class="contentsbox" data-close-header="1" style="position:absolute;left:600px;top:48px;width:80px;height:20px">마감</div>
     <div>9</div><div>학생01</div>
-    <div id="closeCellWrap" class="GridCellControl cell" data-nexa="gridcell" style="width:120px;height:28px">
+    <!-- #50 aligned close cell under 「마감」 header (centerX≈640) -->
+    <div id="closeCellWrap" class="GridCellControl cell" data-nexa="gridcell" data-close-aligned="1" style="position:absolute;left:600px;top:72px;width:120px;height:28px">
       <div id="closeCell" class="nexacontentsbox contentsbox" data-nexa="contentsbox" style="width:110px;height:24px">
         <div id="closePlaceholder" class="cl-textcl-placeholdercl-unselectable" data-nexa="placeholder" style="width:100px;height:19px">미마감</div>
       </div>
+    </div>
+    <!-- #50 misaligned candidate (dx≈244 vs header@640) — must not be clicked -->
+    <div id="misalignedCloseCand" class="cl-grid-cell cl-grid-cell-inherit" data-close-aligned="0" data-decoy="wrong-col" style="position:absolute;left:826px;top:72px;width:111px;height:36px">
+      <div class="cl-text cl-placeholder" style="width:100px;height:25px">미마감</div>
     </div>
     <div id="decoyUnexcused" class="contentsbox">미인정</div>
   </div>

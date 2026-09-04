@@ -1984,9 +1984,15 @@
       // placeholder 리프 자신은 이미 처리 — 중복 push는 no-op
       push(el);
     }
-    // 마감 헤더 열 정렬: 멀리 떨어진 후보 제거 (전부 탈락 시 원본 유지)
+    // 마감 헤더 열 정렬: 멀리 떨어진 후보 제거. 전부 탈락 시 빈 배열(오클릭 금지 #50)
     if (headerCenterX != null && !isNaN(Number(headerCenterX))) {
       var hx = Number(headerCenterX);
+      var maxDx =
+        api && api.closeHeaderMaxDx
+          ? api.closeHeaderMaxDx(null)
+          : api && api.CLOSE_HEADER_MAX_DX != null
+            ? api.CLOSE_HEADER_MAX_DX
+            : 40;
       var filtered = [];
       for (var fi = 0; fi < out.length; fi++) {
         var fe = out[fi];
@@ -1994,11 +2000,11 @@
         var fcx = fr.left + fr.width / 2;
         var okAlign =
           api && api.alignsWithCloseHeader
-            ? api.alignsWithCloseHeader(fcx, hx, 64)
-            : Math.abs(fcx - hx) <= 64;
+            ? api.alignsWithCloseHeader(fcx, hx, maxDx)
+            : Math.abs(fcx - hx) <= maxDx;
         if (okAlign) filtered.push(fe);
       }
-      if (filtered.length) out = filtered;
+      out = filtered;
     }
     // 정렬: placeholder면 컨테이너 우선, 아니면 input→nexa→작은 면적
     out.sort(function (a, b) {
@@ -2127,7 +2133,14 @@
     var cands = [];
     var list = targets && targets.length ? targets : cell ? [cell] : [];
     var hx = headerCenterX != null && !isNaN(Number(headerCenterX)) ? Number(headerCenterX) : null;
+    var maxDx =
+      api && api.CLOSE_HEADER_MAX_DX != null ? api.CLOSE_HEADER_MAX_DX : 40;
     var primaryDx = null;
+    var cellX = null;
+    if (cell && cell.getBoundingClientRect) {
+      var cellRect0 = cell.getBoundingClientRect();
+      cellX = cellRect0.left + cellRect0.width / 2;
+    }
     for (var i = 0; i < list.length && i < 20; i++) {
       var el = list[i];
       if (!el || !el.getBoundingClientRect) continue;
@@ -2184,9 +2197,15 @@
       before: before || {},
       after: after || {},
       modes: modes || [],
+      headerX: hx != null ? Math.round(hx) : null,
+      cellX: cellX != null ? Math.round(cellX) : null,
       closeHeaderDx: primaryDx,
       closeHeaderAligned:
-        primaryDx == null ? 0 : Math.abs(primaryDx) <= 64 ? 1 : 0,
+        primaryDx == null
+          ? 0
+          : Math.abs(primaryDx) <= maxDx
+            ? 1
+            : 0,
     };
     if (api && api.normalizeCloseCellFailDump) return api.normalizeCloseCellFailDump(raw);
     return raw;
@@ -2211,6 +2230,8 @@
         "titleNewly=" + ((d.after && d.after.titleNewly) || 0),
         "illnessNewly=" + ((d.after && d.after.illnessNewly) || 0),
         "decoyTitle=" + ((d.before && d.before.decoyTitle) || 0),
+        "headerX=" + (d.headerX != null ? d.headerX : ""),
+        "cellX=" + (d.cellX != null ? d.cellX : ""),
         "closeHeaderDx=" + (d.closeHeaderDx != null ? d.closeHeaderDx : ""),
         "closeHeaderAligned=" + (d.closeHeaderAligned != null ? d.closeHeaderAligned : 0),
         "modes=" + ((d.modes && d.modes.join(",")) || ""),
@@ -2265,7 +2286,44 @@
         ? Number(headerCenterXOpt)
         : findCloseHeaderCenterX(document.body || document.documentElement);
     var targets = closeClickTargets(cell, headerCx);
-    if (!targets.length) targets = [cell];
+    // #50: 「마감」헤더와 centerX 미정렬이면 클릭하지 않음
+    if (!targets.length) {
+      if (headerCx != null && !isNaN(Number(headerCx))) {
+        var dumpMis = buildCloseCellFailDump(
+          cell,
+          cell ? [cell] : [],
+          beforeProbe,
+          beforeProbe,
+          [],
+          headerCx,
+        );
+        logCloseCellFailDump(dumpMis);
+        var diagMis = popupDiag(document);
+        diagMis.closeCellDump = dumpMis;
+        try {
+          var apiMis = PA();
+          diagMis.closeCellDumpJson =
+            apiMis && apiMis.stringifyCloseCellDump
+              ? apiMis.stringifyCloseCellDump(dumpMis)
+              : JSON.stringify(dumpMis);
+        } catch (eMis) {
+          diagMis.closeCellDumpJson = "";
+        }
+        diagMis.headerX = dumpMis.headerX != null ? dumpMis.headerX : null;
+        diagMis.cellX = dumpMis.cellX != null ? dumpMis.cellX : null;
+        diagMis.closeHeaderDx = dumpMis.closeHeaderDx != null ? dumpMis.closeHeaderDx : null;
+        diagMis.closeHeaderAligned =
+          dumpMis.closeHeaderAligned != null ? dumpMis.closeHeaderAligned : 0;
+        diagMis.beforeTitleVisible = beforeProbe.titleVisible ? 1 : 0;
+        diagMis.beforeIllnessVisible = beforeProbe.illnessVisible ? 1 : 0;
+        diagMis.afterTitleVisible = beforeProbe.titleVisible ? 1 : 0;
+        diagMis.afterIllnessVisible = beforeProbe.illnessVisible ? 1 : 0;
+        diagMis.titleNewly = 0;
+        diagMis.illnessNewly = 0;
+        return { ok: false, code: "close_col_misaligned", diag: diagMis };
+      }
+      targets = [cell];
+    }
     var modes = ["full", "mouseOnly", "dblclick"];
     var modesTried = [];
     var popup = null;
@@ -2346,6 +2404,8 @@
       } catch (eJ) {
         diag.closeCellDumpJson = "";
       }
+      diag.headerX = dump.headerX != null ? dump.headerX : null;
+      diag.cellX = dump.cellX != null ? dump.cellX : null;
       diag.closeHeaderDx = dump.closeHeaderDx != null ? dump.closeHeaderDx : null;
       diag.closeHeaderAligned = dump.closeHeaderAligned != null ? dump.closeHeaderAligned : 0;
       diag.beforeTitleVisible = beforeProbe.titleVisible ? 1 : 0;
