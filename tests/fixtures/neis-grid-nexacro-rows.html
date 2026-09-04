@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>nexacro-like attendance grid (tables=0)</title>
+    <style>
+      /* HTML table 없음. absolute 셀 = 넥사크로류 */
+      body { margin: 0; font: 12px/1.2 sans-serif; color: #111; }
+      #grid {
+        position: relative;
+        width: 920px;
+        height: 280px;
+        background: #fafafa;
+      }
+      #grid .cell {
+        position: absolute;
+        white-space: nowrap;
+        padding: 2px 4px;
+      }
+      #grid .hdr { font-weight: 700; top: 8px; }
+      #grid .r1 { top: 40px; }
+      #grid .r2 { top: 64px; }
+      #grid .r3 { top: 88px; }
+      #grid .r4 { top: 112px; }
+      #grid .r5 { top: 136px; }
+      #grid .r6 { top: 160px; }
+      /* 번호 공백: 5·6·8 없음 → 7 다음 바로 9 */
+    </style>
+  </head>
+  <body>
+    <div id="title">2학년 3반 2026.09.04.</div>
+    <div id="grid" aria-label="일일출결관리">
+      <div class="cell hdr" style="left: 12px">번호</div>
+      <div class="cell hdr" style="left: 56px">성명</div>
+      <div class="cell hdr" style="left: 140px">마감</div>
+      <div class="cell hdr" style="left: 200px">조회</div>
+      <div class="cell hdr" style="left: 260px">1교시</div>
+      <div class="cell hdr" style="left: 320px">2교시</div>
+      <div class="cell hdr" style="left: 380px">3교시</div>
+      <div class="cell hdr" style="left: 440px">종례</div>
+      <div class="cell hdr" style="left: 500px">사유</div>
+
+      <div class="cell r1" style="left: 12px">1</div>
+      <div class="cell r1" style="left: 56px">학생A1</div>
+      <div class="cell r1" style="left: 140px">미마감</div>
+      <div class="cell r1" style="left: 200px">미마감</div>
+      <div class="cell r1" style="left: 260px">미마감</div>
+      <div class="cell r1" style="left: 320px">미마감</div>
+      <div class="cell r1" style="left: 380px">미마감</div>
+      <div class="cell r1" style="left: 440px">미마감</div>
+
+      <div class="cell r2" style="left: 12px">2</div>
+      <div class="cell r2" style="left: 56px">학생A2</div>
+      <div class="cell r2" style="left: 140px">미마감</div>
+      <div class="cell r2" style="left: 200px">미마감</div>
+      <div class="cell r2" style="left: 260px">미마감</div>
+      <div class="cell r2" style="left: 320px">미마감</div>
+      <div class="cell r2" style="left: 380px">미마감</div>
+      <div class="cell r2" style="left: 440px">미마감</div>
+
+      <div class="cell r3" style="left: 12px">3</div>
+      <div class="cell r3" style="left: 56px">학생A3</div>
+      <div class="cell r3" style="left: 140px">미마감</div>
+      <div class="cell r3" style="left: 200px">미마감</div>
+      <div class="cell r3" style="left: 260px">미마감</div>
+      <div class="cell r3" style="left: 320px">미마감</div>
+      <div class="cell r3" style="left: 380px">미마감</div>
+      <div class="cell r3" style="left: 440px">미마감</div>
+
+      <div class="cell r4" style="left: 12px">4</div>
+      <div class="cell r4" style="left: 56px">학생A4</div>
+      <div class="cell r4" style="left: 140px">미마감</div>
+      <div class="cell r4" style="left: 200px">미마감</div>
+      <div class="cell r4" style="left: 260px">미마감</div>
+      <div class="cell r4" style="left: 320px">미마감</div>
+      <div class="cell r4" style="left: 380px">미마감</div>
+      <div class="cell r4" style="left: 440px">미마감</div>
+
+      <div class="cell r5" style="left: 12px">7</div>
+      <div class="cell r5" style="left: 56px">학생A7</div>
+      <div class="cell r5" style="left: 140px">미마감</div>
+      <div class="cell r5" style="left: 200px">미마감</div>
+      <div class="cell r5" style="left: 260px">미마감</div>
+      <div class="cell r5" style="left: 320px">미마감</div>
+      <div class="cell r5" style="left: 380px">미마감</div>
+      <div class="cell r5" style="left: 440px">미마감</div>
+
+      <div class="cell r6" style="left: 12px">9</div>
+      <div class="cell r6" style="left: 56px">학생01</div>
+      <div class="cell r6" style="left: 140px">미마감</div>
+      <div class="cell r6" style="left: 200px">미마감</div>
+      <div class="cell r6" style="left: 260px">미마감</div>
+      <div class="cell r6" style="left: 320px">미마감</div>
+      <div class="cell r6" style="left: 380px">미마감</div>
+      <div class="cell r6" style="left: 440px">미마감</div>
+    </div>
+    <!-- tables=0 픽스처: 번호 1,2,3,4,7,9 / 학생01은 번호 9 -->
+  </body>
+</html>

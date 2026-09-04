@@ -560,42 +560,194 @@
     return Array.prototype.slice.call(row.children || []).filter(visible);
   }
 
+  function RM() {
+    return globalThis.ChulgyeolRowMatch || null;
+  }
+
+  /**
+   * 보이는 짧은 리프 텍스트(좌표 포함). 헤더 아래만.
+   * table.rows 가정 없음.
+   */
+  function collectSpatialLeafRecords(root, headerBottom) {
+    var out = [];
+    if (!root || !root.querySelectorAll) return out;
+    var all = root.querySelectorAll("div, span, td, th, a, label, p, li, em, b, strong");
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      if (!visible(el)) continue;
+      if (el.tagName === "SCRIPT" || el.tagName === "STYLE") continue;
+      var r = el.getBoundingClientRect();
+      if (headerBottom != null && r.bottom <= headerBottom + 2) continue;
+      if (r.width > 520 || r.height > 80) continue;
+      var own = "";
+      for (var t = 0; t < el.childNodes.length; t++) {
+        var n = el.childNodes[t];
+        if (n.nodeType === Node.TEXT_NODE) own += n.textContent || "";
+      }
+      own = normText(own);
+      var full = normText(el.textContent);
+      var text = own;
+      if (!text && el.children.length === 0) text = full;
+      if (!text) continue;
+      if (text.length > 40) continue;
+      // 더 깊은 자식이 같은 텍스트면 부모 스킵
+      var childSame = false;
+      for (var c = 0; c < el.children.length; c++) {
+        if (normText(el.children[c].textContent) === text) {
+          childSame = true;
+          break;
+        }
+      }
+      if (childSame) continue;
+      out.push({
+        el: el,
+        text: text,
+        x: r.left + r.width / 2,
+        y: (r.top + r.bottom) / 2,
+        top: r.top,
+        bottom: r.bottom,
+        left: r.left,
+        right: r.right,
+      });
+    }
+    return out;
+  }
+
+  function leafDataOnly(records) {
+    return (records || []).map(function (L) {
+      return {
+        text: L.text,
+        x: L.x,
+        y: L.y,
+        top: L.top,
+        bottom: L.bottom,
+        left: L.left,
+        right: L.right,
+      };
+    });
+  }
+
+  /** 익명 diag — 번호·성명 값 문자열 금지 */
+  function rowMatchDiag(root, grid, wantNum, wantName) {
+    var api = RM();
+    var hb = grid && grid.headerBottom != null ? grid.headerBottom : null;
+    var records = collectSpatialLeafRecords(root || document, hb);
+    var data = leafDataOnly(records);
+    var pairs = api ? api.scanNumberNamePairs(data, api.BAND_TOL_DEFAULT) : [];
+    var pairsWide = api ? api.scanNumberNamePairs(data, api.BAND_TOL_WIDE) : [];
+    var gdiag = gridDiag(root || document);
+    return {
+      tables: gdiag.tables,
+      kind: (grid && grid.kind) || "none",
+      hasCenters: grid && grid.headerCenters && grid.headerCenters.length ? 1 : 0,
+      leafCount: records.length,
+      hitNum: api ? api.countExactText(data, wantNum) : 0,
+      hitName: api ? api.countExactText(data, wantName) : 0,
+      rowCand: Math.max(pairs.length, pairsWide.length),
+      headerHitNum: gdiag.hitNum,
+      headerHitName: gdiag.hitName,
+      headerHitClose: gdiag.hitClose,
+      headerHitPeriod: gdiag.hitPeriod,
+    };
+  }
+
+  /**
+   * tables=0 / spatial: 번호+성명 밴드 매칭.
+   * nth-row = n 금지. 빈 번호는 숫자 리프가 없어 자연 스킵.
+   */
+  function findRowSpatialByNumberName(grid, wantNum, wantName) {
+    var api = RM();
+    if (!api) return null;
+    var root = (grid && grid.root) || document;
+    var records = collectSpatialLeafRecords(root, grid.headerBottom);
+    var data = leafDataOnly(records);
+    var pair =
+      api.findNumberNamePairOnBand(data, wantNum, wantName, api.BAND_TOL_DEFAULT) ||
+      api.findNumberNamePairOnBand(data, wantNum, wantName, api.BAND_TOL_WIDE);
+    if (!pair) {
+      var scanned =
+        api.matchWantInPairs(api.scanNumberNamePairs(data, api.BAND_TOL_DEFAULT), wantNum, wantName) ||
+        api.matchWantInPairs(api.scanNumberNamePairs(data, api.BAND_TOL_WIDE), wantNum, wantName);
+      if (scanned) {
+        pair = { numIdx: scanned.numIdx, nameIdx: scanned.nameIdx, bandY: scanned.bandY };
+      }
+    }
+    if (!pair) return null;
+
+    var numRec = records[pair.numIdx];
+    var nameRec = records[pair.nameIdx];
+    if (!numRec || !nameRec) return null;
+    var rowTop = Math.min(numRec.top, nameRec.top);
+    var rowBottom = Math.max(numRec.bottom, nameRec.bottom);
+    var bandTol = api.BAND_TOL_DEFAULT;
+    var cells = [];
+
+    if (grid.headerCenters && grid.headerCenters.length) {
+      for (var h = 0; h < grid.headerCenters.length; h++) {
+        cells.push(
+          findCellNear(root, grid.headerCenters[h], rowTop, rowBottom, grid.headerBottom || 0),
+        );
+      }
+      // 헤더 스냅 실패 시 밴드 리프로 보강
+      var snapped = api.buildCellsOnBand(data, pair.bandY, bandTol, grid.headerCenters);
+      for (var s2 = 0; s2 < snapped.length; s2++) {
+        if (cells[s2]) continue;
+        if (!snapped[s2]) continue;
+        for (var ri = 0; ri < records.length; ri++) {
+          if (
+            records[ri].text === snapped[s2].text &&
+            Math.abs(records[ri].x - snapped[s2].x) < 1 &&
+            Math.abs(records[ri].y - snapped[s2].y) < 1
+          ) {
+            cells[s2] = records[ri].el;
+            break;
+          }
+        }
+      }
+      if (grid.col && grid.col.number != null && !cells[grid.col.number]) cells[grid.col.number] = numRec.el;
+      if (grid.col && grid.col.name != null && !cells[grid.col.name]) cells[grid.col.name] = nameRec.el;
+      if (grid.col && grid.col.number != null && grid.col.name != null) {
+        var nt = cellLabel(cells[grid.col.number]);
+        var mt = cellLabel(cells[grid.col.name]);
+        if (nt !== wantNum || mt !== wantName) {
+          // 열 스냅이 어긋나도 밴드 쌍이 맞으면 번호·성명 칸만 교정
+          cells[grid.col.number] = numRec.el;
+          cells[grid.col.name] = nameRec.el;
+        }
+      }
+    } else {
+      var bandCells = api.buildCellsOnBand(data, pair.bandY, bandTol, null);
+      for (var b = 0; b < bandCells.length; b++) {
+        var bc = bandCells[b];
+        var el = null;
+        for (var rj = 0; rj < records.length; rj++) {
+          if (
+            records[rj].text === bc.text &&
+            Math.abs(records[rj].x - bc.x) < 1 &&
+            Math.abs(records[rj].y - bc.y) < 1
+          ) {
+            el = records[rj].el;
+            break;
+          }
+        }
+        cells.push(el || numRec.el);
+      }
+    }
+
+    return {
+      row: numRec.el,
+      rowIndex: -1,
+      cells: cells,
+      bandY: pair.bandY,
+    };
+  }
+
   function findRowByNumberName(grid, number, name) {
     var wantNum = String(number).trim();
     var wantName = String(name).trim();
-    if (grid.kind === "spatial" && grid.headerCenters) {
-      var root = grid.root || document;
-      var numCenter = grid.headerCenters[grid.col.number];
-      var candidates = findLabelHits(root, wantNum);
-      if (!candidates.length) {
-        // 숫자만 있는 칸
-        var all = root.querySelectorAll("*");
-        for (var i = 0; i < all.length; i++) {
-          var el = all[i];
-          if (!visible(el)) continue;
-          if (normText(el.textContent) === wantNum) candidates.push(el);
-        }
-      }
-      for (var c = 0; c < candidates.length; c++) {
-        var eln = candidates[c];
-        var rn = eln.getBoundingClientRect();
-        if (rn.bottom <= grid.headerBottom + 2) continue;
-        var cx = rn.left + rn.width / 2;
-        if (Math.abs(cx - numCenter) > 48) continue;
-        var rowTop = rn.top;
-        var rowBottom = rn.bottom;
-        var cells = [];
-        for (var h = 0; h < grid.headerCenters.length; h++) {
-          cells.push(findCellNear(root, grid.headerCenters[h], rowTop, rowBottom, grid.headerBottom));
-        }
-        if (!cells[grid.col.number] || !cells[grid.col.name]) continue;
-        var numText = cellLabel(cells[grid.col.number]);
-        var nameText = cellLabel(cells[grid.col.name]);
-        if (numText === wantNum && nameText === wantName) {
-          return { row: eln, rowIndex: c, cells: cells };
-        }
-      }
-      return null;
+    // spatial·tables=0: HTML table.rows 가정 금지
+    if (grid.kind === "spatial" || (!grid.bodyTable && !grid.table && grid.kind !== "div-row")) {
+      return findRowSpatialByNumberName(grid, wantNum, wantName);
     }
     if (grid.kind === "div-row" && grid.bodyParent) {
       var kids = Array.prototype.slice.call(grid.bodyParent.children).filter(visible);
@@ -606,13 +758,44 @@
         var numText = cellLabel(cells[grid.col.number]);
         var nameText = cellLabel(cells[grid.col.name]);
         if (numText === "번호" || nameText === "성명") continue;
+        if (!numText) continue; // 빈 번호 스킵
         if (numText === wantNum && nameText === wantName) {
           return { row: kids[i], rowIndex: i, cells: cells };
         }
       }
+      // div 실패 시 좌표 폴백
+      var spatialDiv = findRowSpatialByNumberName(
+        {
+          kind: "spatial",
+          root: grid.root || document,
+          headerBottom: grid.headerBottom || 0,
+          headerCenters: grid.headerCenters,
+          col: grid.col,
+          periodCols: grid.periodCols,
+          periodCount: grid.periodCount,
+        },
+        wantNum,
+        wantName,
+      );
+      if (spatialDiv) return spatialDiv;
       return null;
     }
     var body = grid.bodyTable || grid.table;
+    if (!body || !body.rows) {
+      return findRowSpatialByNumberName(
+        {
+          kind: "spatial",
+          root: grid.root || document,
+          headerBottom: grid.headerBottom != null ? grid.headerBottom : 0,
+          headerCenters: grid.headerCenters,
+          col: grid.col,
+          periodCols: grid.periodCols,
+          periodCount: grid.periodCount,
+        },
+        wantNum,
+        wantName,
+      );
+    }
     var start = grid.dataStart != null ? grid.dataStart : grid.headerIdx + 1;
     for (var r = start; r < body.rows.length; r++) {
       var row = body.rows[r];
@@ -621,6 +804,7 @@
       var numText2 = cellLabel(cells2[grid.col.number]);
       var nameText2 = cellLabel(cells2[grid.col.name]);
       if (numText2 === "번호" || nameText2 === "성명") continue;
+      if (!numText2) continue; // 빈 번호(7→9 공백) 스킵 — 순번≠번호
       if (numText2 === wantNum && nameText2 === wantName) {
         return { row: row, rowIndex: r, cells: cells2 };
       }
@@ -1230,7 +1414,13 @@
       var hit = findRowByNumberName(grid, item.number, item.name);
       if (!hit) {
         log(row, item.type || "?", "stop", "row_not_found");
-        return { ok: false, code: "row_not_found", applied: applied, dryRun: dryRun };
+        return {
+          ok: false,
+          code: "row_not_found",
+          applied: applied,
+          dryRun: dryRun,
+          diag: rowMatchDiag(document, grid, item.number, item.name),
+        };
       }
       var pop = await openClosePopup(hit.row, grid.col.close, hit.cells);
       if (!pop.ok) {

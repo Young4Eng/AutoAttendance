@@ -67,7 +67,7 @@ async function ensureScripts(tabId, frameIds) {
   if (!chrome.scripting || !chrome.scripting.executeScript) {
     return { ok: false, code: "no_scripting" };
   }
-  const files = ["content/detect.js", "content/filter-bar-parse.js", "content/neis-apply.js"];
+  const files = ["content/detect.js", "content/filter-bar-parse.js", "content/row-match.js", "content/neis-apply.js"];
   // 1) allFrames 한 번 (host_permissions 범위)
   try {
     await chrome.scripting.executeScript({
@@ -155,7 +155,7 @@ async function runApply(dryRun) {
         softFail = softFail || res;
         continue;
       }
-      // 익명 필터 diag만 (이름·번호 없음)
+      // 익명 diag만 (이름·번호 값 없음)
       if (res.diag && typeof res.diag === "object") {
         const d = res.diag;
         console.info(
@@ -174,6 +174,16 @@ async function runApply(dryRun) {
           d.bandHit ?? "",
           "itemYear=",
           d.itemYear ?? "",
+          "hitNum=",
+          d.hitNum ?? "",
+          "hitName=",
+          d.hitName ?? "",
+          "rowCand=",
+          d.rowCand ?? "",
+          "kind=",
+          d.kind ?? "",
+          "tables=",
+          d.tables ?? "",
         );
       }
       return res;
