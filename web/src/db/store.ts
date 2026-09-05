@@ -68,16 +68,17 @@ export async function putAttendance(
   ownerSub: string,
   record: Omit<AttendanceRecord, "ownerSub">,
 ): Promise<void> {
-  const client = sb();
-  if (!client) return idb.putAttendance(ownerSub, record);
   if (record.category === "other" && !record.reason.trim()) {
     throw new Error("reason_required_for_other");
   }
   if (record.type !== "absence" && record.period < 1) {
     throw new Error("invalid_period");
   }
+  await idb.putAttendance(ownerSub, record);
+  const client = sb();
+  if (!client) return;
   const { error } = await client.from("entries").upsert(rowOf(ownerSub, record));
-  if (error) throw new Error(error.message);
+  if (error) console.warn(error.message);
 }
 
 function asRecord(r: Record<string, unknown>): AttendanceRecord {
@@ -98,11 +99,12 @@ function asRecord(r: Record<string, unknown>): AttendanceRecord {
 }
 
 export async function listAttendance(ownerSub: string): Promise<AttendanceRecord[]> {
+  const local = await idb.listAttendance(ownerSub);
   const client = sb();
-  if (!client) return idb.listAttendance(ownerSub);
+  if (!client) return local;
   const { data, error } = await client.from("entries").select("*").eq("owner_id", ownerSub);
-  if (error) throw new Error(error.message);
-  return (data ?? []).map((r) => asRecord(r as Record<string, unknown>));
+  if (error || !data || data.length === 0) return local;
+  return data.map((r) => asRecord(r as Record<string, unknown>));
 }
 
 export async function listAttendanceByDate(
@@ -132,6 +134,16 @@ export async function deleteAttendance(
   const { data, error } = await q.select();
   if (error) throw new Error(error.message);
   return data?.length ?? 0;
+}
+
+export async function deleteAllAttendance(ownerSub: string): Promise<number> {
+  const n = await idb.deleteAllAttendance(ownerSub);
+  const client = sb();
+  if (client) {
+    const { error } = await client.from("entries").delete().eq("owner_id", ownerSub);
+    if (error) console.warn(error.message);
+  }
+  return n;
 }
 
 export async function deleteAttendanceRecord(

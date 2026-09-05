@@ -29,7 +29,7 @@ export function PreviewList({ records, periodCount }: Props) {
               </span>
             </div>
             <p className="PreviewList-meta">
-              {CATEGORY_LABELS[r.category]} · {TYPE_LABELS[r.type]} · {r.period}교시
+              {r.date} · {CATEGORY_LABELS[r.category]} · {TYPE_LABELS[r.type]} · {r.period === 0 ? '결석(교시없음)' : `${r.period}교시`}
               {r.reason ? ` · ${r.reason}` : ''}
             </p>
             <SlashRangeHint

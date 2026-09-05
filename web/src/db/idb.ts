@@ -230,6 +230,32 @@ export async function deleteAttendance(
   return deleted;
 }
 
+export async function deleteAllAttendance(ownerSub: string): Promise<number> {
+  const owner = requireOwnerSub(ownerSub);
+  const db = await openDb();
+  const deleted = await new Promise<number>((resolve, reject) => {
+    const tx = db.transaction(STORE_ATTENDANCE, 'readwrite');
+    const store = tx.objectStore(STORE_ATTENDANCE);
+    const req = store.openCursor();
+    let count = 0;
+    req.onerror = () => reject(req.error ?? new Error('idb_del_all'));
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (!cursor) return;
+      const value = cursor.value as AttendanceRecord;
+      if (value.ownerSub === owner) {
+        cursor.delete();
+        count += 1;
+      }
+      cursor.continue();
+    };
+    tx.oncomplete = () => resolve(count);
+    tx.onerror = () => reject(tx.error ?? new Error('idb_del_all_tx'));
+  });
+  db.close();
+  return deleted;
+}
+
 export async function deleteAttendanceRecord(
   ownerSub: string,
   record: Pick<

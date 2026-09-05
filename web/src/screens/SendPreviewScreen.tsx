@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { AttendanceRecord, Owner } from '../types/models';
 import {
-  deleteAttendance,
+  deleteAllAttendance,
   listAttendance,
   listAttendanceByDate,
   putAttendance,
@@ -59,12 +59,17 @@ export function SendPreviewScreen({ owner, date, periodCount, onBack }: Props) {
   );
   const draftCount = drafts.length;
 
+  const toSend = useMemo(() => {
+    if (drafts.length) return drafts;
+    return records.filter((r) => r.status === 'queued');
+  }, [drafts, records]);
+
   const openSend = () => {
-    if (draftCount === 0) {
-      setError('대기열에 넣을 draft가 없습니다');
+    if (toSend.length === 0) {
+      setError('보낼 초안·대기가 없습니다');
       return;
     }
-    const bad = drafts.filter(
+    const bad = toSend.filter(
       (r) => r.category === 'other' && !r.reason.trim(),
     );
     if (bad.length > 0) {
@@ -84,16 +89,16 @@ export function SendPreviewScreen({ owner, date, periodCount, onBack }: Props) {
     setSendOpen(false);
     setError(null);
     try {
-      for (const r of drafts) {
+      for (const r of toSend) {
         if (r.category === 'other' && !r.reason.trim()) {
           throw new Error('reason_required_for_other');
         }
         const { ownerSub: _o, ...rest } = r;
         await putAttendance(owner.ownerSub, { ...rest, status: 'queued' });
       }
-      setStatus(`${drafts.length}건을 대기(queued)로 표시했습니다`);
+      setStatus(`${toSend.length}건을 대기로 보냅니다`);
       await load();
-      const queued = drafts.map((r) => ({ ...r, status: 'queued' as const }));
+      const queued = toSend.map((r) => ({ ...r, status: 'queued' as const }));
       const ext = await sendToExtension(queued);
       if (ext.ok) {
         setStatus((s) => `${s ?? ''} · 확장 수신 ${ext.accepted}건`);
@@ -112,8 +117,8 @@ export function SendPreviewScreen({ owner, date, periodCount, onBack }: Props) {
   };
 
   const openClear = () => {
-    if (draftCount === 0) {
-      setError('지울 draft가 없습니다');
+    if (records.length === 0) {
+      setError('지울 기록이 없습니다');
       return;
     }
     setError(null);
@@ -129,8 +134,8 @@ export function SendPreviewScreen({ owner, date, periodCount, onBack }: Props) {
     setClearOpen(false);
     setError(null);
     try {
-      const n = await deleteAttendance(owner.ownerSub, date, { onlyDraft: true });
-      setStatus(`draft ${n}건 삭제`);
+      const n = await deleteAllAttendance(owner.ownerSub);
+      setStatus(`초안·대기 ${n}건 삭제`);
       await load();
     } catch {
       setError('삭제 실패');
