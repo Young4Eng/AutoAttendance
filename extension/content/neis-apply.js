@@ -2829,13 +2829,17 @@
   function verifyRow(row, grid, item, cellsOpt) {
     var cells = cellsOpt || rowCells(row);
     var wantClose = closeLabel(item.category, item.type);
-    var closeText = cellLabel(cells[grid.col.close]);
+    var closeEl = null;
+    var hx = findCloseHeaderCenterX(document.body || document.documentElement);
+    if (hx != null) closeEl = resolveCloseCellByHeaderX(row, cells, hx, grid && grid.headerBottom);
+    if (!closeEl && grid && grid.col && grid.col.close != null) closeEl = cells[grid.col.close];
+    var closeText = cellLabel(closeEl);
     var catKo = CATEGORY_KO[item.category] || "";
     var typeKo = TYPE_KO[item.type] || "";
     var closeOk =
-      closeText.indexOf(wantClose) >= 0 ||
+      (closeText && wantClose && closeText.indexOf(wantClose) >= 0) ||
       (catKo && typeKo && closeText.indexOf(catKo) >= 0 && closeText.indexOf(typeKo) >= 0);
-    if (!closeOk) return { ok: false, code: "close_label_mismatch" };
+    if (!closeOk) return { ok: false, code: "close_label_mismatch", closeText: closeText || "" };
     // Nexacro(spatial/div): '/' 표시가 table과 다름 → 마감 라벨 일치면 soft OK
     if (grid.kind === "spatial" || grid.kind === "div-row") {
       return { ok: true, soft: true };
@@ -2949,9 +2953,12 @@
   }
 
   async function applyQueue(opts) {
-    var items = (opts && opts.items) || [];
+    var items = ((opts && opts.items) || []).slice();
     var dryRun = !opts || opts.dryRun !== false;
     if (!items.length) return { ok: false, code: "empty_items" };
+    items.sort(function (a, b) {
+      return String(normalizeDate(a.date) || "").localeCompare(String(normalizeDate(b.date) || ""));
+    });
 
     var leftover = findOpenPopupVisible();
     if (leftover) {
@@ -2990,6 +2997,7 @@
         log(row, item.type || "?", "stop", fm.code);
         return { ok: false, code: fm.code, applied: applied, dryRun: dryRun };
       }
+      grid = findAttendanceGrid(document) || grid;
       var hit = findRowByNumberName(grid, item.number, item.name);
       if (!hit) {
         log(row, item.type || "?", "stop", "row_not_found");
@@ -3024,8 +3032,8 @@
       await sleep(500);
       var ver = verifyRow(hit.row, grid, item, hit.cells);
       if (!ver.ok) {
-        // dryRun: popup→적용→P칸까지 왔으면 표시 검증은 soft (Nexacro 갱신 지연/표기 차이)
-        if (dryRun) {
+        // 넥사크로는 마감 글자가 늦게 바뀜. 적용까지 했으면 날짜 작업을 끝까지 하고 저장한다.
+        if (dryRun || ver.code === "close_label_mismatch") {
           log(row, item.type || "?", "ok_verify_soft", ver.code);
           applied += 1;
           continue;
