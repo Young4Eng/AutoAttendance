@@ -1,0 +1,101 @@
+.mh {
+  --canvas: #fbfbfa;
+  --ink: #18181b;
+  --muted: #71717a;
+  --line: #e4e4e7;
+  --teal: #0f766e;
+  --tint: #f0fdfa;
+  display: flex;
+  min-height: 100vh;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: Pretendard, system-ui, sans-serif;
+}
+.mh-side {
+  width: 16rem;
+  border-right: 1px solid var(--line);
+  padding: 1.25rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: #fff;
+}
+.mh-brand { display: flex; gap: 0.6rem; align-items: center; }
+.mh-logo {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: var(--teal); color: #fff;
+  display: grid; place-items: center; font-weight: 600;
+}
+.mh-sub { font-size: 11px; color: var(--muted); }
+.mh-chip {
+  font-size: 11px; color: var(--teal);
+  border: 1px solid #99f6e4; background: var(--tint);
+  border-radius: 999px; padding: 0.15rem 0.5rem; width: fit-content;
+}
+.mh-side nav { display: flex; flex-direction: column; gap: 2px; margin-top: 0.5rem; }
+.mh-side nav button, .mh-foot button {
+  text-align: left; border: 0; background: none;
+  padding: 0.5rem 0.7rem; border-radius: 10px; cursor: pointer;
+}
+.mh-side nav button.on { background: var(--tint); color: var(--teal); font-weight: 600; }
+.mh-side nav button:disabled { color: #a1a1aa; cursor: default; }
+.mh-foot { margin-top: auto; font-size: 12px; }
+.mh-ok { color: var(--teal); margin-bottom: 0.35rem; }
+.mh-muted { color: var(--muted); word-break: break-all; }
+.mh-main { flex: 1; padding: 1.5rem 1.75rem; min-width: 0; }
+.mh-main.split { max-width: calc(100% - 22rem); }
+.mh-banner {
+  background: var(--tint); border: 1px solid #99f6e4;
+  border-radius: 12px; padding: 0.8rem 1rem; font-size: 13px; line-height: 1.55;
+  margin-bottom: 1.25rem;
+}
+.mh-banner span { color: var(--teal); }
+.mh-head h1 { margin: 0; font-size: 24px; letter-spacing: -0.015em; }
+.mh-head p { margin: 0.35rem 0 1rem; color: var(--muted); font-size: 13px; }
+.mh-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.mh-dow { font-size: 12px; color: var(--muted); padding: 4px 6px; }
+.mh-dow.wk { color: #a1a1aa; }
+.mh-cell {
+  min-height: 84px; border: 1px solid var(--line); border-radius: 16px;
+  background: #fff; text-align: left; padding: 8px; cursor: pointer;
+}
+.mh-cell.wk, .mh-cell.out { background: #f4f4f5; color: #a1a1aa; cursor: default; }
+.mh-cell.out { opacity: 0.4; }
+.mh-cell.sel { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12); }
+.mh-cell.h1 { background: #f0fdfa; }
+.mh-cell.h2 { background: #ccfbf1; }
+.mh-cell.h3 { background: #99f6e4; }
+.mh-cell b {
+  display: inline-block; margin-top: 8px; font-size: 11px; font-weight: 600;
+  background: var(--teal); color: #fff; border-radius: 999px; padding: 1px 7px;
+}
+.mh-panel {
+  width: 22rem; border-left: 1px solid var(--line); background: #fff;
+  padding: 1rem; display: flex; flex-direction: column; gap: 0.7rem;
+}
+.mh-panel-h { display: flex; justify-content: space-between; align-items: flex-start; }
+.mh-panel-h h2 { margin: 0; font-size: 18px; }
+.mh-panel-h p { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+.mh-panel .x { border: 1px solid var(--line); background: #fff; border-radius: 10px; height: 32px; }
+.mh-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.mh-actions button {
+  height: 36px; border-radius: 10px; border: 1px solid var(--line);
+  background: #fff; padding: 0 10px; cursor: pointer;
+}
+.mh-panel > input, .mh-cards input {
+  height: 36px; border: 1px solid var(--line); border-radius: 10px; padding: 0 10px; width: 100%;
+}
+.mh-cards { display: flex; flex-direction: column; gap: 8px; overflow: auto; }
+.mh-cards article {
+  border: 1px solid var(--line); border-radius: 16px; padding: 10px; background: #fff;
+}
+.mh-cards strong { margin-right: 8px; }
+.mh-cards em { font-style: normal; font-size: 11px; color: var(--teal); }
+.cats, .ps { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+.cats button, .ps button {
+  border: 1px solid var(--line); background: #f4f4f5; border-radius: 999px;
+  font-size: 12px; padding: 3px 8px; cursor: pointer;
+}
+.cats button.on { background: #fef3c7; border-color: #fde68a; color: #b45309; }
+.ps button.on { background: var(--teal); color: #fff; border-color: var(--teal); }
+.mh-panel-f { font-size: 12px; color: var(--muted); margin-top: auto; }
