@@ -1682,7 +1682,7 @@
       controls[0].dispatchEvent(new KeyboardEvent("keypress", ent));
       controls[0].dispatchEvent(new KeyboardEvent("keyup", ent));
     } catch (eE) {}
-    await sleep(4000);
+    await sleep(3000);
     filters = readFilters();
     var fm = filtersMatchItem(filters, item);
     if (fm.ok) return fm;
