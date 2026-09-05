@@ -66,6 +66,6 @@ export default function App() {
   }
 
   return (
-    <MonthHome ownerSub={owner.ownerSub} teacherLabel={label} onLogout={logout} onNav={nav} />
+    <MonthHome ownerSub={owner.ownerSub} teacherLabel={label} onLogout={logout} onNav={nav} screen={screen} />
   );
 }

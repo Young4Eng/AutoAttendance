@@ -9,6 +9,7 @@ import {
 } from "../db/idb";
 import type { AttendanceRecord, AttendanceType, Category, Student } from "../types/models";
 import "./MonthHome.css";
+import { Shell, type AppScreen } from "./Shell";
 
 const DOW = ["월", "화", "수", "목", "금", "토", "일"];
 const CAT_KO: Record<Category, string> = {
@@ -51,10 +52,11 @@ type Props = {
   ownerSub: string;
   teacherLabel: string;
   onLogout: () => void;
+  screen: AppScreen;
   onNav: (s: AppScreen) => void;
 };
 
-export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav }: Props) {
+export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: Props) {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
@@ -148,42 +150,7 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav }: Props) {
   }
 
   return (
-    <div className="mh">
-      <aside className="mh-side">
-        <div className="mh-brand">
-          <div className="mh-logo">출</div>
-          <div>
-            <strong>출결메이트</strong>
-            <div className="mh-sub">중학교 담임 출결 초안</div>
-          </div>
-        </div>
-        <span className="mh-chip">구글 계정에 저장</span>
-        <nav>
-          <button type="button" className="on">이번 달</button>
-          <button type="button" onClick={() => onNav("preview")}>미리보기</button>
-          <button type="button" onClick={() => onNav("roster")}>명단</button>
-          <button type="button" onClick={() => onNav("repeat")}>장기·반복</button>
-          <button type="button" onClick={() => onNav("guide")}>사용 방법</button>
-          <button type="button" onClick={() => onNav("qa")}>패치 노트 및 Q&A</button>
-        </nav>
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".csv,text/csv"
-          hidden
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) void onCsv(f).catch((err) => setMsg(String(err)));
-            e.target.value = "";
-          }}
-        />
-        <div className="mh-foot">
-          <div className="mh-ok">명단 {roster.length}명</div>
-          <div className="mh-muted">{teacherLabel}</div>
-          <div className="mh-muted">{msg}</div>
-          <button type="button" onClick={onLogout}>로그아웃</button>
-        </div>
-      </aside>
+    <Shell screen={screen} teacherLabel={teacherLabel} rosterCount={roster.length} onNav={onNav} onLogout={onLogout}>
       <main className={"mh-main" + (open ? " split" : "")}>
         <div className="mh-banner">
           출결 초안은 계정에 저장됩니다. 같은 날짜는 한 번만 열고, 패널 안에서 학생을 더합니다.
@@ -380,6 +347,6 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav }: Props) {
           </div>
         </section>
       ) : null}
-    </div>
+    </Shell>
   );
 }
