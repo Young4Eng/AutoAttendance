@@ -28,7 +28,7 @@ export const TYPES = Object.freeze([
   "result",
 ]);
 
-const ALLOWED_ORIGINS = Object.freeze(["http://localhost:5173", "https://young4eng.github.io"]);
+const ALLOWED_ORIGINS = Object.freeze(["http://localhost:5173", "https://young4eng.github.io", "https://auto-attendance-six.vercel.app"]);
 
 export function originAllowed(urlOrOrigin) {
   if (!urlOrOrigin || typeof urlOrOrigin !== "string") return false;
