@@ -2865,14 +2865,86 @@
   }
 
 
+  function climbToolbarBtn(el) {
+    if (!el || !(el instanceof Element)) return null;
+    var cur = el;
+    for (var i = 0; i < 6 && cur; i++, cur = cur.parentElement) {
+      if (!(cur instanceof Element)) break;
+      var tag = (cur.tagName || "").toUpperCase();
+      if (tag === "BODY" || tag === "HTML") break;
+      var r = cur.getBoundingClientRect();
+      if (r.width < 8 || r.height < 8) continue;
+      if (r.width > 220 || r.height > 56) continue;
+      return cur;
+    }
+    return el;
+  }
+
+  /** 그리드 위 파란 툴바 「저장」. 출결마감·마감취소 제외. */
+  function findNeisSaveButton() {
+    var root = document.body || document.documentElement;
+    var closeHits = [];
+    try {
+      closeHits = findElementsByExactText(root, "출결마감").concat(findLabelHits(root, "출결마감") || []);
+    } catch (eC) {
+      closeHits = [];
+    }
+    var closeX = null;
+    var closeY = null;
+    for (var c = 0; c < closeHits.length; c++) {
+      var ct = normText(closeHits[c].textContent || "");
+      if (ct !== "출결마감" && ct.indexOf("출결마감") !== 0) continue;
+      if (ct.length > 8) continue;
+      if (!visible(closeHits[c])) continue;
+      var cr = closeHits[c].getBoundingClientRect();
+      if (cr.width < 8 || cr.height < 8) continue;
+      closeX = cr.left + cr.width / 2;
+      closeY = (cr.top + cr.bottom) / 2;
+      break;
+    }
+    var hits = [];
+    try {
+      hits = findElementsByExactText(root, "저장").concat(findLabelHits(root, "저장") || []);
+    } catch (eS) {
+      hits = [];
+    }
+    var best = null;
+    var bestScore = 1e15;
+    for (var i = 0; i < hits.length; i++) {
+      var el = hits[i];
+      if (!visible(el)) continue;
+      var t = normText(el.textContent || el.value || "");
+      if (t !== "저장") continue;
+      if (t.indexOf("출결마감") >= 0) continue;
+      var r = el.getBoundingClientRect();
+      if (r.width < 8 || r.height < 8 || r.height > 48) continue;
+      var cx = r.left + r.width / 2;
+      var cy = (r.top + r.bottom) / 2;
+      var score = r.top;
+      if (closeX != null) {
+        if (cy < closeY - 28 || cy > closeY + 28) continue;
+        if (cx >= closeX - 4) continue;
+        score = Math.abs(cy - closeY) * 8 + (closeX - cx);
+      }
+      if (score < bestScore) {
+        bestScore = score;
+        best = el;
+      }
+    }
+    return best ? climbToolbarBtn(best) : findClickableByText(root, "저장");
+  }
+
   function clickSaveOnly() {
-    var btn = findClickableByText(document, "저장");
+    var btn = findNeisSaveButton();
     if (!btn) return { ok: false, code: "save_not_found" };
-    var label = (btn.textContent || btn.value || "").replace(/\s+/g, " ").trim();
-    if (label !== "저장") return { ok: false, code: "save_ambiguous" };
-    // 출결마감 문자열이 섞인 버튼 거부
-    if (label.indexOf("출결마감") >= 0) return { ok: false, code: "refused_close_button" };
-    clickEl(btn);
+    var label = normText(btn.textContent || btn.value || "");
+    if (label.indexOf("출결마감") >= 0 && label !== "저장") {
+      return { ok: false, code: "refused_close_button" };
+    }
+    if (label !== "저장" && label.indexOf("저장") !== 0) {
+      return { ok: false, code: "save_ambiguous" };
+    }
+    clickOnce(btn);
     return { ok: true };
   }
 
@@ -2880,6 +2952,13 @@
     var items = (opts && opts.items) || [];
     var dryRun = !opts || opts.dryRun !== false;
     if (!items.length) return { ok: false, code: "empty_items" };
+
+    var leftover = findOpenPopupVisible();
+    if (leftover) {
+      var closer = findElementsByExactText(leftover, "닫기")[0] || findLabelHits(leftover, "닫기")[0];
+      if (closer) clickOnce(closer);
+      await sleep(400);
+    }
 
     var filters = readFilters();
     var grid = null;
