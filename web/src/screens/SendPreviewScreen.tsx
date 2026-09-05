@@ -12,6 +12,15 @@ import { ConfirmSendDialog } from '../components/ConfirmSendDialog';
 import { ConfirmClearDialog } from '../components/ConfirmClearDialog';
 import { sendToExtension } from '../lib/sendToExtension';
 
+function extMsg(code: string): string {
+  if (code === 'missing_extension_id') return 'web/.env에 VITE_EXTENSION_ID가 없습니다. 크롬 확장 ID를 넣고 서버를 다시 켜세요.';
+  if (code === 'no_chrome_runtime') return '크롬이 아니거나 확장이 없습니다.';
+  if (code === 'empty_queue') return '보낼 queued가 없습니다.';
+  if (code === 'runtime_error') return '확장이 메시지를 거절했습니다. 확장 로드·ID를 확인하세요.';
+  return '확장 미연결(' + code + ')';
+}
+
+
 interface Props {
   owner: Owner;
   date: string;
@@ -88,8 +97,8 @@ export function SendPreviewScreen({ owner, date, periodCount, onBack }: Props) {
       const ext = await sendToExtension(queued);
       if (ext.ok) {
         setStatus((s) => `${s ?? ''} · 확장 수신 ${ext.accepted}건`);
-      } else if (ext.code !== 'missing_extension_id') {
-        setStatus((s) => `${s ?? ''} · 확장 미연결(${ext.code})`);
+      } else {
+        setStatus((s) => `${s ?? ''} · ${extMsg(ext.code)}`);
       }
     } catch (e) {
       const code = e instanceof Error ? e.message : 'queue_error';
