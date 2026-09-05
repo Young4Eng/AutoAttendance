@@ -1,23 +1,23 @@
 import { useState } from 'react';
 import type { Owner } from './types/models';
 import { LoginScreen } from './screens/LoginScreen';
-import { TodayAttendanceScreen } from './screens/TodayAttendanceScreen';
+import { MonthHome } from './screens/MonthHome';
 import { SendPreviewScreen } from './screens/SendPreviewScreen';
 import './App.css';
 
-type Screen = 'today' | 'preview';
+type Screen = 'month' | 'preview';
 
 export default function App() {
   const [owner, setOwner] = useState<Owner | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [screen, setScreen] = useState<Screen>('today');
+  const [screen, setScreen] = useState<Screen>('month');
   const [previewDate, setPreviewDate] = useState('');
   const [previewPeriods, setPreviewPeriods] = useState(6);
 
   const logout = () => {
     setOwner(null);
     setError(null);
-    setScreen('today');
+    setScreen('month');
   };
 
   if (!owner) {
@@ -25,7 +25,7 @@ export default function App() {
       <LoginScreen
         onLogin={(o) => {
           setOwner(o);
-          setScreen('today');
+          setScreen('month');
         }}
         error={error}
         onError={setError}
@@ -39,18 +39,18 @@ export default function App() {
         owner={owner}
         date={previewDate}
         periodCount={previewPeriods}
-        onBack={() => setScreen('today')}
+        onBack={() => setScreen('month')}
       />
     );
   }
 
   return (
-    <TodayAttendanceScreen
-      owner={owner}
+    <MonthHome
+      teacherLabel={owner.displayName || owner.email || owner.ownerSub}
       onLogout={logout}
-      onPreview={(date, periodCount) => {
-        setPreviewDate(date);
-        setPreviewPeriods(periodCount);
+      onOpenPreview={() => {
+        setPreviewDate(previewDate);
+        setPreviewPeriods(previewPeriods);
         setScreen('preview');
       }}
     />
