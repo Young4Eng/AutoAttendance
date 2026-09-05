@@ -3211,8 +3211,45 @@
     return climbToolbarBtn(oks[0].el) || oks[0].el;
   }
 
+  function findConfirmBelowText(needles) {
+    var root = document.body || document.documentElement;
+    var msg = null;
+    var nodes = root.querySelectorAll("div, span, p, td, li");
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (!visible(el)) continue;
+      var t = normText(el.textContent || "");
+      if (!t || t.length > 60) continue;
+      for (var n = 0; n < needles.length; n++) {
+        if (t.indexOf(needles[n]) >= 0) {
+          msg = el;
+          break;
+        }
+      }
+      if (msg) break;
+    }
+    if (!msg) return null;
+    var mr = msg.getBoundingClientRect();
+    var oks = collectExactLabels(root, "확인");
+    var best = null;
+    var bestScore = 1e15;
+    for (var j = 0; j < oks.length; j++) {
+      var ok = oks[j];
+      if (ok.cy < mr.top + 8) continue;
+      if (ok.r.height > 56) continue;
+      var dx = ok.cx - (mr.left + mr.width / 2);
+      var dy = ok.cy - mr.bottom;
+      var score = dy * dy + dx * dx;
+      if (score < bestScore) {
+        bestScore = score;
+        best = ok.el;
+      }
+    }
+    return best ? climbToolbarBtn(best) || best : null;
+  }
+
   async function dismissSavedAlert() {
-    var waitUntil = Date.now() + 3000;
+    var waitUntil = Date.now() + 3500;
     var box = null;
     while (Date.now() < waitUntil) {
       box = findDialogByNeedles(["저장했습니다", "저장하였습니다"]);
@@ -3221,15 +3258,21 @@
     }
     if (!box) return { ok: true, skipped: true };
     for (var n = 0; n < 2; n++) {
+      if (!findDialogByNeedles(["저장했습니다", "저장하였습니다"])) return { ok: true };
       var cur = findDialogByNeedles(["저장했습니다", "저장하였습니다"]);
-      if (!cur) return { ok: true };
-      var okBtn = findLoneConfirmIn(cur) || findLoneConfirmIn(document.body);
-      if (!okBtn) return { ok: false, code: "saved_alert_btn_missing" };
+      var okBtn =
+        findConfirmBelowText(["저장했습니다", "저장하였습니다"]) ||
+        (cur && findLoneConfirmIn(cur)) ||
+        findLoneConfirmIn(document.body);
+      if (!okBtn) {
+        await sleep(400);
+        continue;
+      }
       clickOnce(okBtn);
       await sleep(500);
-      if (!findDialogByNeedles(["저장했습니다", "저장하였습니다"])) return { ok: true };
     }
-    return { ok: !findDialogByNeedles(["저장했습니다", "저장하였습니다"]), code: "saved_alert_still_open" };
+    if (!findDialogByNeedles(["저장했습니다", "저장하였습니다"])) return { ok: true };
+    return { ok: true, code: "saved_alert_soft" };
   }
 
   async function saveDateAndConfirm() {
@@ -3239,8 +3282,14 @@
     var q = await confirmSaveDialog();
     if (!q.ok && !saveDoneVisible()) return q;
     await sleep(400);
-    var d = await dismissSavedAlert();
-    if (!d.ok) return d;
+    await dismissSavedAlert();
+    if (saveDoneVisible()) {
+      var extra = findConfirmBelowText(["저장했습니다", "저장하였습니다"]);
+      if (extra) {
+        clickOnce(extra);
+        await sleep(500);
+      }
+    }
     if (saveDoneVisible()) return { ok: false, code: "saved_alert_still_open" };
     return { ok: true };
   }
