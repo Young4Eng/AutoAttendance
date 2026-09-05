@@ -115,7 +115,7 @@ export async function putAttendance(
   if (record.category === 'other' && !record.reason.trim()) {
     throw new Error('reason_required_for_other');
   }
-  if (record.period < 1) {
+  if (record.type !== 'absence' && record.period < 1) {
     throw new Error('invalid_period');
   }
   const full: AttendanceRecord = { ...record, ownerSub: owner };

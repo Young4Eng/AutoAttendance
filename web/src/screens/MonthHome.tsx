@@ -1,8 +1,24 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { parseRosterCsv } from "../csv/parseRoster";
+import { listAttendance, listRoster, putAttendance, replaceRoster } from "../db/idb";
+import type { AttendanceRecord, AttendanceType, Category, Student } from "../types/models";
 import "./MonthHome.css";
 
 const DOW = ["월", "화", "수", "목", "금", "토", "일"];
-const CATS = ["질병", "미인정", "기타", "출석인정"] as const;
+const CAT_KO: Record<Category, string> = {
+  illness: "질병",
+  unexcused: "미인정",
+  other: "기타",
+  recognized: "출석인정",
+};
+const TYPE_KO: Record<AttendanceType, string> = {
+  late: "지각",
+  early_leave: "조퇴",
+  absence: "결석",
+  result: "결과",
+};
+const CATS = Object.keys(CAT_KO) as Category[];
+const KINDS = Object.keys(TYPE_KO) as AttendanceType[];
 
 function ymd(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -22,55 +38,87 @@ function monthCells(year: number, month: number): Date[] {
   });
 }
 
-type Card = {
-  id: string;
-  number: number;
-  name: string;
-  kind: "결석" | "지각" | "조퇴" | "결과";
-  cat: (typeof CATS)[number];
-  period?: number;
-  reason: string;
-};
-
 type Props = {
+  ownerSub: string;
   teacherLabel: string;
   onLogout: () => void;
   onOpenPreview: () => void;
 };
 
-export function MonthHome({ teacherLabel, onLogout, onOpenPreview }: Props) {
-  const year = 2026;
-  const month = 9;
-  const cells = useMemo(() => monthCells(year, month), []);
+export function MonthHome({ ownerSub, teacherLabel, onLogout, onOpenPreview }: Props) {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  const cells = useMemo(() => monthCells(year, month), [year, month]);
   const [open, setOpen] = useState<string | null>(null);
-  const [cards, setCards] = useState<Record<string, Card[]>>({
-    "2026-09-03": [
-      { id: "a", number: 2, name: "학생02", kind: "결석", cat: "질병", reason: "비염" },
-      { id: "b", number: 9, name: "학생09", kind: "지각", cat: "미인정", period: 2, reason: "버스" },
-    ],
-    "2026-09-08": [{ id: "c", number: 7, name: "학생07", kind: "조퇴", cat: "기타", period: 5, reason: "병원" }],
-  });
+  const [roster, setRoster] = useState<Student[]>([]);
+  const [rows, setRows] = useState<AttendanceRecord[]>([]);
+  const [pending, setPending] = useState<AttendanceType | null>(null);
   const [q, setQ] = useState("");
+  const [msg, setMsg] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  const dayCards = open ? cards[open] || [] : [];
+  async function reload() {
+    const [st, att] = await Promise.all([listRoster(ownerSub), listAttendance(ownerSub)]);
+    setRoster(st);
+    setRows(att);
+  }
+
+  useEffect(() => {
+    void reload().catch((e) => setMsg(String(e)));
+  }, [ownerSub]);
+
+  const counts = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const r of rows) m[r.date] = (m[r.date] || 0) + 1;
+    return m;
+  }, [rows]);
+
+  const dayRows = open ? rows.filter((r) => r.date === open) : [];
   const weekdayKo = open
     ? ["일", "월", "화", "수", "목", "금", "토"][new Date(open + "T12:00:00").getDay()]
     : "";
 
-  function add(kind: Card["kind"]) {
-    if (!open) return;
-    const n = kind === "결석" ? 1 : kind === "지각" ? 9 : 7;
-    const name = n === 1 ? "학생01" : n === 9 ? "학생09" : "학생07";
-    const next: Card = {
-      id: String(Date.now()),
-      number: n,
-      name,
-      kind,
-      cat: "질병",
-      period: kind === "결석" ? undefined : 3,
+  const hits = roster
+    .filter((s) => {
+      if (!q.trim()) return true;
+      return String(s.number).startsWith(q.trim()) || s.name.includes(q.trim());
+    })
+    .filter((s) => !dayRows.some((r) => r.number === s.number && pending && r.type === pending))
+    .slice(0, 8);
+
+  const meta = roster[0];
+
+  async function save(partial: Omit<AttendanceRecord, "ownerSub">) {
+    await putAttendance(ownerSub, partial);
+    await reload();
+  }
+
+  async function pickStudent(s: Student) {
+    if (!open || !pending) return;
+    await save({
+      date: open,
+      year: Number(open.slice(0, 4)),
+      grade: s.grade,
+      class: s.class,
+      number: s.number,
+      name: s.name,
+      category: "illness",
+      type: pending,
+      period: pending === "absence" ? 0 : 1,
       reason: "",
-    };
-    setCards((prev) => ({ ...prev, [open]: [...(prev[open] || []), next] }));
+      status: "draft",
+    });
+    setPending(null);
+    setQ("");
+  }
+
+  async function onCsv(file: File) {
+    const text = await file.text();
+    const parsed = parseRosterCsv(text);
+    await replaceRoster(ownerSub, parsed);
+    setMsg(`명단 ${parsed.length}명`);
+    await reload();
   }
 
   return (
@@ -91,8 +139,8 @@ export function MonthHome({ teacherLabel, onLogout, onOpenPreview }: Props) {
           <button type="button" onClick={onOpenPreview}>
             미리보기
           </button>
-          <button type="button" disabled>
-            명단
+          <button type="button" onClick={() => fileRef.current?.click()}>
+            명단 CSV
           </button>
           <button type="button" disabled>
             장기·반복
@@ -100,13 +148,22 @@ export function MonthHome({ teacherLabel, onLogout, onOpenPreview }: Props) {
           <button type="button" disabled>
             사용 방법
           </button>
-          <button type="button" disabled>
-            질문
-          </button>
         </nav>
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".csv,text/csv"
+          hidden
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void onCsv(f).catch((err) => setMsg(String(err)));
+            e.target.value = "";
+          }}
+        />
         <div className="mh-foot">
-          <div className="mh-ok">크롬 확장 연결은 이후</div>
+          <div className="mh-ok">명단 {roster.length}명</div>
           <div className="mh-muted">{teacherLabel}</div>
+          <div className="mh-muted">{msg}</div>
           <button type="button" onClick={onLogout}>
             로그아웃
           </button>
@@ -115,16 +172,15 @@ export function MonthHome({ teacherLabel, onLogout, onOpenPreview }: Props) {
 
       <main className={"mh-main" + (open ? " split" : "")}>
         <div className="mh-banner">
-          출결 초안(번호·성명·사유)은 출결메이트 계정 DB에 저장됩니다. 캐시를 지워도 남고, 같은 구글이면 다른
-          PC에서도 보입니다. 나이스에 넣은 값은 나이스에 있습니다.
-          <span> 사용 방법 · 개인정보 안내</span>
+          출결 초안은 이 계정에 남습니다. 캐시를 지워도(사이트 데이터가 아니면) 브라우저 DB에 있습니다. 클라우드 DB는
+          다음 연결입니다.
         </div>
-
         <header className="mh-head">
-          <h1>2026년 9월</h1>
-          <p>칸을 한 번 누르면 그날만 엽니다. 주말은 회색입니다.</p>
+          <h1>
+            {year}년 {month}월
+          </h1>
+          <p>칸 한 번 → 그날 패널. 주말 불가. CSV로 명단을 넣은 뒤 학생을 고르세요.</p>
         </header>
-
         <div className="mh-cal">
           {DOW.map((d) => (
             <div key={d} className={"mh-dow" + (d === "토" || d === "일" ? " wk" : "")}>
@@ -135,7 +191,7 @@ export function MonthHome({ teacherLabel, onLogout, onOpenPreview }: Props) {
             const key = ymd(d);
             const out = d.getMonth() !== month - 1;
             const wk = weekend(d);
-            const n = (cards[key] || []).length;
+            const n = counts[key] || 0;
             const heat = n >= 3 ? "h3" : n === 2 ? "h2" : n === 1 ? "h1" : "";
             return (
               <button
@@ -160,68 +216,59 @@ export function MonthHome({ teacherLabel, onLogout, onOpenPreview }: Props) {
               <h2>
                 {open.slice(5).replace("-", "월 ")}일 ({weekdayKo})
               </h2>
-              <p>{dayCards.length ? `예외 ${dayCards.length}명` : "이날 예외 없음"}</p>
+              <p>{dayRows.length ? `예외 ${dayRows.length}명` : "이날 예외 없음"}</p>
             </div>
             <button type="button" className="x" onClick={() => setOpen(null)}>
               닫기
             </button>
           </div>
           <div className="mh-actions">
-            <button type="button" onClick={() => add("결석")}>
-              + 결석
-            </button>
-            <button type="button" onClick={() => add("지각")}>
-              + 지각
-            </button>
-            <button type="button" onClick={() => add("조퇴")}>
-              + 조퇴
-            </button>
-            <button type="button" onClick={() => add("결과")}>
-              + 결과
-            </button>
+            {KINDS.map((k) => (
+              <button key={k} type="button" className={pending === k ? "on" : ""} onClick={() => setPending(k)}>
+                + {TYPE_KO[k]}
+              </button>
+            ))}
           </div>
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="번호 또는 이름 일부"
-          />
+          {pending ? (
+            <>
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="번호 또는 이름 일부" />
+              <div className="mh-cards">
+                {roster.length === 0 ? <p>먼저 명단 CSV를 가져오세요.</p> : null}
+                {hits.map((s) => (
+                  <button key={s.number} type="button" onClick={() => void pickStudent(s)}>
+                    {s.number} {s.name}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : null}
           <div className="mh-cards">
-            {dayCards.map((c) => (
-              <article key={c.id}>
+            {dayRows.map((c) => (
+              <article key={`${c.number}-${c.type}-${c.period}`}>
                 <strong>
                   {String(c.number).padStart(2, "0")} {c.name}
                 </strong>
-                <em>{c.kind}</em>
+                <em>{TYPE_KO[c.type]}</em>
                 <div className="cats">
                   {CATS.map((cat) => (
                     <button
                       key={cat}
                       type="button"
-                      className={c.cat === cat ? "on" : ""}
-                      onClick={() =>
-                        setCards((prev) => ({
-                          ...prev,
-                          [open]: (prev[open] || []).map((x) => (x.id === c.id ? { ...x, cat } : x)),
-                        }))
-                      }
+                      className={c.category === cat ? "on" : ""}
+                      onClick={() => void save({ ...c, category: cat })}
                     >
-                      {cat}
+                      {CAT_KO[cat]}
                     </button>
                   ))}
                 </div>
-                {c.kind !== "결석" ? (
+                {c.type !== "absence" ? (
                   <div className="ps">
                     {[1, 2, 3, 4, 5, 6, 7].map((p) => (
                       <button
                         key={p}
                         type="button"
                         className={c.period === p ? "on" : ""}
-                        onClick={() =>
-                          setCards((prev) => ({
-                            ...prev,
-                            [open]: (prev[open] || []).map((x) => (x.id === c.id ? { ...x, period: p } : x)),
-                          }))
-                        }
+                        onClick={() => void save({ ...c, period: p })}
                       >
                         {p}
                       </button>
@@ -229,19 +276,16 @@ export function MonthHome({ teacherLabel, onLogout, onOpenPreview }: Props) {
                   </div>
                 ) : null}
                 <input
-                  value={c.reason}
-                  placeholder="사유"
-                  onChange={(e) =>
-                    setCards((prev) => ({
-                      ...prev,
-                      [open]: (prev[open] || []).map((x) => (x.id === c.id ? { ...x, reason: e.target.value } : x)),
-                    }))
-                  }
+                  defaultValue={c.reason}
+                  placeholder={c.category === "other" ? "사유 필수" : "사유"}
+                  onBlur={(e) => void save({ ...c, reason: e.target.value })}
                 />
               </article>
             ))}
           </div>
-          <div className="mh-panel-f">계정에 저장됨 · 완료는 다음 연결</div>
+          <div className="mh-panel-f">
+            {meta ? `${meta.grade}학년 ${meta.class}반` : "명단 없음"} · 저장은 칸을 바꿀 때
+          </div>
         </section>
       ) : null}
     </div>

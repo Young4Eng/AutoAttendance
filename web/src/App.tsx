@@ -46,6 +46,7 @@ export default function App() {
 
   return (
     <MonthHome
+      ownerSub={owner.ownerSub}
       teacherLabel={owner.displayName || owner.email || owner.ownerSub}
       onLogout={logout}
       onOpenPreview={() => {
