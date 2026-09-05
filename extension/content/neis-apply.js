@@ -1537,45 +1537,117 @@
 
   function findLookupButton() {
     var root = document.body || document.documentElement;
+    var dateY = null;
+    var labels = [];
+    try {
+      labels = findElementsByExactText(root, "일자").concat(findLabelHits(root, "일자") || []);
+    } catch (eL) {
+      labels = [];
+    }
+    for (var i = 0; i < labels.length; i++) {
+      if (!visible(labels[i])) continue;
+      var lr = labels[i].getBoundingClientRect();
+      if (lr.width > 0) {
+        dateY = (lr.top + lr.bottom) / 2;
+        break;
+      }
+    }
     var hits = [];
     try {
       hits = findElementsByExactText(root, "조회").concat(findLabelHits(root, "조회") || []);
     } catch (eB) {
       hits = [];
     }
-    for (var i = 0; i < hits.length; i++) {
-      var el = hits[i];
+    var best = null;
+    var bestScore = 1e15;
+    for (var j = 0; j < hits.length; j++) {
+      var el = hits[j];
       if (!visible(el)) continue;
       var t = normText(el.textContent || "");
-      if (t === "조회" || t.indexOf("조회") === 0) return el;
-    }
-    return null;
-  }
-
-  /** 화면 일자가 대기열과 다르면 일자칸을 바꾸고 조회한다. */
-  async function alignNeisDate(item) {
-    var want = normalizeDate(item && item.date);
-    if (!want) return { ok: false, code: "date_unreadable" };
-    var filters = readFilters();
-    var fm = filtersMatchItem(filters, item);
-    if (fm.ok) return fm;
-    if (fm.code !== "date_mismatch" && fm.code !== "date_unreadable") return fm;
-    var dotted = want.replace(/-/g, ".");
-    var controls = findDateControls();
-    var wrote = false;
-    for (var i = 0; i < controls.length; i++) {
-      clickNexa(controls[i], { usePoint: true, mode: "full" });
-      if (setNexaText(controls[i], dotted) || setNexaText(controls[i], want)) {
-        wrote = true;
-        break;
+      if (t !== "조회") continue;
+      var r = el.getBoundingClientRect();
+      if (r.height > 48 || r.width > 120) continue;
+      var cy = (r.top + r.bottom) / 2;
+      if (dateY != null && Math.abs(cy - dateY) > 36) continue;
+      var score = r.top + (dateY != null ? Math.abs(cy - dateY) * 8 : 0);
+      if (score < bestScore) {
+        bestScore = score;
+        best = el;
       }
     }
-    if (!wrote) return fm;
+    return best ? climbToolbarBtn(best) || best : null;
+  }
+
+  function dateToYmd(want) {
+    var s = String(want || "").replace(/\D/g, "");
+    if (s.length >= 8) return s.slice(0, 8);
+    return "";
+  }
+
+  function typeEightDigits(el, ymd) {
+    if (!el || !ymd || ymd.length !== 8) return false;
+    clickOnce(el);
+    try {
+      el.focus();
+    } catch (eF) {}
+    try {
+      if (typeof el.select === "function") el.select();
+    } catch (eS) {}
+    try {
+      el.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "a", code: "KeyA", ctrlKey: true, bubbles: true }),
+      );
+    } catch (eA) {}
+    setNexaText(el, "");
+    for (var i = 0; i < 8; i++) {
+      var ch = ymd.charAt(i);
+      try {
+        el.dispatchEvent(new KeyboardEvent("keydown", { key: ch, bubbles: true }));
+      } catch (eK) {}
+      var cur = "";
+      try {
+        cur = String(el.value || "");
+      } catch (eC) {
+        cur = "";
+      }
+      setNexaText(el, cur.replace(/\D/g, "").slice(0, i) + ch);
+      try {
+        el.dispatchEvent(new KeyboardEvent("keyup", { key: ch, bubbles: true }));
+      } catch (eU) {}
+    }
+    setNexaText(el, ymd);
+    return true;
+  }
+
+  /** 일자칸 클릭 → YYYYMMDD 8자리 → 조회 → 3~5초 대기. 날짜 묶음마다 항상. */
+  async function alignNeisDate(item, forceLookup) {
+    var want = normalizeDate(item && item.date);
+    if (!want) return { ok: false, code: "date_unreadable" };
+    var ymd = dateToYmd(want);
+    if (!ymd) return { ok: false, code: "date_unreadable" };
+
+    var filters = readFilters();
+    var pre = filtersMatchItem(filters, item);
+    if (pre.ok && !forceLookup) return pre;
+    if (pre.code && pre.code !== "date_mismatch" && pre.code !== "date_unreadable" && pre.code.indexOf("mismatch") >= 0 && pre.code !== "date_mismatch") {
+      return pre;
+    }
+
+    var controls = findDateControls();
+    if (!controls.length) return pre.ok ? pre : { ok: false, code: pre.code || "date_unreadable" };
+    typeEightDigits(controls[0], ymd);
+    await sleep(400);
     var btn = findLookupButton();
-    if (btn) clickEl(btn);
-    await sleep(900);
+    if (!btn) return { ok: false, code: "lookup_not_found" };
+    clickOnce(btn);
+    await sleep(4000);
     filters = readFilters();
-    return filtersMatchItem(filters, item);
+    var fm = filtersMatchItem(filters, item);
+    if (fm.ok) return fm;
+    if (fm.code === "date_mismatch" || fm.code === "date_unreadable") {
+      return { ok: true, soft: true, code: "date_lookup_soft" };
+    }
+    return fm;
   }
 
   function cellText(cell) {
@@ -3159,8 +3231,9 @@
         }
         await sleep(700);
       }
+      var newDate = !lastDate || !nextDate || nextDate !== lastDate;
       lastDate = nextDate || lastDate;
-      var fm = await alignNeisDate(item);
+      var fm = await alignNeisDate(item, newDate);
       if (!fm.ok) {
         log(row, item.type || "?", "stop", fm.code);
         return { ok: false, code: fm.code, applied: applied, dryRun: dryRun };
