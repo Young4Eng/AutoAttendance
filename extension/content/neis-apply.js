@@ -3053,11 +3053,71 @@
     };
   }
 
+  function findDialogByNeedles(needles) {
+    var root = document.body || document.documentElement;
+    var all = root.querySelectorAll("div, span, p, td, li");
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      if (!visible(el)) continue;
+      var t = normText(el.textContent || "");
+      if (!t || t.length > 80) continue;
+      var hit = false;
+      for (var n = 0; n < needles.length; n++) {
+        if (t.indexOf(needles[n]) >= 0) {
+          hit = true;
+          break;
+        }
+      }
+      if (!hit) continue;
+      var box = el;
+      for (var up = 0; up < 8 && box; up++, box = box.parentElement) {
+        if (!(box instanceof Element)) break;
+        var br = box.getBoundingClientRect();
+        if (br.width > 120 && br.width < 720 && br.height > 80 && br.height < 420) return box;
+      }
+      return el;
+    }
+    return null;
+  }
+
+  function findLoneConfirmIn(scope) {
+    var oks = collectExactLabels(scope, "확인");
+    if (!oks.length) return null;
+    oks.sort(function (a, b) {
+      return b.cy - a.cy;
+    });
+    return climbToolbarBtn(oks[0].el) || oks[0].el;
+  }
+
+  async function dismissSavedAlert() {
+    var waitUntil = Date.now() + 3000;
+    var box = null;
+    while (Date.now() < waitUntil) {
+      box = findDialogByNeedles(["저장했습니다", "저장하였습니다"]);
+      if (box) break;
+      await sleep(150);
+    }
+    if (!box) return { ok: true, skipped: true };
+    for (var n = 0; n < 2; n++) {
+      var cur = findDialogByNeedles(["저장했습니다", "저장하였습니다"]);
+      if (!cur) return { ok: true };
+      var okBtn = findLoneConfirmIn(cur) || findLoneConfirmIn(document.body);
+      if (!okBtn) return { ok: false, code: "saved_alert_btn_missing" };
+      clickOnce(okBtn);
+      await sleep(500);
+      if (!findDialogByNeedles(["저장했습니다", "저장하였습니다"])) return { ok: true };
+    }
+    return { ok: true };
+  }
+
   async function saveDateAndConfirm() {
     var sv = clickSaveOnly();
     if (!sv.ok) return sv;
     await sleep(500);
-    return confirmSaveDialog();
+    var q = await confirmSaveDialog();
+    if (!q.ok) return q;
+    await sleep(400);
+    return dismissSavedAlert();
   }
 
   async function applyQueue(opts) {
