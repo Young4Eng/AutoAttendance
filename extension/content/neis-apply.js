@@ -1584,7 +1584,7 @@
     return "";
   }
 
-  function typeEightDigits(el, ymd) {
+  function pasteYmd(el, ymd) {
     if (!el || !ymd || ymd.length !== 8) return false;
     clickOnce(el);
     try {
@@ -1593,29 +1593,50 @@
     try {
       if (typeof el.select === "function") el.select();
     } catch (eS) {}
+    var holder = document.createElement("textarea");
+    holder.value = ymd;
+    holder.setAttribute("readonly", "readonly");
+    holder.style.position = "fixed";
+    holder.style.left = "-9999px";
+    document.body.appendChild(holder);
+    holder.select();
+    var copied = false;
     try {
-      el.dispatchEvent(
-        new KeyboardEvent("keydown", { key: "a", code: "KeyA", ctrlKey: true, bubbles: true }),
-      );
-    } catch (eA) {}
-    var inserted = false;
-    try {
-      inserted = document.execCommand("insertText", false, ymd);
-    } catch (eI) {
-      inserted = false;
+      copied = document.execCommand("copy");
+    } catch (eC) {
+      copied = false;
     }
-    if (!inserted) {
-      for (var i = 0; i < 8; i++) {
-        var ch = ymd.charAt(i);
-        try {
-          el.dispatchEvent(new KeyboardEvent("keydown", { key: ch, bubbles: true, keyCode: 48 + Number(ch) }));
-          el.dispatchEvent(new KeyboardEvent("keypress", { key: ch, bubbles: true, keyCode: 48 + Number(ch) }));
-          el.dispatchEvent(new InputEvent("input", { bubbles: true, data: ch, inputType: "insertText" }));
-          el.dispatchEvent(new KeyboardEvent("keyup", { key: ch, bubbles: true, keyCode: 48 + Number(ch) }));
-        } catch (eK) {}
+    document.body.removeChild(holder);
+    clickOnce(el);
+    try {
+      el.focus();
+    } catch (eF2) {}
+    try {
+      if (typeof el.select === "function") el.select();
+    } catch (eS2) {}
+    var pasted = false;
+    try {
+      var dt = new DataTransfer();
+      dt.setData("text/plain", ymd);
+      pasted = el.dispatchEvent(
+        new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: dt }),
+      );
+    } catch (eDt) {
+      pasted = false;
+    }
+    try {
+      if (!pasted) pasted = document.execCommand("paste");
+    } catch (eP) {
+      pasted = false;
+    }
+    if (!pasted) {
+      try {
+        pasted = document.execCommand("insertText", false, ymd);
+      } catch (eI) {
+        pasted = false;
       }
     }
-    return true;
+    return copied || pasted;
   }
 
   /** 일자칸 클릭 → YYYYMMDD 8자리 → 조회 → 3~5초 대기. 날짜 묶음마다 항상. */
@@ -1643,7 +1664,7 @@
 
     var controls = findDateControls();
     if (!controls.length) return pre.ok ? pre : { ok: false, code: pre.code || "date_unreadable" };
-    typeEightDigits(controls[0], ymd);
+    pasteYmd(controls[0], ymd);
     await sleep(500);
     var btn = findLookupButton();
     if (!btn) return { ok: false, code: "lookup_not_found" };
@@ -3114,7 +3135,12 @@
     return null;
   }
 
+  function saveDoneVisible() {
+    return !!findDialogByNeedles(["저장했습니다", "저장하였습니다"]);
+  }
+
   function saveConfirmStillOpen() {
+    if (saveDoneVisible()) return false;
     return !!findSaveConfirmRoot();
   }
 
@@ -3122,25 +3148,29 @@
     var waitUntil = Date.now() + 3000;
     var appeared = null;
     while (Date.now() < waitUntil) {
+      if (saveDoneVisible()) return { ok: true };
       appeared = findSaveConfirmRoot();
       if (appeared) break;
       await sleep(150);
     }
-    if (!appeared) return { ok: false, code: "save_confirm_not_found" };
+    if (!appeared) {
+      if (saveDoneVisible()) return { ok: true };
+      return { ok: false, code: "save_confirm_not_found" };
+    }
 
     for (var n = 0; n < 2; n++) {
+      if (saveDoneVisible() || !findSaveConfirmRoot()) return { ok: true };
       var box = findSaveConfirmRoot();
-      if (!box) return { ok: true };
       var okBtn = findConfirmButton(box) || findConfirmButton(document.body);
-      if (!okBtn) return { ok: false, code: "save_confirm_btn_missing" };
+      if (!okBtn) {
+        if (saveDoneVisible()) return { ok: true };
+        return { ok: false, code: "save_confirm_btn_missing" };
+      }
       clickOnce(okBtn);
       await sleep(500);
-      if (!saveConfirmStillOpen()) return { ok: true };
     }
-    return {
-      ok: !saveConfirmStillOpen(),
-      code: saveConfirmStillOpen() ? "save_confirm_still_open" : undefined,
-    };
+    if (saveDoneVisible() || !findSaveConfirmRoot()) return { ok: true };
+    return { ok: false, code: "save_confirm_still_open" };
   }
 
   function findDialogByNeedles(needles) {
