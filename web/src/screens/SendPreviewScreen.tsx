@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { AttendanceRecord, Owner } from '../types/models';
 import {
   deleteAttendance,
+  listAttendance,
   listAttendanceByDate,
   putAttendance,
 } from '../db/idb';
@@ -33,7 +34,9 @@ export function SendPreviewScreen({ owner, date, periodCount, onBack }: Props) {
   const [clearStep, setClearStep] = useState<1 | 2>(1);
 
   const load = useCallback(async () => {
-    const rows = await listAttendanceByDate(owner.ownerSub, date);
+    const rows = date
+      ? await listAttendanceByDate(owner.ownerSub, date)
+      : await listAttendance(owner.ownerSub);
     setRecords(rows.filter(isQueueCandidate));
   }, [owner.ownerSub, date]);
 
@@ -126,7 +129,7 @@ export function SendPreviewScreen({ owner, date, periodCount, onBack }: Props) {
         <div>
           <h1>전송 미리보기</h1>
           <p className="muted">
-            {date} · 비출석 {records.length}건 · queued만 확장 준비
+            {date || '전체 날짜'} · 비출석 {records.length}건 · 출결마감 없음 · queued만 확장
           </p>
         </div>
         <button type="button" className="btn ghost" onClick={onBack}>

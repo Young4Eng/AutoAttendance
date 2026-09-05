@@ -245,6 +245,8 @@ MIT. 교육 현장 비영리 사용을 전제로 한다. 나이스 자체는 이
 | `docs/data-contract.md` | 구분·종류·클릭 규칙·JSON |
 | `docs/auth.md` | 구글 로그인·계정 DB |
 | `docs/privacy.md` | 출결 초안 개인정보 안내 (앱 문구 원문) |
+| `docs/ROADMAP.md` | 정식 배포 순서 |
+| `supabase/schema.sql` | 계정 DB 초안 |
 | `docs/BOTS.md` | 그록 봇 이름·레이블·설명 |
 | `docs/FIRST-ISSUES.md` | 코딩 전 이슈 |
 | `docs/issue-template.md` | 이슈 본문 양식 |

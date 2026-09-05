@@ -42,9 +42,11 @@ export function LoginScreen({ onLogin, error, onError }: Props) {
       <section className="card login-card">
         <h2>로그인</h2>
         <GoogleSignInButton onOwner={handleOwner} onError={handleGisError} />
-        <button type="button" className="btn secondary" onClick={loginFixture}>
-          픽스처로 들어가기 (test-owner-aaa)
-        </button>
+        {import.meta.env.DEV ? (
+          <button type="button" className="btn secondary" onClick={loginFixture}>
+            개발용 픽스처 (test-owner-aaa)
+          </button>
+        ) : null}
         {error ? (
           <p className="error" role="alert">
             {error}
