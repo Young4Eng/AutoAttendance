@@ -98,7 +98,12 @@ export function SendPreviewScreen({ owner, date, periodCount, onBack }: Props) {
       if (ext.ok) {
         setStatus((s) => `${s ?? ''} · 확장 수신 ${ext.accepted}건`);
       } else {
-        setStatus((s) => `${s ?? ''} · ${extMsg(ext.code)}`);
+        setStatus((s) => {
+          const detail = ext.errors?.length
+            ? ext.errors.slice(0, 3).map((e) => `${e.row + 1}행 ${e.code}`).join(', ')
+            : extMsg(ext.code);
+          return `${s ?? ''} · 확장 거절 ${ext.rejected ?? 0}건 (${detail})`;
+        });
       }
     } catch (e) {
       const code = e instanceof Error ? e.message : 'queue_error';

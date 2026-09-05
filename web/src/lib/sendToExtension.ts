@@ -2,13 +2,14 @@ import type { AttendanceRecord } from '../types/models';
 
 export type SendToExtensionResult =
   | { ok: true; accepted: number; rejected: number }
-  | { ok: false; code: string; accepted?: number; rejected?: number };
+  | { ok: false; code: string; accepted?: number; rejected?: number; errors?: { row: number; code: string }[] };
 
 type ExternalResponse = {
   ok?: boolean;
   code?: string;
   accepted?: number;
   rejected?: number;
+  errors?: { row: number; code: string }[];
 };
 
 declare global {
@@ -64,6 +65,7 @@ export function sendToExtension(
               code: response?.code || 'rejected',
               accepted: response?.accepted,
               rejected: response?.rejected,
+              errors: response?.errors,
             });
             return;
           }

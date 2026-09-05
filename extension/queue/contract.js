@@ -56,7 +56,12 @@ export function validateQueueItem(raw) {
   if (raw.status !== "queued") return { ok: false, code: "not_queued" };
   if (!CATEGORIES.includes(raw.category)) return { ok: false, code: "bad_category" };
   if (!TYPES.includes(raw.type)) return { ok: false, code: "bad_type" };
-  if (typeof raw.period !== "number" || raw.period < 1) {
+  if (typeof raw.period !== "number" || Number.isNaN(raw.period)) {
+    return { ok: false, code: "bad_period" };
+  }
+  if (raw.type === "absence") {
+    if (raw.period !== 0) return { ok: false, code: "absence_period_must_be_0" };
+  } else if (raw.period < 1) {
     return { ok: false, code: "bad_period" };
   }
   if (typeof raw.ownerSub !== "string" || !raw.ownerSub) {
