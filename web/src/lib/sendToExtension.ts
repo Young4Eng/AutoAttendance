@@ -39,7 +39,13 @@ export function sendToExtension(
     return Promise.resolve({ ok: false, code: 'missing_extension_id' });
   }
 
-  const items = queue.filter((r) => r.status === 'queued');
+  const items = queue
+    .filter((r) => r.status === 'queued')
+    .slice()
+    .sort((a, b) => {
+      if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+      return a.number - b.number;
+    });
   if (items.length === 0) {
     return Promise.resolve({ ok: false, code: 'empty_queue' });
   }

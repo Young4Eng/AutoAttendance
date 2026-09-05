@@ -299,7 +299,12 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
 
   chrome.storage.session.get(QUEUE_KEY).then((data) => {
     const prev = Array.isArray(data[QUEUE_KEY]) ? data[QUEUE_KEY] : [];
-    const next = prev.concat(accepted);
+    const next = prev.concat(accepted).sort((a, b) => {
+      const da = String(a.date || "");
+      const db = String(b.date || "");
+      if (da !== db) return da < db ? -1 : 1;
+      return (Number(a.number) || 0) - (Number(b.number) || 0);
+    });
     return chrome.storage.session.set({ [QUEUE_KEY]: next }).then(() => {
       sendResponse({
         ok: errors.length === 0,

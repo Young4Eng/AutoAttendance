@@ -3389,7 +3389,13 @@
     var dryRun = !opts || opts.dryRun !== false;
     if (!items.length) return { ok: false, code: "empty_items" };
     items.sort(function (a, b) {
-      return String(normalizeDate(a.date) || "").localeCompare(String(normalizeDate(b.date) || ""));
+      var da = String(normalizeDate(a.date) || "");
+      var db = String(normalizeDate(b.date) || "");
+      if (da !== db) return da < db ? -1 : 1;
+      var na = Number(a.number) || 0;
+      var nb = Number(b.number) || 0;
+      if (na !== nb) return na - nb;
+      return String(a.name || "").localeCompare(String(b.name || ""), "ko");
     });
 
     var leftover = findOpenPopupVisible();

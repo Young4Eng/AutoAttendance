@@ -45,7 +45,11 @@ export function SendPreviewScreen({ owner, date, periodCount, onBack }: Props) {
     const rows = date
       ? await listAttendanceByDate(owner.ownerSub, date)
       : await listAttendance(owner.ownerSub);
-    setRecords(rows.filter(isQueueCandidate));
+    setRecords(
+      rows
+        .filter(isQueueCandidate)
+        .sort((a, b) => (a.date === b.date ? a.number - b.number : a.date < b.date ? -1 : 1)),
+    );
   }, [owner.ownerSub, date]);
 
   useEffect(() => {
