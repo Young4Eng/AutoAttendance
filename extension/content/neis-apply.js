@@ -3189,11 +3189,13 @@
         }
       }
       if (!hit) continue;
-      var box = el;
-      for (var up = 0; up < 8 && box; up++, box = box.parentElement) {
-        if (!(box instanceof Element)) break;
-        var br = box.getBoundingClientRect();
-        if (br.width > 120 && br.width < 720 && br.height > 80 && br.height < 420) return box;
+      var cur = el;
+      for (var up = 0; up < 12 && cur; up++, cur = cur.parentElement) {
+        if (!(cur instanceof Element)) break;
+        var blob = normText(cur.textContent || "");
+        var br = cur.getBoundingClientRect();
+        if (br.width > 900 || br.height > 620) continue;
+        if (blob.indexOf("확인") >= 0 && br.height > 80) return cur;
       }
       return el;
     }
@@ -3227,7 +3229,7 @@
       await sleep(500);
       if (!findDialogByNeedles(["저장했습니다", "저장하였습니다"])) return { ok: true };
     }
-    return { ok: true };
+    return { ok: !findDialogByNeedles(["저장했습니다", "저장하였습니다"]), code: "saved_alert_still_open" };
   }
 
   async function saveDateAndConfirm() {
@@ -3235,9 +3237,12 @@
     if (!sv.ok) return sv;
     await sleep(500);
     var q = await confirmSaveDialog();
-    if (!q.ok) return q;
+    if (!q.ok && !saveDoneVisible()) return q;
     await sleep(400);
-    return dismissSavedAlert();
+    var d = await dismissSavedAlert();
+    if (!d.ok) return d;
+    if (saveDoneVisible()) return { ok: false, code: "saved_alert_still_open" };
+    return { ok: true };
   }
 
   async function applyQueue(opts) {
