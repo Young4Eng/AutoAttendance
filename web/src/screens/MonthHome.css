@@ -50,8 +50,13 @@
   margin-bottom: 1.25rem;
 }
 .mh-banner span { color: var(--teal); }
-.mh-head h1 { margin: 0; font-size: 24px; letter-spacing: -0.015em; }
+.mh-head { display: flex; align-items: baseline; gap: 12px; }
+.mh-head h1 { margin: 0 0 1rem; font-size: 24px; letter-spacing: -0.015em; }
 .mh-head p { margin: 0.35rem 0 1rem; color: var(--muted); font-size: 13px; }
+.mh-mini { font-size: 11px; color: #3f3f46; margin-top: 4px; }
+.mh-reasons { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; }
+.mh-reasons span { color: var(--muted); }
+.mh-reasons button { border: 1px solid var(--line); background: #f4f4f5; border-radius: 999px; padding: 3px 8px; cursor: pointer; }
 .mh-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
 .mh-dow { font-size: 12px; color: var(--muted); padding: 4px 6px; }
 .mh-dow.wk { color: #a1a1aa; }
