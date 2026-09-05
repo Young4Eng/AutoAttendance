@@ -1598,24 +1598,23 @@
         new KeyboardEvent("keydown", { key: "a", code: "KeyA", ctrlKey: true, bubbles: true }),
       );
     } catch (eA) {}
-    setNexaText(el, "");
-    for (var i = 0; i < 8; i++) {
-      var ch = ymd.charAt(i);
-      try {
-        el.dispatchEvent(new KeyboardEvent("keydown", { key: ch, bubbles: true }));
-      } catch (eK) {}
-      var cur = "";
-      try {
-        cur = String(el.value || "");
-      } catch (eC) {
-        cur = "";
-      }
-      setNexaText(el, cur.replace(/\D/g, "").slice(0, i) + ch);
-      try {
-        el.dispatchEvent(new KeyboardEvent("keyup", { key: ch, bubbles: true }));
-      } catch (eU) {}
+    var inserted = false;
+    try {
+      inserted = document.execCommand("insertText", false, ymd);
+    } catch (eI) {
+      inserted = false;
     }
-    setNexaText(el, ymd);
+    if (!inserted) {
+      for (var i = 0; i < 8; i++) {
+        var ch = ymd.charAt(i);
+        try {
+          el.dispatchEvent(new KeyboardEvent("keydown", { key: ch, bubbles: true, keyCode: 48 + Number(ch) }));
+          el.dispatchEvent(new KeyboardEvent("keypress", { key: ch, bubbles: true, keyCode: 48 + Number(ch) }));
+          el.dispatchEvent(new InputEvent("input", { bubbles: true, data: ch, inputType: "insertText" }));
+          el.dispatchEvent(new KeyboardEvent("keyup", { key: ch, bubbles: true, keyCode: 48 + Number(ch) }));
+        } catch (eK) {}
+      }
+    }
     return true;
   }
 
@@ -1633,10 +1632,19 @@
       return pre;
     }
 
+    var guide = findDialogByNeedles(["[안내]", "begin 4", "저장했습니다", "저장하시겠습니까"]);
+    if (guide) {
+      var gOk = findLoneConfirmIn(guide) || findConfirmButton(guide);
+      if (gOk) {
+        clickOnce(gOk);
+        await sleep(500);
+      }
+    }
+
     var controls = findDateControls();
     if (!controls.length) return pre.ok ? pre : { ok: false, code: pre.code || "date_unreadable" };
     typeEightDigits(controls[0], ymd);
-    await sleep(400);
+    await sleep(500);
     var btn = findLookupButton();
     if (!btn) return { ok: false, code: "lookup_not_found" };
     clickOnce(btn);
