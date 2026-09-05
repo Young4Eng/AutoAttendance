@@ -5,7 +5,7 @@ type Props = { teacherLabel: string; screen: AppScreen; onNav: (s: AppScreen) =>
 export function RepeatScreen(p: Props) {
   return (
     <Shell {...p}>
-      <StitchMain folder="_2" />
+      <StitchMain folder="repeat" />
     </Shell>
   );
 }

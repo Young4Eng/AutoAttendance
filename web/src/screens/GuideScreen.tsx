@@ -4,7 +4,7 @@ type Props = { teacherLabel: string; screen: AppScreen; onNav: (s: AppScreen) =>
 export function GuideScreen(p: Props) {
   return (
     <Shell {...p}>
-      <StitchMain folder="_8" />
+      <StitchMain folder="guide" />
     </Shell>
   );
 }

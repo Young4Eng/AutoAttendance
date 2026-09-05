@@ -3,7 +3,7 @@
 0. 고정 — 월 달력 홈, 날짜 한 번, 결석에 P 없음, 주말 제외, 출결마감 안 함
 1. 구글 로그인 — `VITE_GOOGLE_CLIENT_ID`. 픽스처는 개발만 (`DEV`)
 2. 계정 DB — `supabase/schema.sql` + RLS. 키는 `.env`
-3. 스티치 HTML — `_5` → `9_1` → `9_3_2` → `_4` → `_2` → 미리보기 → `_8`
+3. 스티치 HTML — web/public/stitch (login·month·day-panel·roster·repeat·preview·guide·qa)
 4. 구멍 — 기타 사유, 미리보기↔확장
 5. 확장 전송 — `VITE_EXTENSION_ID` + 0.6.8 매크로
 6. 학교 개인정보 담당 · 나이스 확장 허용

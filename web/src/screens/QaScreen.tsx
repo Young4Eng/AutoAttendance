@@ -4,7 +4,7 @@ type Props = { teacherLabel: string; screen: AppScreen; onNav: (s: AppScreen) =>
 export function QaScreen(p: Props) {
   return (
     <Shell {...p}>
-      <StitchMain folder="q_a" />
+      <StitchMain folder="qa" />
     </Shell>
   );
 }

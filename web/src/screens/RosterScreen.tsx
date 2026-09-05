@@ -28,7 +28,7 @@ export function RosterScreen({ ownerSub, teacherLabel, screen, onNav, onLogout }
             e.target.value = "";
           }} />
         </div>
-        <StitchMain folder="_4" />
+        <StitchMain folder="roster" />
       </div>
     </Shell>
   );
