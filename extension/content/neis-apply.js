@@ -1086,6 +1086,78 @@
     return null;
   }
 
+  function pressArrowKey(el, dir) {
+    var key = dir === "up" ? "ArrowUp" : "ArrowDown";
+    var target = el || document.activeElement || document.body;
+    var init = { key: key, code: key, keyCode: dir === "up" ? 38 : 40, which: dir === "up" ? 38 : 40, bubbles: true, cancelable: true };
+    try {
+      target.dispatchEvent(new KeyboardEvent("keydown", init));
+      target.dispatchEvent(new KeyboardEvent("keyup", init));
+    } catch (eK) {}
+  }
+
+  function firstVisibleNameLeaf(grid) {
+    var root = (grid && grid.root) || document;
+    var records = collectSpatialLeafRecords(root, grid && grid.headerBottom);
+    for (var i = 0; i < records.length; i++) {
+      var t = records[i].text || "";
+      if (t === "성명" || t === "번호" || t === "마감" || t === "미마감") continue;
+      if (!/^[가-힣]{2,6}$/.test(t)) continue;
+      if (!records[i].el || !visible(records[i].el)) continue;
+      return records[i].el;
+    }
+    return null;
+  }
+
+  function visibleNumberValues(grid) {
+    var out = [];
+    var root = (grid && grid.root) || document;
+    var records = collectSpatialLeafRecords(root, grid && grid.headerBottom);
+    for (var i = 0; i < records.length; i++) {
+      var t = records[i].text || "";
+      if (!/^\d{1,3}$/.test(t)) continue;
+      if (t === "번호") continue;
+      var n = Number(t);
+      if (Number.isFinite(n) && out.indexOf(n) < 0) out.push(n);
+    }
+    return out;
+  }
+
+  /** 화면에 없으면 이름칸 포커스 후 화살표로 한 줄씩. 타깃 번호+성명이 보이면 중단. */
+  async function revealRowByNumberName(grid, number, name) {
+    var hit = findRowByNumberName(grid, number, name);
+    if (hit) return { ok: true, hit: hit, grid: grid };
+    var want = Number(String(number).trim());
+    var focus = firstVisibleNameLeaf(grid);
+    if (focus) {
+      clickOnce(focus);
+      await sleep(150);
+    }
+    var vis = visibleNumberValues(grid);
+    var minV = vis.length ? Math.min.apply(null, vis) : null;
+    var maxV = vis.length ? Math.max.apply(null, vis) : null;
+    var dir = "down";
+    if (Number.isFinite(want) && minV != null && want < minV) dir = "up";
+    else if (Number.isFinite(want) && maxV != null && want > maxV) dir = "down";
+    var maxStep = 80;
+    for (var step = 0; step < maxStep; step++) {
+      pressArrowKey(document.activeElement || focus || document.body, dir);
+      await sleep(160);
+      grid = findAttendanceGrid(document) || grid;
+      hit = findRowByNumberName(grid, number, name);
+      if (hit) return { ok: true, hit: hit, grid: grid, scrolled: step + 1 };
+    }
+    var other = dir === "down" ? "up" : "down";
+    for (var step2 = 0; step2 < maxStep; step2++) {
+      pressArrowKey(document.activeElement || focus || document.body, other);
+      await sleep(160);
+      grid = findAttendanceGrid(document) || grid;
+      hit = findRowByNumberName(grid, number, name);
+      if (hit) return { ok: true, hit: hit, grid: grid, scrolled: step2 + 1 };
+    }
+    return { ok: false, hit: null, grid: grid };
+  }
+
   function FB() {
     return globalThis.ChulgyeolFilterBar || null;
   }
@@ -3359,8 +3431,10 @@
         return { ok: false, code: fm.code, applied: applied, dryRun: dryRun };
       }
       grid = findAttendanceGrid(document) || grid;
-      var hit = findRowByNumberName(grid, item.number, item.name);
-      if (!hit) {
+      var revealed = await revealRowByNumberName(grid, item.number, item.name);
+      grid = revealed.grid || grid;
+      var hit = revealed.hit;
+      if (!revealed.ok || !hit) {
         log(row, item.type || "?", "stop", "row_not_found");
         return {
           ok: false,
