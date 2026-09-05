@@ -1,0 +1,49 @@
+.ls {
+  min-height: 100vh;
+  background: #fbfbfa;
+  color: #18181b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  font-family: Pretendard, system-ui, sans-serif;
+}
+.ls-chip {
+  align-self: flex-end;
+  font-size: 12px;
+  color: #0f766e;
+  background: #f0fdfa;
+  border: 1px solid #99f6e4;
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+.ls-mid { width: 100%; max-width: 420px; text-align: center; margin: auto; }
+.ls-logo {
+  width: 64px; height: 64px; border-radius: 16px;
+  background: #0f766e; color: #fff; display: grid; place-items: center;
+  font-weight: 700; font-size: 22px; margin: 0 auto 20px;
+}
+.ls-mid h1 { margin: 0 0 8px; font-size: 24px; }
+.ls-mid .sub { color: #71717a; font-size: 14px; line-height: 1.6; margin: 0 0 32px; }
+.ls-card {
+  background: #fff; border: 1px solid #e4e4e7; border-radius: 16px;
+  padding: 28px; text-align: left;
+}
+.ls-div {
+  text-align: center; color: #a1a1aa; font-size: 11px;
+  letter-spacing: 0.08em; margin: 16px 0;
+}
+.ls-note {
+  background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 12px;
+  padding: 14px; font-size: 12px; line-height: 1.55; color: #475569; white-space: pre-line;
+}
+.ls-note b { color: #0f766e; }
+.ls-meta { display: flex; gap: 24px; justify-content: center; margin-top: 24px; font-size: 12px; color: #71717a; }
+.ls-foot { font-size: 12px; color: #a1a1aa; }
+.ls .error { color: #be123c; font-size: 13px; margin-top: 8px; }
+.ls .gis-host { display: flex; justify-content: center; }
+.ls .btn.secondary {
+  width: 100%; margin-top: 10px; height: 36px; border-radius: 10px;
+  border: 1px solid #e4e4e7; background: #fff; cursor: pointer;
+}
