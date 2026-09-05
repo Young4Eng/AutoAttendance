@@ -2952,6 +2952,75 @@
     return { ok: true };
   }
 
+  function findSaveConfirmRoot() {
+    var root = document.body || document.documentElement;
+    var needles = ["저장하시겠습니까", "저장 하시겠습니까"];
+    var all = root.querySelectorAll("div, span, p, td, li");
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      if (!visible(el)) continue;
+      var t = normText(el.textContent || "");
+      if (!t || t.length > 80) continue;
+      var hit = false;
+      for (var n = 0; n < needles.length; n++) {
+        if (t.indexOf(needles[n]) >= 0) {
+          hit = true;
+          break;
+        }
+      }
+      if (!hit) continue;
+      var box = el;
+      for (var up = 0; up < 8 && box; up++, box = box.parentElement) {
+        if (!(box instanceof Element)) break;
+        var br = box.getBoundingClientRect();
+        if (br.width > 120 && br.width < 720 && br.height > 80 && br.height < 420) return box;
+      }
+      return el;
+    }
+    return null;
+  }
+
+  function findConfirmButton(scope) {
+    var root = scope || document.body || document.documentElement;
+    var hits = [];
+    try {
+      hits = findElementsByExactText(root, "확인").concat(findLabelHits(root, "확인") || []);
+    } catch (eH) {
+      hits = [];
+    }
+    for (var i = 0; i < hits.length; i++) {
+      var el = hits[i];
+      if (!visible(el)) continue;
+      if (normText(el.textContent || "") !== "확인") continue;
+      return climbToolbarBtn(el) || el;
+    }
+    return null;
+  }
+
+  async function confirmSaveDialog() {
+    var deadline = Date.now() + 2800;
+    while (Date.now() < deadline) {
+      var box = findSaveConfirmRoot();
+      if (box) {
+        var okBtn = findConfirmButton(box) || findConfirmButton(document.body);
+        if (okBtn) {
+          clickOnce(okBtn);
+          await sleep(400);
+          return { ok: true };
+        }
+      }
+      await sleep(120);
+    }
+    return { ok: false, code: "save_confirm_not_found" };
+  }
+
+  async function saveDateAndConfirm() {
+    var sv = clickSaveOnly();
+    if (!sv.ok) return sv;
+    await sleep(300);
+    return confirmSaveDialog();
+  }
+
   async function applyQueue(opts) {
     var items = ((opts && opts.items) || []).slice();
     var dryRun = !opts || opts.dryRun !== false;
@@ -2984,7 +3053,7 @@
       var item = items[row];
       var nextDate = normalizeDate(item.date);
       if (!dryRun && lastDate && nextDate && nextDate !== lastDate) {
-        var midSave = clickSaveOnly();
+        var midSave = await saveDateAndConfirm();
         if (!midSave.ok) {
           log(row, item.type || "?", "stop", midSave.code || "save_before_date_change");
           return { ok: false, code: midSave.code || "save_before_date_change", applied: applied, dryRun: false };
@@ -3049,7 +3118,7 @@
       console.info("[출결메이트]", "dryRun=true save_skipped");
       return { ok: true, applied: applied, dryRun: true, saved: false };
     }
-    var sv = clickSaveOnly();
+    var sv = await saveDateAndConfirm();
     if (!sv.ok) return { ok: false, code: sv.code, applied: applied, dryRun: false, saved: false };
     console.info("[출결메이트]", "saved=true synced_not_set");
     return { ok: true, applied: applied, dryRun: false, saved: true };
