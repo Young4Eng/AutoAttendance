@@ -124,8 +124,8 @@ export function SendPreviewScreen({ owner, date, periodCount, onBack }: Props) {
   };
 
   return (
-    <div className="app">
-      <header className="header row">
+    <div className="flex-1 p-6">
+      <header className="flex items-start justify-between mb-4">
         <div>
           <h1>전송 미리보기</h1>
           <p className="muted">
