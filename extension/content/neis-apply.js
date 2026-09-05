@@ -554,6 +554,129 @@
     return null;
   }
 
+  function closeHeaderMaxDxValue() {
+    var api = PA();
+    if (api && typeof api.closeHeaderMaxDx === "function") {
+      var n = Number(api.closeHeaderMaxDx(null));
+      if (!isNaN(n) && n > 0 && n <= 80) return n;
+    }
+    if (api && api.CLOSE_HEADER_MAX_DX != null) {
+      var d = Number(api.CLOSE_HEADER_MAX_DX);
+      if (!isNaN(d) && d > 0 && d <= 80) return d;
+    }
+    return 40;
+  }
+
+  function closeHeaderAlignedOk(cellCenterX, headerCenterX) {
+    if (headerCenterX == null || isNaN(Number(headerCenterX))) return false;
+    if (cellCenterX == null || isNaN(Number(cellCenterX))) return false;
+    var api = PA();
+    var maxDx = closeHeaderMaxDxValue();
+    if (api && typeof api.alignsWithCloseHeader === "function") {
+      return !!api.alignsWithCloseHeader(cellCenterX, headerCenterX, maxDx);
+    }
+    return Math.abs(Number(cellCenterX) - Number(headerCenterX)) <= maxDx;
+  }
+
+  function cellCenterX(el) {
+    if (!el || !el.getBoundingClientRect) return null;
+    var r = el.getBoundingClientRect();
+    if (!(r.width > 0 && r.height > 0)) return null;
+    return r.left + r.width / 2;
+  }
+
+  /** 번호·성명 칸으로 행 Y 띠. 행 컨테이너가 그리드 전체여도 띠만 씀. */
+  function rowBandFromRowAndCells(row, cells) {
+    var top = null;
+    var bottom = null;
+    function acc(el) {
+      if (!el || !el.getBoundingClientRect) return;
+      var r = el.getBoundingClientRect();
+      if (!(r.width > 0 && r.height > 0)) return;
+      if (r.height > 90) return;
+      top = top == null ? r.top : Math.min(top, r.top);
+      bottom = bottom == null ? r.bottom : Math.max(bottom, r.bottom);
+    }
+    var list = cells || [];
+    for (var i = 0; i < list.length && i < 4; i++) acc(list[i]);
+    acc(row);
+    if (top == null || bottom == null || bottom - top < 8) {
+      var rr = row && row.getBoundingClientRect ? row.getBoundingClientRect() : null;
+      if (rr && rr.height > 0 && rr.height <= 48) {
+        return { top: rr.top, bottom: rr.bottom, midY: (rr.top + rr.bottom) / 2 };
+      }
+      return null;
+    }
+    if (bottom - top > 70) {
+      var mid = (top + bottom) / 2;
+      return { top: mid - 16, bottom: mid + 16, midY: mid };
+    }
+    return { top: top, bottom: bottom, midY: (top + bottom) / 2 };
+  }
+
+  function climbCloseCellFromPoint(el) {
+    if (!el || !(el instanceof Element)) return null;
+    var cur = el;
+    for (var i = 0; i < 8 && cur; i++, cur = cur.parentElement) {
+      if (!(cur instanceof Element)) break;
+      var tag = (cur.tagName || "").toUpperCase();
+      if (tag === "BODY" || tag === "HTML" || tag === "TR" || tag === "TABLE") break;
+      var r = cur.getBoundingClientRect();
+      if (r.width < 2 || r.height < 2) continue;
+      if (r.width > 280 || r.height > 90) continue;
+      return cur;
+    }
+    return el instanceof Element ? el : null;
+  }
+
+  /**
+   * #52: closeIdx 칸을 쓰지 않는다. 마감 헤더 X × 행 midY.
+   * MAX_DX를 올리지 않음. 정렬 안 되면 null.
+   */
+  function resolveCloseCellByHeaderX(row, cells, headerCenterX, headerBottom) {
+    if (headerCenterX == null || isNaN(Number(headerCenterX))) return null;
+    var hx = Number(headerCenterX);
+    var band = rowBandFromRowAndCells(row, cells);
+    if (!band) return null;
+    var hb = headerBottom != null ? headerBottom : band.top - 24;
+
+    var hitEl = null;
+    try {
+      if (document.elementFromPoint) {
+        hitEl = document.elementFromPoint(hx, band.midY);
+      }
+    } catch (ePt) {
+      hitEl = null;
+    }
+    if (hitEl) {
+      var climbed = climbCloseCellFromPoint(hitEl);
+      var cx = cellCenterX(climbed);
+      if (climbed && closeHeaderAlignedOk(cx, hx)) return climbed;
+    }
+
+    var root = document.body || document.documentElement;
+    var near = findCellNear(root, hx, band.top, band.bottom, hb);
+    if (near && closeHeaderAlignedOk(cellCenterX(near), hx)) return near;
+
+    if (cells && cells.length) {
+      var best = null;
+      var bestDx = 1e15;
+      for (var i = 0; i < cells.length; i++) {
+        var el = cells[i];
+        var ccx = cellCenterX(el);
+        if (ccx == null) continue;
+        if (!closeHeaderAlignedOk(ccx, hx)) continue;
+        var dx = Math.abs(ccx - hx);
+        if (dx < bestDx) {
+          bestDx = dx;
+          best = el;
+        }
+      }
+      if (best) return best;
+    }
+    return null;
+  }
+
   function findCellNear(root, centerX, rowTop, rowBottom, headerBottom) {
     var best = null;
     var bestScore = 1e15;
@@ -2273,9 +2396,6 @@
 
   async function openClosePopup(row, closeIdx, cellsOpt, headerCenterXOpt) {
     var cells = cellsOpt || rowCells(row);
-    var cell = cells[closeIdx];
-    if (!cell) return { ok: false, code: "no_close_cell", diag: popupDiag(document) };
-
     var beforeOpen = findOpenPopupVisible();
     if (beforeOpen) return { ok: true, popup: beforeOpen };
 
@@ -2285,6 +2405,30 @@
       headerCenterXOpt != null && !isNaN(Number(headerCenterXOpt))
         ? Number(headerCenterXOpt)
         : findCloseHeaderCenterX(document.body || document.documentElement);
+
+    // #52: closeIdx(880칸) 버리고 헤더X×행Y로 재선택. 정렬 실패면 클릭 안 함.
+    var cell = resolveCloseCellByHeaderX(row, cells, headerCx, null);
+    if (!cell) {
+      var idxCell = cells && closeIdx != null ? cells[closeIdx] : null;
+      var dumpIdx = buildCloseCellFailDump(
+        idxCell,
+        idxCell ? [idxCell] : [],
+        beforeProbe,
+        beforeProbe,
+        [],
+        headerCx,
+      );
+      logCloseCellFailDump(dumpIdx);
+      var diagIdx = popupDiag(document);
+      diagIdx.closeCellDump = dumpIdx;
+      diagIdx.headerX = dumpIdx.headerX != null ? dumpIdx.headerX : null;
+      diagIdx.cellX = dumpIdx.cellX != null ? dumpIdx.cellX : null;
+      diagIdx.closeHeaderDx = dumpIdx.closeHeaderDx != null ? dumpIdx.closeHeaderDx : null;
+      diagIdx.closeHeaderAligned = 0;
+      diagIdx.resolve = "headerX_x_rowY";
+      return { ok: false, code: "close_col_misaligned", diag: diagIdx };
+    }
+
     var targets = closeClickTargets(cell, headerCx);
     // #50: 「마감」헤더와 centerX 미정렬이면 클릭하지 않음
     if (!targets.length) {
