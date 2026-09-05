@@ -1,0 +1,540 @@
+<!DOCTYPE html><html lang="ko" style=""><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;word-break:keep-all;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"on-tertiary":"#ffffff","background":"#fbf8fc","inverse-on-surface":"#f3f0f4","surface-container-highest":"#e4e1e6","tertiary-fixed":"#ffdbce","inverse-primary":"#80d5cb","surface-container-lowest":"#ffffff","surface-container":"#f0edf1","error-container":"#ffdad6","surface-variant":"#e4e1e6","on-primary-fixed":"#00201d","on-secondary-fixed-variant":"#920028","surface-dim":"#dcd9dd","on-tertiary-container":"#ffe5db","surface-bright":"#fbf8fc","on-surface":"#1b1b1e","on-background":"#1b1b1e","on-primary-fixed-variant":"#00504a","primary-fixed-dim":"#80d5cb","secondary-fixed-dim":"#ffb3b6","error":"#ba1a1a","surface-container-high":"#eae7eb","on-tertiary-fixed-variant":"#72361b","outline":"#6e7977","secondary-fixed":"#ffdada","primary":"#005c55","on-surface-variant":"#3e4947","on-error":"#ffffff","surface-container-low":"#f6f2f7","surface-tint":"#006a63","surface":"#fbf8fc","tertiary-fixed-dim":"#ffb598","primary-container":"#0f766e","on-tertiary-fixed":"#370e00","tertiary":"#7f4025","on-primary-container":"#a3faef","secondary-container":"#e21e49","outline-variant":"#bdc9c6","on-error-container":"#93000a","on-secondary":"#ffffff","secondary":"#ba0035","inverse-surface":"#303033","primary-fixed":"#9cf2e8","tertiary-container":"#9c573a","on-secondary-container":"#fffbff","on-secondary-fixed":"#40000c","on-primary":"#ffffff"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"space-xl":"2rem","space-lg":"1.5rem","space-md":"1rem","max-content-width":"78rem","space-xs":"0.5rem","gutter":"1.25rem","sidebar-width":"16rem","space-sm":"0.75rem","space-2xs":"0.25rem","space-2xl":"3rem"},"fontFamily":{"display-lg":["Hanken Grotesk"],"label-sm":["Hanken Grotesk"],"label-md":["Hanken Grotesk"],"body-lg":["Hanken Grotesk"],"body-md":["Hanken Grotesk"],"title-md":["Hanken Grotesk"],"headline-md":["Hanken Grotesk"],"headline-sm":["Hanken Grotesk"],"body-code":["Hanken Grotesk"]},"fontSize":{"display-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.02em","fontWeight":"600"}],"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.02em","fontWeight":"600"}],"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.01em","fontWeight":"500"}],"body-lg":["15px",{"lineHeight":"24px","fontWeight":"400"}],"body-md":["13px",{"lineHeight":"20px","fontWeight":"400"}],"title-md":["15px",{"lineHeight":"22px","letterSpacing":"-0.005em","fontWeight":"600"}],"headline-md":["24px",{"lineHeight":"32px","letterSpacing":"-0.015em","fontWeight":"600"}],"headline-sm":["18px",{"lineHeight":"26px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-code":["12px",{"lineHeight":"18px","letterSpacing":"0.02em","fontWeight":"500"}]}}}}</script></head><body class="bg-background font-body-md text-on-surface antialiased h-screen overflow-hidden flex"><aside class="w-64 h-screen shrink-0 bg-white border-r border-slate-200 flex flex-col p-4 overflow-y-auto z-20 justify-between">
+  <div class="flex flex-col gap-4">
+    <!-- Brand Header -->
+    <div class="flex items-center gap-3 px-1 py-1">
+      <img src="https://lh3.googleusercontent.com/aida/AEtjO1XCByYcAah5JGlg_-vowuWijwo-FsIlbj33PsziWyUx8Qch4UVOXG9312HC3jY6WNvUk5Unfw_70gPFfw7hDxqhTczqtrtC5jkIJU0ZupWZKslyYoSv5zjpF83aLAcStgCJToVSxkO8p2yCla4KljDba5pKgCoBmuJ234_XsiIIb4m5FZjy0OkrMl2GUuOAIBCzwrfbAfwrLMS2OGGTU2FknDvnh2dACzOJNjq5Del85eFamsQxNp92cg" alt="출결메이트 로고" class="h-9 w-9 rounded-lg object-contain shrink-0">
+      <div class="flex flex-col">
+        <span class="text-base font-bold tracking-tight text-slate-900 leading-tight">출결메이트</span>
+        <span class="text-[11px] text-slate-500 font-medium">중학교 담임 출결 초안</span>
+      </div>
+    </div>
+
+    <!-- Class Selector Badge -->
+    <div class="flex items-center justify-between px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800">
+      <span class="text-xs font-semibold text-teal-800">2학년 3반 교실</span>
+      <span class="text-[10px] font-medium bg-white text-slate-600 px-1.5 py-0.5 rounded border border-slate-200">담임 전용</span>
+    </div>
+
+    <!-- Navigation List -->
+    <nav class="flex flex-col gap-1">
+      <a href="#" data-path="current-month" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-medium transition-colors">
+        <span class="material-symbols-outlined text-[19px]">calendar_month</span>
+        <span class="">이번 달</span>
+      </a>
+      <a href="#" data-path="queue-preview" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-medium transition-colors">
+        <span class="material-symbols-outlined text-[19px]">queue</span>
+        <span class="">미리보기 (대기열)</span>
+      </a>
+      <a href="#" data-path="student-roster" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-medium transition-colors">
+        <span class="material-symbols-outlined text-[19px]">group</span>
+        <span class="">명단</span>
+      </a>
+      <a href="#" data-path="recurring-absence" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-medium transition-colors">
+        <span class="material-symbols-outlined text-[19px]">event_repeat</span>
+        <span class="">장기·반복</span>
+      </a>
+      <a href="#" data-path="user-guide" aria-current="page" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm bg-teal-50 text-teal-800 font-semibold transition-colors">
+        <span class="material-symbols-outlined text-[19px]">menu_book</span>
+        <span class="">사용 방법</span>
+      </a>
+      <a href="#" data-path="patch-notes-and-qa" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-medium transition-colors">
+        <span class="material-symbols-outlined text-[19px]">update</span>
+        <span class="">패치 노트 및 Q&amp;A</span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- Lower Sidebar Section -->
+  <div class="flex flex-col gap-3 mt-6 pt-2">
+    <!-- Card 1: Version & Chrome Extension -->
+    <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg flex flex-col gap-2">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-teal-600"></span>
+          <span class="text-xs font-semibold text-teal-800">v2.4 (최신)</span>
+        </div>
+        <span class="text-[10px] text-slate-400 font-medium">2025.09.02</span>
+      </div>
+      <div class="flex items-center justify-between pt-2 border-t border-slate-200 text-xs">
+        <div class="flex items-center gap-1.5 text-teal-700 font-medium">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="">크롬 확장 연결됨</span>
+        </div>
+        <a href="#" target="_blank" class="text-slate-500 hover:text-teal-700 transition-colors flex items-center gap-0.5 text-[11px]">
+          <span class="">웹스토어</span>
+          <span class="material-symbols-outlined text-[13px]">open_in_new</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Card 2: Public interest notice & developer info card -->
+    <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg flex flex-col gap-2">
+      <div class="flex items-start gap-1.5 text-slate-700">
+        <span class="material-symbols-outlined text-[16px] text-slate-500 shrink-0 mt-0.5">info</span>
+        <p class="text-[11px] leading-relaxed text-slate-600 break-keep">
+          어떤 수익도 발생하지 않고, 오로지 교사의 편의를 위해 만든 <strong class="text-slate-800 font-medium">공익 목적</strong>의 프로그램입니다. 중학교 출결 기능만을 지원합니다. 고등학교 선생님들은 내모ai 등 다른 프로그램을 사용해주세요.
+        </p>
+      </div>
+      <div class="pt-2 border-t border-slate-200 flex flex-col gap-1 text-[11px] text-slate-500">
+        <div class="flex items-center justify-between">
+          <span class="">개발자</span>
+          <span class="font-medium text-slate-800">서울 대명중학교 조영욱</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="">문의</span>
+          <a href="mailto:whduddnr@daemyeong.sen.ms.kr" class="text-teal-700 hover:underline">whduddnr@daemyeong.sen.ms.kr</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Teacher profile & data deletion card -->
+    <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg flex flex-col gap-2">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full bg-teal-100 flex items-center justify-center text-teal-800 shrink-0">
+            <span class="material-symbols-outlined text-[16px]">person</span>
+          </div>
+          <div class="flex flex-col min-w-0">
+            <span class="text-xs font-semibold text-slate-800 leading-none">김선생 교사</span>
+            <span class="text-[10px] text-slate-500 truncate">teacher.kim@school.go.kr</span>
+          </div>
+        </div>
+        <button type="button" class="text-[11px] font-medium text-slate-500 hover:text-slate-800 px-1 py-0.5">
+          로그아웃
+        </button>
+      </div>
+      <p class="text-[11px] leading-tight text-slate-500 pt-2 border-t border-slate-200 break-keep text-xs">
+        이 계정으로 저장된 명단·출결 초안이 DB에서 삭제됩니다. 나이스에 넣은 값은 지워지지 않습니다.
+      </p>
+      <div class="flex justify-end">
+        <button type="button" class="text-xs font-medium text-red-600 hover:underline px-1 py-0.5">
+          기록 삭제
+        </button>
+      </div>
+    </div>
+  </div>
+</aside><div class="min-h-screen flex flex-col h-screen overflow-y-auto flex-1"><header class="fixed top-0 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-xl z-40 shadow-[0_1px_8px_rgba(0,0,0,0.04)]" style="left: 16rem;"><div class="w-full h-16 px-space-lg flex items-center justify-between"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-2xs"><span class="font-title-md text-title-md text-on-surface font-semibold">2025학년도 2학기</span><span class="font-title-md text-title-md text-on-surface-variant">·</span><span class="font-title-md text-title-md text-primary font-semibold">2학년 3반</span></div></div><div class="flex items-center gap-space-sm"><div class="inline-flex items-center gap-space-xs px-space-sm py-space-2xs rounded-full bg-surface-container text-on-surface font-label-md text-label-md"><span class="w-2 h-2 rounded-full bg-primary"></span><span class="">계정 동기화됨</span></div><div class="inline-flex items-center gap-space-xs px-space-sm py-space-2xs rounded-full bg-primary-container text-on-primary font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">extension</span><span class="">NEIS 확장 연결됨</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="relative w-full pt-16 bg-background flex-1"><div class="max-w-max-content-width mx-auto px-space-lg py-space-lg"><div class="flex flex-col w-full">
+<!-- Page Header & Action Bar -->
+<header class="relative mb-space-xl p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-space-md">
+<div class="flex flex-col gap-space-2xs">
+<div class="inline-flex items-center gap-space-xs text-primary font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span class="">교무업무 경감 공식 가이드</span>
+</div>
+<h1 class="font-headline-md text-headline-md text-on-surface font-semibold tracking-tight">출결메이트 사용 방법 가이드</h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">
+        매일 반복되는 복잡한 나이스 출결 작업, 4단계로 간편하게 끝내는 워크플로우 안내입니다.
+      </p>
+<div class="flex flex-wrap items-center gap-space-xs mt-space-xs">
+<a class="inline-flex items-center gap-1 px-space-xs py-1 rounded bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high font-label-sm text-label-sm transition-colors" href="#workflow-section">
+<span class="material-symbols-outlined text-[15px]">linear_scale</span>
+<span class="">4단계 출결 루틴</span>
+</a>
+<a class="inline-flex items-center gap-1 px-space-xs py-1 rounded bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high font-label-sm text-label-sm transition-colors" href="#pro-tips-section">
+<span class="material-symbols-outlined text-[15px]">tips_and_updates</span>
+<span class="">담임 실무 팁</span>
+</a>
+<a class="inline-flex items-center gap-1 px-space-xs py-1 rounded bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high font-label-sm text-label-sm transition-colors" href="#faq-section">
+<span class="material-symbols-outlined text-[15px]">help</span>
+<span class="">자주 묻는 질문</span>
+</a>
+<a class="inline-flex items-center gap-1 px-space-xs py-1 rounded-md bg-primary-fixed text-on-primary-fixed hover:bg-primary hover:text-on-primary font-label-sm text-label-sm font-semibold transition-colors" href="#privacy-policy-section">
+<span class="material-symbols-outlined text-[15px]">shield</span>
+<span class="">개인정보 안내 전문</span>
+</a>
+</div>
+</div>
+<div class="flex items-center gap-space-xs shrink-0"><a class="inline-flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-primary text-on-primary hover:bg-primary-container transition-colors font-title-md text-title-md shadow-sm border border-transparent" href="#" target="_blank"><span class="material-symbols-outlined text-[18px]">extension</span><span class="">크롬 확장 프로그램 설치</span><span class="material-symbols-outlined text-[14px]">north_east</span></a>
+</div>
+</header>
+<!-- Process Overview KPI Banner -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-space-md mb-space-2xl">
+<div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-primary-fixed flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[22px]">timer</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-sm text-label-sm text-on-surface-variant">소요 시간 단축</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">일 30분 → 3분</span>
+</div>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface shrink-0">
+<span class="material-symbols-outlined text-[22px]">cloud_sync</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-sm text-label-sm text-on-surface-variant">계정 클라우드 동기화</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">어느 PC에서나 연속</span>
+</div>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-tertiary-fixed flex items-center justify-center text-tertiary shrink-0">
+<span class="material-symbols-outlined text-[22px]">flash_on</span>
+</div>
+<div class="flex flex-col min-w-0"><div class="flex items-center gap-space-2xs"><span class="font-label-sm text-label-sm text-on-surface-variant">나이스 전송 속도</span><span class="px-space-2xs py-0.5 rounded bg-tertiary text-on-tertiary font-label-sm text-[10px] font-semibold leading-none">확장 연동 필수</span></div><span class="font-headline-sm text-headline-sm text-on-surface font-semibold">100건 1초 자동입력</span></div>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[22px]">school</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-sm text-label-sm text-on-surface-variant">중등 맞춤 설계</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">7교시제 완벽 호환</span>
+</div>
+</div>
+</section>
+<!-- Step-by-Step Interactive Workflow Grid -->
+<section class="flex flex-col gap-space-md mb-space-2xl" id="workflow-section">
+<div class="flex items-center justify-between">
+<div>
+<span class="font-label-sm text-label-sm text-primary uppercase tracking-wider font-semibold">Standard Workflow</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">핵심 4단계 출결 루틴</h2>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">순서대로 따라하면 나이스 출결 업무가 완료됩니다</span>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-space-md">
+<!-- Step 1 Card -->
+<article class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between relative group hover:shadow-md transition-all">
+<div class="flex flex-col">
+<div class="flex items-center justify-between mb-space-md">
+<span class="px-space-xs py-space-2xs rounded bg-surface-container text-primary font-label-sm text-label-sm font-semibold">
+              STEP 01
+            </span>
+<span class="material-symbols-outlined text-[22px] text-outline">badge</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface font-semibold mb-space-xs">학급 명단 세팅</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-space-md leading-relaxed">
+            3월 초 최초 1회만 진행합니다. 학생 번호와 성명을 입력하고, 전출·유예 등 결번 슬롯을 나이스 출석부 순서와 엄격히 일치시킵니다.
+          </p>
+<div class="p-space-xs rounded-lg bg-surface-container-low flex flex-col gap-space-2xs mb-space-md">
+<div class="flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-on-surface-variant">01번 강서연</span>
+<span class="text-primary font-semibold">등록됨</span>
+</div>
+<div class="flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-on-surface-variant">02번 김도윤</span>
+<span class="text-primary font-semibold">등록됨</span>
+</div>
+<div class="flex items-center justify-between text-label-sm font-label-sm text-secondary">
+<span class="">03번 (결번: 전출)</span>
+<span class="font-semibold">공백유지</span>
+</div>
+</div>
+</div>
+<div class="pt-space-xs flex items-center gap-space-2xs text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px] text-primary">check_circle</span>
+<span class="">계정 DB 자동 저장으로 안전 보존</span>
+</div>
+</article>
+<!-- Step 2 Card -->
+<article class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between relative group hover:shadow-md transition-all">
+<div class="flex flex-col">
+<div class="flex items-center justify-between mb-space-md">
+<span class="px-space-xs py-space-2xs rounded bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-semibold">
+              STEP 02
+            </span>
+<span class="material-symbols-outlined text-[22px] text-primary">edit_calendar</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface font-semibold mb-space-xs">일일 예외 출결 입력</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-space-md leading-relaxed">
+            '이번 달' 달력에서 결석/지각/조퇴/결과 학생만 원클릭 선택합니다.</p>
+<div class="p-space-xs rounded-lg bg-surface-container-low flex flex-wrap gap-space-2xs mb-space-md">
+<span class="px-space-xs py-space-2xs rounded-full bg-[#FEF3C7] text-[#B45309] font-label-sm text-label-sm font-semibold">질병결석</span>
+<span class="px-space-xs py-space-2xs rounded-full bg-[#CCFBF1] text-[#0F766E] font-label-sm text-label-sm font-semibold">인정조퇴</span>
+<span class="px-space-xs py-space-2xs rounded-full bg-[#FFE4E6] text-[#BE123C] font-label-sm text-label-sm font-semibold">미인정지각</span>
+<span class="px-space-xs py-space-2xs rounded-full bg-[#EDE9FE] text-[#5B21B6] font-label-sm text-label-sm font-semibold">기타결과</span>
+</div>
+</div>
+<div class="pt-space-xs flex items-center gap-space-2xs text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px] text-primary">touch_app</span>
+<span class="">마우스 클릭 또는 키보드 단축키</span>
+</div>
+</article>
+<!-- Step 3 Card -->
+<article class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between relative group hover:shadow-md transition-all">
+<div class="flex flex-col">
+<div class="flex items-center justify-between mb-space-md">
+<span class="px-space-xs py-space-2xs rounded bg-surface-container text-primary font-label-sm text-label-sm font-semibold">
+              STEP 03
+            </span>
+<span class="material-symbols-outlined text-[22px] text-outline">fact_check</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface font-semibold mb-space-xs">대기열 검토 및 증빙 체크</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-space-md leading-relaxed">
+            월말 마감 전 '미리보기(대기열)'에서 월간 누적 건수 및 결석계/진료확인서 제출 상태를 토글 체크합니다. (미제출 시에도 나이스 선전송 가능)
+          </p>
+<div class="p-space-xs rounded-lg bg-surface-container-low flex flex-col gap-space-2xs mb-space-md">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface font-medium">9월 누적 전송 대기</span>
+<span class="font-semibold text-primary">14건</span>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 85%"></div>
+</div>
+<div class="flex items-center justify-between text-label-sm font-label-sm text-on-surface-variant">
+<span class="">증빙서류 접수율</span>
+<span class="font-semibold text-on-surface">12/14건 (85%)</span>
+</div>
+</div>
+</div>
+<div class="pt-space-xs flex items-center gap-space-2xs text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px] text-primary">checklist</span>
+<span class="">누락 서류 컬러 하이라이트</span>
+</div>
+</article>
+<!-- Step 4 Card -->
+<article class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between relative group hover:shadow-md transition-all">
+<div class="flex flex-col">
+<div class="flex items-center justify-between mb-space-md">
+<span class="px-space-xs py-space-2xs rounded bg-secondary-container text-on-secondary font-label-sm text-label-sm font-semibold">
+              STEP 04
+            </span>
+<span class="material-symbols-outlined text-[22px] text-secondary">send_to_mobile</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface font-semibold mb-space-xs">원클릭 나이스 자동 전송</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-space-md leading-relaxed">
+            나이스 출결 화면 탭을 열어둔 상태에서 [나이스로 전송] 버튼을 클릭하면 수십 건의 사유와 구분이 자동으로 채워집니다.
+          </p>
+<div class="p-space-xs rounded-lg bg-secondary-fixed flex items-center justify-between mb-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-secondary">bolt</span>
+<span class="font-label-sm text-label-sm font-semibold text-on-secondary-fixed">NEIS 일괄 동기화</span>
+</div>
+<span class="px-space-xs py-space-2xs rounded bg-surface-container-lowest text-secondary font-label-sm text-label-sm font-semibold">초고속</span>
+</div>
+</div>
+<div class="pt-space-xs flex items-center gap-space-2xs text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px] text-secondary">done_all</span>
+<span class="">자동 검증 후 저장 버튼만 클릭</span>
+</div>
+</article>
+</div>
+</section>
+<!-- Practical Tips for Teachers (2x2 Rich Editorial Grid) -->
+<section class="flex flex-col gap-space-md mb-space-2xl" id="pro-tips-section">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-primary uppercase tracking-wider font-semibold">Teacher's Pro Tips</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">담임교사 실무 가이드 &amp; 핵심 안내</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- Tip 1 -->
+<div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs mb-space-xs">
+<div class="w-7 h-7 rounded bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">event_repeat</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface font-semibold">장기·반복 결석 1분 컷 일괄 등록</h3>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed mb-space-md">
+            입원치료나 감염병 격리 등 동일 사유로 이어지는 결석은 매일 날짜를 찍을 필요가 없습니다. <strong class="text-on-surface font-medium">'장기·반복' 메뉴</strong>에서 학생과 시작일·종료일만 지정하면 해당 기간의 결석 유형 및 기재 문구가 달력 전체에 즉시 일괄 생성됩니다.
+          </p>
+</div>
+<div class="p-space-xs rounded bg-surface-container-low flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-on-surface-variant">예: 2025.09.15 ~ 2025.09.19 (5일간 법정감염병 격리)</span>
+<span class="text-primary font-semibold">원클릭 분할</span>
+</div>
+</div>
+<!-- Tip 2 -->
+<div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between"><div class="flex flex-col"><div class="flex items-center justify-between gap-space-xs mb-space-xs"><div class="flex items-center gap-space-xs"><div class="w-7 h-7 rounded bg-primary-container flex items-center justify-center text-on-primary"><span class="material-symbols-outlined text-[18px]">download</span></div><h3 class="font-title-md text-title-md text-on-surface font-semibold">크롬 웹스토어 확장 프로그램 다운로드</h3></div><span class="px-space-xs py-space-2xs rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-semibold">필수 설치</span></div><p class="font-body-md text-body-md text-on-surface-variant leading-relaxed mb-space-md">나이스(NEIS)와 출결메이트를 1초 만에 연결해 주는 필수 보조 도구입니다. 크롬 웹스토어에서 원클릭으로 설치할 수 있으며, 설치 후 나이스 출결 탭을 열면 자동으로 연동 상태가 초록불로 활성화됩니다.</p><div class="mb-space-md"><a class="inline-flex items-center justify-center gap-space-xs w-full py-space-xs px-space-md rounded-lg bg-primary text-on-primary hover:bg-primary-container font-title-md text-title-md transition-colors shadow-sm" href="#" target="_blank"><span class="material-symbols-outlined text-[18px]">extension</span><span class="">확장 프로그램 무료 다운로드 (Chrome 웹스토어)</span><span class="material-symbols-outlined text-[16px]">north_east</span></a></div></div><div class="p-space-xs rounded bg-surface-container-low flex items-center justify-between text-label-sm font-label-sm"><span class="text-on-surface-variant flex items-center gap-space-2xs"><span class="material-symbols-outlined text-[15px] text-primary">verified</span>한 번만 설치해 두시면 매일 나이스에 들어갈 때 자동으로 작동합니다.</span><span class="text-primary font-semibold shrink-0">원클릭 연동</span></div></div>
+<!-- Tip 3 -->
+<div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs mb-space-xs">
+<div class="w-7 h-7 rounded bg-tertiary-fixed flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[18px]">extension</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface font-semibold">나이스 탭 인식 및 확장 프로그램 초록불 점검</h3>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed mb-space-md">
+            전송 전, 브라우저 우측 상단 또는 좌측 사이드바 하단에 <strong class="text-on-surface font-medium">'확장 연결됨' 초록색 표시등</strong>이 켜져 있는지 확인하세요. 크롬 창에 열려 있는 나이스 출결 관리 탭을 한 번 클릭해 활성화한 뒤 전송을 누르면 안정적으로 매핑됩니다.
+          </p>
+</div>
+<div class="p-space-xs rounded bg-surface-container-low flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-on-surface-variant">인식 불가 시 브라우저 확장 프로그램 새로고침(F5)</span>
+<span class="text-primary font-semibold">자가진단 가능</span>
+</div>
+</div>
+<!-- Tip 4 -->
+<div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs mb-space-xs">
+<div class="w-7 h-7 rounded bg-surface-container-high flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined text-[18px]">info</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface font-semibold">중학교 교과·일과 전용 양식 안내</h3>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed mb-space-md">
+            출결메이트는 <strong class="text-on-surface font-medium">대한민국 중학교 학업성적관리시행지침 및 7교시 일과 구조</strong>에 최적화되어 있습니다. 고등학교는 무단결과 가중치 및 고교학점제 이수 시스템 등 NEIS 체계가 완전히 상이하므로, 고등학교 선생님은 '내모ai' 등 고등 전용 툴 사용을 권장합니다.
+          </p>
+</div>
+<div class="p-space-xs rounded bg-surface-container-low flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-on-surface-variant">중학교 전용 규격 엄수 (공익 목적 무료 도구)</span>
+<span class="text-outline font-semibold">중등 단독 지원</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Interactive FAQ Mini-Drawer -->
+<section class="mb-space-2xl p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col gap-space-md" id="faq-section">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[20px] text-primary">help</span>
+<h3 class="font-title-md text-title-md text-on-surface font-semibold">선생님들이 자주 묻는 질문</h3>
+</div>
+<a class="font-label-sm text-label-sm text-primary hover:underline" href="#">전체 질의응답 보기 →</a>
+</div>
+<div class="space-y-space-xs" id="faq-container">
+<details class="group rounded-lg bg-surface-container p-space-sm cursor-pointer">
+<summary class="flex items-center justify-between font-title-md text-title-md text-on-surface list-none select-none">
+<span class="">Q. 학기 중에 전입생이나 전출생이 발생하면 어떻게 수정하나요?</span>
+<span class="material-symbols-outlined text-[18px] text-outline transition-transform group-open:rotate-180">expand_more</span>
+</summary>
+<p class="font-body-md text-body-md text-on-surface-variant mt-space-xs pt-space-xs border-t border-transparent leading-relaxed">
+          '명단' 탭에서 해당 번호 학생을 클릭한 뒤 '결번(전출)' 처리하거나 신규 번호에 전입생 성명을 추가하시면 됩니다. 기존에 이미 기록된 다른 학생들의 출결 히스토리는 그대로 보존됩니다.
+        </p>
+</details>
+<details class="group rounded-lg bg-surface-container p-space-sm cursor-pointer">
+<summary class="flex items-center justify-between font-title-md text-title-md text-on-surface list-none select-none">
+<span class="">Q. 학교 컴퓨터를 교체하거나 다른 PC로 옮길 때 데이터 백업은 어떻게 하나요?</span>
+<span class="material-symbols-outlined text-[18px] text-outline transition-transform group-open:rotate-180">expand_more</span>
+</summary>
+<p class="font-body-md text-body-md text-on-surface-variant mt-space-xs pt-space-xs border-t border-transparent leading-relaxed">
+          출결 초안은 출결메이트 계정 DB에 안전하게 동기화되어 저장되므로, 별도로 파일을 옮길 필요 없이 같은 구글 계정으로 다른 PC에서 로그인하면 기존에 작성하던 명단과 출결 내역이 그대로 이어집니다.
+        </p>
+</details>
+<details class="group rounded-lg bg-surface-container p-space-sm cursor-pointer">
+<summary class="flex items-center justify-between font-title-md text-title-md text-on-surface list-none select-none">
+<span class="">Q. 나이스 전송 도중 멈추거나 튕길 위험은 없나요?</span>
+<span class="material-symbols-outlined text-[18px] text-outline transition-transform group-open:rotate-180">expand_more</span>
+</summary>
+<p class="font-body-md text-body-md text-on-surface-variant mt-space-xs pt-space-xs border-t border-transparent leading-relaxed">
+          출결메이트 확장은 직접 나이스 내부 DB를 건드리는 것이 아니라, 화면상의 입력 폼에 텍스트를 대리 입력해 주는 클라이언트 매크로 방식입니다. 전송 후 반드시 담임선생님께서 최종 화면을 눈으로 확인하고 나이스의 [저장] 버튼을 누르게 설계되어 있어 오입력 위험이 원천 차단됩니다.
+        </p>
+</details>
+</div>
+</section>
+<!-- Personal Information Notice Section (개인정보 안내 독립 전문 카드) -->
+<section class="mb-space-2xl p-space-lg md:p-space-xl rounded-xl bg-surface-container-lowest border border-outline-variant/60 shadow-sm flex flex-col gap-space-lg" id="privacy-policy-section">
+<div class="flex flex-col gap-space-2xs border-b border-outline-variant/40 pb-space-md">
+<div class="inline-flex items-center gap-space-xs text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[18px]">security</span>
+<span class="">공식 운영 및 보호 방침</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface font-semibold tracking-tight">개인정보 안내</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">
+이 프로그램은 담임이 나이스에 넣기 전에 출결 예외를 정리하는 초안 도구입니다.
+</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- 1. 처리 목적 -->
+<div class="p-space-md rounded-lg bg-surface-container-low flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="w-6 h-6 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-label-sm text-label-sm font-bold shrink-0">1</span>
+<h3 class="font-title-md text-title-md text-on-surface font-semibold">처리 목적</h3>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed pl-8">
+나이스 일일출결 입력 전에 결석·지각·조퇴·결과와 사유를 정리하고, 같은 구글 계정으로 다른 컴퓨터에서도 이어서 보기 위함입니다.
+</p>
+</div>
+<!-- 2. 처리 항목 -->
+<div class="p-space-md rounded-lg bg-surface-container-low flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="w-6 h-6 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-label-sm text-label-sm font-bold shrink-0">2</span>
+<h3 class="font-title-md text-title-md text-on-surface font-semibold">처리 항목</h3>
+</div>
+<div class="font-body-md text-body-md text-on-surface-variant leading-relaxed pl-8 space-y-1">
+<p class=""><span class="font-semibold text-on-surface">교사:</span> 구글 계정 식별값, 이메일, 이름</p>
+<p class=""><span class="font-semibold text-on-surface">학생 초안:</span> 학년, 반, 출석번호, 성명, 날짜, 구분, 종류, 기준 교시, 사유</p>
+<p class="text-secondary font-medium"><span class="font-semibold">받지 않음:</span> 주민등록번호, 사진, 학부모 연락처, 나이스 비밀번호·인증서</p>
+</div>
+</div>
+<!-- 3. 저장 위치 -->
+<div class="p-space-md rounded-lg bg-surface-container-low flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="w-6 h-6 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-label-sm text-label-sm font-bold shrink-0">3</span>
+<h3 class="font-title-md text-title-md text-on-surface font-semibold">저장 위치</h3>
+</div>
+<div class="font-body-md text-body-md text-on-surface-variant leading-relaxed pl-8 space-y-0.5">
+<p class="">출결 초안은 출결메이트 계정 DB에 저장됩니다.</p>
+<p class="">브라우저 캐시·방문 기록을 지워도 삭제되지 않습니다.</p>
+<p class="">같은 구글 계정으로 로그인하면 다른 PC에서도 보입니다.</p>
+</div>
+</div>
+<!-- 4. 보유 기간 -->
+<div class="p-space-md rounded-lg bg-surface-container-low flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="w-6 h-6 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-label-sm text-label-sm font-bold shrink-0">4</span>
+<h3 class="font-title-md text-title-md text-on-surface font-semibold">보유 기간</h3>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed pl-8">
+해당 학년도가 끝난 때, 또는 교사가 「기록 삭제」를 누른 때 중 빠른 때입니다.
+</p>
+</div>
+<!-- 5. 파기 -->
+<div class="p-space-md rounded-lg bg-surface-container-low flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="w-6 h-6 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-label-sm text-label-sm font-bold shrink-0">5</span>
+<h3 class="font-title-md text-title-md text-on-surface font-semibold">파기</h3>
+</div>
+<div class="font-body-md text-body-md text-on-surface-variant leading-relaxed pl-8 space-y-0.5">
+<p class="">「기록 삭제」를 누르면 이 계정 초안이 DB에서 삭제됩니다.</p>
+<p class="">나이스에 이미 저장한 출결은 나이스 규정에 따라 학교가 보유합니다.</p>
+</div>
+</div>
+<!-- 6. 위탁·로그인 -->
+<div class="p-space-md rounded-lg bg-surface-container-low flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="w-6 h-6 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-label-sm text-label-sm font-bold shrink-0">6</span>
+<h3 class="font-title-md text-title-md text-on-surface font-semibold">위탁·로그인</h3>
+</div>
+<div class="font-body-md text-body-md text-on-surface-variant leading-relaxed pl-8 space-y-0.5">
+<p class="">저장·인증은 호스팅 업체(설정에 표시된 이름)에 위탁합니다.</p>
+<p class="">구글은 로그인 신원만 제공하며, 출결 원문은 구글에 올리지 않습니다.</p>
+<p class="">다른 교사·외부에 초안을 제공하지 않습니다. 법령에 따른 요청은 예외입니다.</p>
+</div>
+</div>
+<!-- 7. 권리와 거부 -->
+<div class="p-space-md rounded-lg bg-surface-container-low md:col-span-2 flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="w-6 h-6 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-label-sm text-label-sm font-bold shrink-0">7</span>
+<h3 class="font-title-md text-title-md text-on-surface font-semibold">권리와 거부</h3>
+</div>
+<div class="font-body-md text-body-md text-on-surface-variant leading-relaxed pl-8 space-y-0.5">
+<p class="">교사는 화면에서 열람·수정·삭제할 수 있습니다.</p>
+<p class="">학생 또는 보호자가 삭제를 요청하면 해당 초안을 지웁니다.</p>
+<p class="">이 프로그램을 쓰지 않고 나이스에 직접 입력할 수 있습니다.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Bottom Direct Action Banner -->
+<section class="p-space-xl rounded-xl bg-primary text-on-primary shadow-md flex flex-col md:flex-row items-center justify-between gap-space-lg">
+<div class="flex flex-col gap-space-2xs text-center md:text-left">
+<div class="inline-flex items-center justify-center md:justify-start gap-space-xs text-on-primary-container font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px]">rocket_launch</span>
+<span class="">준비 완료</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm font-semibold tracking-tight text-on-primary">
+        지금 바로 이번 달 학급 출결 입력을 시작해보세요
+      </h2>
+<p class="font-body-md text-body-md text-primary-fixed-dim">
+        오늘자 예외 학생만 체크하면 월말 출결 마감 스트레스에서 완전히 해방됩니다.
+      </p>
+</div>
+<div class="flex flex-wrap items-center gap-space-xs shrink-0">
+<a class="px-space-lg py-space-sm rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-bright font-title-md text-title-md transition-colors shadow-sm flex items-center gap-space-xs" data-path="current-month" href="#">
+<span class="material-symbols-outlined text-[20px]">calendar_month</span>
+<span class="">이번 달 달력 바로가기</span>
+</a>
+<a class="px-space-md py-space-sm rounded-lg bg-primary-container text-on-primary hover:bg-primary transition-colors font-title-md text-title-md flex items-center gap-space-xs" data-path="recurring-absence" href="#">
+<span class="material-symbols-outlined text-[20px]">event_repeat</span>
+<span class="">장기·반복 등록 바로가기</span>
+</a>
+</div>
+</section>
+</div></div></main></div>
+
+
+</body></html>

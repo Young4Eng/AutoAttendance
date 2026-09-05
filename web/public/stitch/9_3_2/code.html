@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{width:5px;height:5px;}::-webkit-scrollbar-thumb{background:#bdc9c6;border-radius:4px;}::-webkit-scrollbar-track{background:transparent;}</style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "inverse-primary": "#80d5cb",
+          "on-primary-fixed-variant": "#00504a",
+          "secondary-container": "#e21e49",
+          "surface-container-lowest": "#ffffff",
+          "outline-variant": "#bdc9c6",
+          "on-secondary-fixed": "#40000c",
+          "surface-tint": "#006a63",
+          "surface": "#fbf8fc",
+          "on-tertiary-container": "#ffe5db",
+          "on-secondary": "#ffffff",
+          "tertiary-fixed-dim": "#ffb598",
+          "primary": "#005c55",
+          "on-secondary-container": "#fffbff",
+          "error": "#ba1a1a",
+          "inverse-surface": "#303033",
+          "background": "#fbf8fc",
+          "surface-container-high": "#eae7eb",
+          "primary-container": "#0f766e",
+          "on-error": "#ffffff",
+          "surface-container-highest": "#e4e1e6",
+          "on-tertiary-fixed": "#370e00",
+          "surface-container": "#f0edf1",
+          "surface-bright": "#fbf8fc",
+          "tertiary": "#7f4025",
+          "on-error-container": "#93000a",
+          "on-tertiary": "#ffffff",
+          "on-surface-variant": "#3e4947",
+          "primary-fixed": "#9cf2e8",
+          "inverse-on-surface": "#f3f0f4",
+          "surface-dim": "#dcd9dd",
+          "on-primary-container": "#a3faef",
+          "tertiary-container": "#9c573a",
+          "on-surface": "#1b1b1e",
+          "outline": "#6e7977",
+          "on-tertiary-fixed-variant": "#72361b",
+          "surface-variant": "#e4e1e6",
+          "surface-container-low": "#f6f2f7",
+          "on-background": "#1b1b1e",
+          "secondary-fixed": "#ffdada",
+          "on-primary-fixed": "#00201d",
+          "tertiary-fixed": "#ffdbce",
+          "secondary": "#ba0035",
+          "on-secondary-fixed-variant": "#920028",
+          "on-primary": "#ffffff",
+          "error-container": "#ffdad6",
+          "primary-fixed-dim": "#80d5cb",
+          "secondary-fixed-dim": "#ffb3b6"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "sidebar-width": "16rem",
+          "gutter": "1.25rem",
+          "space-md": "1rem",
+          "space-2xl": "3rem",
+          "space-sm": "0.75rem",
+          "max-content-width": "100%",
+          "space-xs": "0.5rem",
+          "space-xl": "1.5rem",
+          "space-lg": "1.25rem",
+          "space-2xs": "0.25rem"
+        },
+        "fontFamily": {
+          "body-lg": [
+            "Hanken Grotesk"
+          ],
+          "display-lg": [
+            "Hanken Grotesk"
+          ],
+          "label-sm": [
+            "Hanken Grotesk"
+          ],
+          "headline-md": [
+            "Hanken Grotesk"
+          ],
+          "body-code": [
+            "Hanken Grotesk"
+          ],
+          "body-md": [
+            "Hanken Grotesk"
+          ],
+          "title-md": [
+            "Hanken Grotesk"
+          ],
+          "headline-sm": [
+            "Hanken Grotesk"
+          ],
+          "label-md": [
+            "Hanken Grotesk"
+          ]
+        },
+        "fontSize": {
+          "body-lg": [
+            "15px",
+            {
+              "lineHeight": "24px",
+              "fontWeight": "400"
+            }
+          ],
+          "display-lg": [
+            "26px",
+            {
+              "lineHeight": "34px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "600"
+            }
+          ],
+          "label-sm": [
+            "11px",
+            {
+              "lineHeight": "14px",
+              "letterSpacing": "0.01em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-md": [
+            "22px",
+            {
+              "lineHeight": "30px",
+              "letterSpacing": "-0.015em",
+              "fontWeight": "600"
+            }
+          ],
+          "body-code": [
+            "12px",
+            {
+              "lineHeight": "18px",
+              "letterSpacing": "0.02em",
+              "fontWeight": "500"
+            }
+          ],
+          "body-md": [
+            "13px",
+            {
+              "lineHeight": "20px",
+              "fontWeight": "400"
+            }
+          ],
+          "title-md": [
+            "14px",
+            {
+              "lineHeight": "20px",
+              "letterSpacing": "-0.005em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-sm": [
+            "18px",
+            {
+              "lineHeight": "26px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "600"
+            }
+          ],
+          "label-md": [
+            "12px",
+            {
+              "lineHeight": "16px",
+              "letterSpacing": "0.01em",
+              "fontWeight": "500"
+            }
+          ]
+        }
+      },
+    },
+  };</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-screen w-[220px] bg-[#FBFBFA] border-r border-[#E4E4E7] z-50 flex flex-col justify-between select-none"><div class="flex flex-col"><div class="p-space-md border-b border-[#E4E4E7] flex items-center gap-space-sm"><img alt="로고" class="w-8 h-8 rounded-full object-cover shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1XCByYcAah5JGlg_-vowuWijwo-FsIlbj33PsziWyUx8Qch4UVOXG9312HC3jY6WNvUk5Unfw_70gPFfw7hDxqhTczqtrtC5jkIJU0ZupWZKslyYoSv5zjpF83aLAcStgCJToVSxkO8p2yCla4KljDba5pKgCoBmuJ234_XsiIIb4m5FZjy0OkrMl2GUuOAIBCzwrfbAfwrLMS2OGGTU2FknDvnh2dACzOJNjq5Del85eFamsQxNp92cg"/><div class="flex flex-col min-w-0"><span class="font-title-md text-title-md text-on-surface tracking-tight truncate">출결메이트</span><span class="font-label-sm text-label-sm text-on-surface-variant truncate">중학교 담임 출결 초안</span></div></div><nav class="p-space-xs flex flex-col gap-space-2xs" data-active-classes="bg-surface-container-high text-on-surface font-medium"><a aria-current="page" class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg transition-colors bg-surface-container-high text-on-surface font-medium" data-path="this-month" href="#"><span class="material-symbols-outlined text-[18px] shrink-0">calendar_today</span><span>이번 달</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="preview" href="#"><span class="material-symbols-outlined text-[18px] shrink-0">send_to_mobile</span><span>미리보기</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="roster" href="#"><span class="material-symbols-outlined text-[18px] shrink-0">group</span><span>명단</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="recurring" href="#"><span class="material-symbols-outlined text-[18px] shrink-0">event_repeat</span><span>장기·반복</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="guide" href="#"><span class="material-symbols-outlined text-[18px] shrink-0">description</span><span>사용 방법</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="faq" href="#"><span class="material-symbols-outlined text-[18px] shrink-0">chat</span><span>질문</span></a></nav></div><div class="p-space-sm border-t border-[#E4E4E7] flex flex-col gap-space-sm bg-[#FBFBFA]"><div class="flex items-center gap-space-xs px-space-xs py-space-2xs rounded bg-surface-container-low"><span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-primary-container"></span></span><span class="font-label-sm text-label-sm text-on-surface truncate">크롬 확장 연결됨</span></div><div class="flex items-center justify-between px-space-2xs"><div class="flex flex-col min-w-0 pr-space-xs"><span class="font-label-md text-label-md text-on-surface font-medium truncate">김선생 교사</span><span class="font-label-sm text-label-sm text-on-surface-variant truncate">teacher.kim@school.go.kr</span></div><button class="font-label-sm text-label-sm text-outline hover:text-on-surface transition-colors shrink-0" type="button">로그아웃</button></div><button class="w-full flex items-center justify-center gap-space-2xs py-space-2xs px-space-xs rounded border border-[#E4E4E7] bg-surface hover:bg-surface-container text-on-surface-variant font-label-sm text-label-sm transition-colors" type="button"><span class="material-symbols-outlined text-[14px]">delete_sweep</span><span>이 PC 기록 삭제</span></button></div></aside><div class="pl-[220px]"><header class="fixed top-0 left-[220px] right-0 h-12 bg-surface/80 backdrop-blur-xl border-b border-[#E4E4E7] z-40 flex items-center justify-end px-space-lg"><div class="flex items-center gap-space-sm"><div class="inline-flex items-center gap-space-2xs px-space-sm py-0.5 rounded-full bg-surface-container text-on-surface-variant border border-[#E4E4E7] font-label-sm text-label-sm"><span class="material-symbols-outlined text-[13px] text-outline">lock</span><span>이 PC에만 저장</span></div><img alt="프로필" class="w-8 h-8 rounded-full object-cover shrink-0 ml-space-xs" src="https://lh3.googleusercontent.com/aida/AEtjO1XCByYcAah5JGlg_-vowuWijwo-FsIlbj33PsziWyUx8Qch4UVOXG9312HC3jY6WNvUk5Unfw_70gPFfw7hDxqhTczqtrtC5jkIJU0ZupWZKslyYoSv5zjpF83aLAcStgCJToVSxkO8p2yCla4KljDba5pKgCoBmuJ234_XsiIIb4m5FZjy0OkrMl2GUuOAIBCzwrfbAfwrLMS2OGGTU2FknDvnh2dACzOJNjq5Del85eFamsQxNp92cg"/></div></header><main class="relative pt-12 bg-surface min-h-screen"><div class="w-full px-space-lg py-space-md"><div class="flex flex-col w-full relative">
+<div class="flex items-center justify-between mb-space-md">
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-space-2xs bg-surface-container-low p-space-2xs rounded-xl shadow-sm border border-[#E4E4E7]">
+<button class="w-7 h-7 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<span class="font-headline-sm text-headline-sm text-on-surface px-space-xs tracking-tight">2025년 9월</span>
+<button class="w-7 h-7 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+<div class="inline-flex items-center gap-space-xs px-space-sm py-space-2xs bg-surface-container rounded-lg border border-[#E4E4E7]/60">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-label-md text-label-md text-on-surface-variant">2학년 4반 (총 37명)</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="flex items-center gap-space-xs bg-surface-container-low px-space-sm py-1 rounded-xl text-on-surface-variant font-label-sm text-label-sm border border-[#E4E4E7]">
+<span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#D97706]"></span>질병</span>
+<span class="inline-flex items-center gap-1 ml-1.5"><span class="w-2 h-2 rounded-full bg-[#E11D48]"></span>미인정</span>
+<span class="inline-flex items-center gap-1 ml-1.5"><span class="w-2 h-2 rounded-full bg-[#7C3AED]"></span>기타</span>
+<span class="inline-flex items-center gap-1 ml-1.5"><span class="w-2 h-2 rounded-full bg-[#0D9488]"></span>출석인정</span>
+</div>
+<button class="px-space-sm py-1.5 bg-surface-container hover:bg-surface-container-high text-on-surface rounded-xl font-label-md text-label-md transition-colors flex items-center gap-1 border border-[#E4E4E7] shadow-sm" type="button">
+<span class="material-symbols-outlined text-[16px]">today</span>
+<span>오늘로 이동</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 xl:grid-cols-[1fr,560px] gap-space-md items-start">
+<!-- 왼쪽 달력 뷰 (비율 확장 및 여백 최적화) -->
+<div class="bg-surface-container-lowest rounded-xl p-space-sm shadow-sm border border-[#E4E4E7] flex flex-col">
+<div class="grid grid-cols-7 mb-1 text-center py-1.5 bg-surface-container-low rounded-lg font-label-md text-label-md text-on-surface-variant font-semibold">
+<span class="text-secondary">일</span>
+<span>월</span>
+<span>화</span>
+<span>수</span>
+<span>목</span>
+<span>금</span>
+<span class="text-primary-container">토</span>
+</div>
+<div class="grid grid-cols-7 gap-1">
+<!-- 8월 마지막 주 -->
+<div class="h-28 p-1.5 rounded-lg bg-surface/40 opacity-40 flex flex-col justify-between border border-transparent">
+<span class="font-label-sm text-label-sm text-on-surface-variant">31</span>
+</div>
+<!-- 9월 1일 -->
+<div class="h-28 p-1.5 rounded-lg bg-surface-container-low/30 hover:bg-surface-container-low/70 border border-[#E4E4E7]/60 transition-colors flex flex-col justify-between cursor-pointer">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface font-semibold">1</span>
+<span class="text-[10px] text-on-surface-variant bg-surface-container px-1 rounded">개학식</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<span class="px-1.5 py-0.5 rounded bg-surface-container text-[11px] font-medium text-on-surface-variant">전원 출석</span>
+</div>
+</div>
+<!-- 9월 2일 -->
+<div class="h-28 p-1.5 rounded-lg bg-surface-container-low/30 hover:bg-surface-container-low/70 border border-[#E4E4E7]/60 transition-colors flex flex-col justify-between cursor-pointer">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface font-semibold">2</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<div class="px-1.5 py-0.5 rounded bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A] text-[11px] font-medium flex items-center justify-between">
+<span>07번 최현우 (지각)</span>
+<span class="text-[9px] font-semibold text-[#B45309]">질병</span>
+</div>
+</div>
+</div>
+<!-- 9월 3일 (선택 활성 상태 - 텍스트 잘림 없는 정갈한 배지 표시) -->
+<div class="h-28 p-1.5 rounded-lg bg-surface-container-lowest ring-2 ring-primary ring-offset-1 ring-offset-surface shadow-md flex flex-col justify-between relative cursor-pointer overflow-hidden border border-primary/40">
+<div class="flex items-center justify-between pb-0.5 border-b border-primary/20">
+<div class="flex items-center gap-1">
+<span class="w-5 h-5 rounded-full bg-primary text-on-primary flex items-center justify-center font-label-sm text-label-sm font-bold">3</span>
+<span class="text-[11px] text-primary font-bold">오늘</span>
+</div>
+<span class="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">예외 11명</span>
+</div>
+<div class="flex flex-col gap-1 overflow-hidden mt-1">
+<div class="flex items-center justify-between px-1.5 py-0.5 rounded bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A] text-[11px] font-medium">
+<span class="truncate">14번 김민준 (결석)</span>
+<span class="text-[9px] font-bold text-[#B45309] shrink-0 ml-1">질병</span>
+</div>
+<div class="flex items-center justify-between px-1.5 py-0.5 rounded bg-[#FFE4E6] text-[#9F1239] border border-[#FECDD3] text-[11px] font-medium">
+<span class="truncate">03번 박지후 (지각)</span>
+<span class="text-[9px] font-bold text-[#BE123C] shrink-0 ml-1">미인정</span>
+</div>
+<div class="flex items-center justify-between px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant text-[10px] font-semibold">
+<span>외 9명 예외</span>
+<span class="text-primary font-bold text-[10px]">상세보기 →</span>
+</div>
+</div>
+</div>
+<!-- 9월 4일 -->
+<div class="h-28 p-1.5 rounded-lg bg-surface-container-low/30 hover:bg-surface-container-low/70 border border-[#E4E4E7]/60 transition-colors flex flex-col justify-between cursor-pointer">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface font-semibold">4</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<div class="px-1.5 py-0.5 rounded bg-[#CCFBF1] text-[#0F766E] border border-[#99F6E4] text-[11px] font-medium flex items-center justify-between">
+<span>25번 한지민 (인정)</span>
+<span class="text-[9px] font-bold">대회</span>
+</div>
+</div>
+</div>
+<!-- 9월 5일 -->
+<div class="h-28 p-1.5 rounded-lg bg-surface-container-low/30 hover:bg-surface-container-low/70 border border-[#E4E4E7]/60 transition-colors flex flex-col justify-between cursor-pointer">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface font-semibold">5</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<span class="px-1.5 py-0.5 rounded bg-surface-container text-[11px] font-medium text-on-surface-variant">전원 출석</span>
+</div>
+</div>
+<!-- 9월 6일 (토) -->
+<div class="h-28 p-1.5 rounded-lg bg-surface/40 opacity-70 border border-transparent flex flex-col justify-between">
+<span class="font-label-md text-label-md text-primary-container font-semibold">6</span>
+</div>
+<!-- 9월 7일 (일) -->
+<div class="h-28 p-1.5 rounded-lg bg-surface/40 opacity-70 border border-transparent flex flex-col justify-between">
+<span class="font-label-md text-label-md text-secondary font-semibold">7</span>
+</div>
+<!-- 9월 8일 ~ 13일 -->
+<div class="h-28 p-1.5 rounded-lg bg-surface-container-low/30 hover:bg-surface-container-low/70 border border-[#E4E4E7]/60 transition-colors flex flex-col justify-between cursor-pointer">
+<span class="font-label-md text-label-md text-on-surface font-semibold">8</span>
+<div class="px-1.5 py-0.5 rounded bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A] text-[11px] font-medium truncate">18번 윤다혜 (결석)</div>
+</div>
+<div class="h-28 p-1.5 rounded-lg bg-surface-container-low/30 hover:bg-surface-container-low/70 border border-[#E4E4E7]/60 transition-colors flex flex-col justify-between cursor-pointer">
+<span class="font-label-md text-label-md text-on-surface font-semibold">9</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container text-[11px] font-medium text-on-surface-variant">전원 출석</span>
+</div>
+<div class="h-28 p-1.5 rounded-lg bg-surface-container-low/30 hover:bg-surface-container-low/70 border border-[#E4E4E7]/60 transition-colors flex flex-col justify-between cursor-pointer">
+<span class="font-label-md text-label-md text-on-surface font-semibold">10</span>
+</div>
+<div class="h-28 p-1.5 rounded-lg bg-surface-container-low/30 hover:bg-surface-container-low/70 border border-[#E4E4E7]/60 transition-colors flex flex-col justify-between cursor-pointer">
+<span class="font-label-md text-label-md text-on-surface font-semibold">11</span>
+</div>
+<div class="h-28 p-1.5 rounded-lg bg-surface-container-low/30 hover:bg-surface-container-low/70 border border-[#E4E4E7]/60 transition-colors flex flex-col justify-between cursor-pointer">
+<span class="font-label-md text-label-md text-on-surface font-semibold">12</span>
+</div>
+<div class="h-28 p-1.5 rounded-lg bg-surface/40 opacity-70 border border-transparent flex flex-col justify-between">
+<span class="font-label-md text-label-md text-primary-container font-semibold">13</span>
+</div>
+<!-- 9월 14일 ~ 20일 -->
+<div class="h-28 p-1.5 rounded-lg bg-surface/40 opacity-70 border border-transparent flex flex-col justify-between">
+<span class="font-label-md text-label-md text-secondary font-semibold">14</span>
+</div>
+<div class="h-28 p-1.5 rounded-lg bg-surface-container-low/30 hover:bg-surface-container-low/70 border border-[#E4E4E7]/60 transition-colors flex flex-col justify-between cursor-pointer">
+<span class="font-label-md text-label-md text-on-surface font-semibold">15</span>
+</div>
+<div class="h-28 p-1.5 rounded-lg bg-surface-container-low/30 hover:bg-surface-container-low/70 border border-[#E4E4E7]/60 transition-colors flex flex-col justify-between cursor-pointer">
+<span class="font-label-md text-label-md text-on-surface font-semibold">16</span>
+</div>
+<div class="h-28 p-1.5 rounded-lg bg-surface-container-low/30 hover:bg-surface-container-low/70 border border-[#E4E4E7]/60 transition-colors flex flex-col justify-between cursor-pointer">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface font-semibold">17</span>
+<span class="font-label-sm text-label-sm text-secondary font-semibold">추석 연휴</span>
+</div>
+</div>
+<div class="h-28 p-1.5 rounded-lg bg-surface-container-low/30 hover:bg-surface-container-low/70 border border-[#E4E4E7]/60 transition-colors flex flex-col justify-between cursor-pointer">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface font-semibold">18</span>
+<span class="font-label-sm text-label-sm text-secondary font-semibold">추석</span>
+</div>
+</div>
+<div class="h-28 p-1.5 rounded-lg bg-surface-container-low/30 hover:bg-surface-container-low/70 border border-[#E4E4E7]/60 transition-colors flex flex-col justify-between cursor-pointer">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface font-semibold">19</span>
+<span class="font-label-sm text-label-sm text-secondary font-semibold">추석 연휴</span>
+</div>
+</div>
+<div class="h-28 p-1.5 rounded-lg bg-surface/40 opacity-70 border border-transparent flex flex-col justify-between">
+<span class="font-label-md text-label-md text-primary-container font-semibold">20</span>
+</div>
+<!-- 9월 21일 ~ 27일 -->
+<div class="h-28 p-1.5 rounded-lg bg-surface/40 opacity-70 border border-transparent flex flex-col justify-between">
+<span class="font-label-md text-label-md text-secondary font-semibold">21</span>
+</div>
+<div class="h-28 p-1.5 rounded-lg bg-surface-container-low/30 hover:bg-surface-container-low/70 border border-[#E4E4E7]/60 transition-colors flex flex-col justify-between cursor-pointer">
+<span class="font-label-md text-label-md text-on-surface font-semibold">22</span>
+</div>
+<div class="h-28 p-1.5 rounded-lg bg-surface-container-low/30 hover:bg-surface-container-low/70 border border-[#E4E4E7]/60 transition-colors flex flex-col justify-between cursor-pointer">
+<span class="font-label-md text-label-md text-on-surface font-semibold">23</span>
+</div>
+<div class="h-28 p-1.5 rounded-lg bg-surface-container-low/30 hover:bg-surface-container-low/70 border border-[#E4E4E7]/60 transition-colors flex flex-col justify-between cursor-pointer">
+<span class="font-label-md text-label-md text-on-surface font-semibold">24</span>
+</div>
+<div class="h-28 p-1.5 rounded-lg bg-surface-container-low/30 hover:bg-surface-container-low/70 border border-[#E4E4E7]/60 transition-colors flex flex-col justify-between cursor-pointer">
+<span class="font-label-md text-label-md text-on-surface font-semibold">25</span>
+</div>
+<div class="h-28 p-1.5 rounded-lg bg-surface-container-low/30 hover:bg-surface-container-low/70 border border-[#E4E4E7]/60 transition-colors flex flex-col justify-between cursor-pointer">
+<span class="font-label-md text-label-md text-on-surface font-semibold">26</span>
+</div>
+<div class="h-28 p-1.5 rounded-lg bg-surface/40 opacity-70 border border-transparent flex flex-col justify-between">
+<span class="font-label-md text-label-md text-primary-container font-semibold">27</span>
+</div>
+<!-- 9월 28일 ~ 30일 -->
+<div class="h-28 p-1.5 rounded-lg bg-surface/40 opacity-70 border border-transparent flex flex-col justify-between">
+<span class="font-label-md text-label-md text-secondary font-semibold">28</span>
+</div>
+<div class="h-28 p-1.5 rounded-lg bg-surface-container-low/30 hover:bg-surface-container-low/70 border border-[#E4E4E7]/60 transition-colors flex flex-col justify-between cursor-pointer">
+<span class="font-label-md text-label-md text-on-surface font-semibold">29</span>
+</div>
+<div class="h-28 p-1.5 rounded-lg bg-surface-container-low/30 hover:bg-surface-container-low/70 border border-[#E4E4E7]/60 transition-colors flex flex-col justify-between cursor-pointer">
+<span class="font-label-md text-label-md text-on-surface font-semibold">30</span>
+</div>
+<div class="h-28 p-1.5 rounded-lg bg-surface/30 opacity-30"></div>
+<div class="h-28 p-1.5 rounded-lg bg-surface/30 opacity-30"></div>
+<div class="h-28 p-1.5 rounded-lg bg-surface/30 opacity-30"></div>
+<div class="h-28 p-1.5 rounded-lg bg-surface/30 opacity-30"></div>
+</div>
+</div>
+<!-- 우측 출결 입력 패널 (대량 결석 완벽 대응: 고밀도 리스트 구조) -->
+<div class="w-full xl:w-[560px] bg-surface-container-lowest rounded-xl shadow-xl border border-[#E4E4E7] flex flex-col self-stretch overflow-hidden">
+<!-- 1. 패널 헤더: 직관적인 카운터 & 상태 -->
+<div class="px-space-md py-space-sm bg-surface-container-low border-b border-[#E4E4E7] flex items-center justify-between">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<h2 class="font-display-lg text-display-lg text-on-surface">9월 3일 (수)</h2>
+<span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-bold">오늘</span>
+</div>
+<div class="flex items-center gap-1.5 text-on-surface-variant font-label-md text-label-md mt-0.5">
+<span class="font-semibold text-on-surface">예외 학생 11명</span>
+<span class="text-outline">·</span>
+<span class="text-[#B45309]">결석 8</span>
+<span class="text-outline">·</span>
+<span class="text-[#BE123C]">지각 2</span>
+<span class="text-outline">·</span>
+<span class="text-[#5B21B6]">조퇴 1</span>
+<span class="text-outline">·</span>
+<span>(정상 출석 26명)</span>
+</div>
+</div>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="닫기" type="button">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- 2. 액션 바: 개별 등록 버튼 + '다수 결석 일괄 등록' 액션 제공 -->
+<div class="p-space-sm bg-surface-container-low/40 border-b border-[#E4E4E7] flex flex-col gap-space-xs">
+<div class="flex items-center gap-1.5">
+<button class="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg bg-surface-container-lowest border border-[#E4E4E7] hover:border-primary/50 text-on-surface font-label-md text-label-md transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-[15px] text-[#B45309]">person_add</span>
+<span>+ 결석</span>
+</button>
+<button class="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg bg-surface-container-lowest border border-[#E4E4E7] hover:border-primary/50 text-on-surface font-label-md text-label-md transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-[15px] text-[#BE123C]">schedule</span>
+<span>+ 지각</span>
+</button>
+<button class="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg bg-surface-container-lowest border border-[#E4E4E7] hover:border-primary/50 text-on-surface font-label-md text-label-md transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-[15px] text-[#5B21B6]">logout</span>
+<span>+ 조퇴</span>
+</button>
+<button class="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg bg-surface-container-lowest border border-[#E4E4E7] hover:border-primary/50 text-on-surface font-label-md text-label-md transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-[15px] text-[#0F766E]">hourglass_bottom</span>
+<span>+ 결과</span>
+</button>
+<button class="flex items-center justify-center gap-1 py-1.5 px-2.5 rounded-lg bg-primary/10 border border-primary/30 hover:bg-primary/20 text-primary font-label-md text-label-md transition-colors shadow-sm shrink-0" title="독감이나 체험학습 등 다수 학생을 한 번에 선택" type="button">
+<span class="material-symbols-outlined text-[16px]">playlist_add_check</span>
+<span class="font-semibold">+ 다수 일괄 등록</span>
+</button>
+</div>
+<!-- 빠른 사유 일괄 적용 칩 (교직 실무 최적화) -->
+<div class="flex items-center gap-1 text-[11px] text-on-surface-variant pt-0.5">
+<span class="shrink-0 font-medium">자주 쓰는 사유:</span>
+<button class="px-1.5 py-0.5 rounded bg-surface-container hover:bg-surface-container-high border border-[#E4E4E7] transition-colors" type="button">독감 진단</button>
+<button class="px-1.5 py-0.5 rounded bg-surface-container hover:bg-surface-container-high border border-[#E4E4E7] transition-colors" type="button">감기몸살</button>
+<button class="px-1.5 py-0.5 rounded bg-surface-container hover:bg-surface-container-high border border-[#E4E4E7] transition-colors" type="button">교통 지연</button>
+<button class="px-1.5 py-0.5 rounded bg-surface-container hover:bg-surface-container-high border border-[#E4E4E7] transition-colors" type="button">가정사(경조사)</button>
+<button class="px-1.5 py-0.5 rounded bg-surface-container hover:bg-surface-container-high border border-[#E4E4E7] transition-colors" type="button">체험학습</button>
+</div>
+</div>
+<!-- 3. 고밀도 행(Row) 리스트 테이블: 11명 예외 학생이 스크롤 없이도 일목요연하게 파악됨 -->
+<div class="flex-1 max-h-[520px] overflow-y-auto divide-y divide-[#E4E4E7]/70 px-space-sm py-1 bg-surface-container-lowest">
+<!-- 1. 14번 김민준 [결석 - 질병] -->
+<div class="py-2 px-1.5 hover:bg-surface-container-low/60 rounded-lg transition-colors flex items-center gap-2">
+<div class="w-20 shrink-0 font-title-md text-title-md font-semibold text-on-surface truncate">
+14 김민준
+</div>
+<span class="px-1.5 py-0.5 rounded bg-[#FEF3C7] text-[#92400E] font-label-sm text-label-sm font-bold shrink-0 border border-[#FDE68A]">결석</span>
+<div class="inline-flex rounded-md border border-[#E4E4E7] p-0.5 bg-surface-container-low shrink-0 text-[11px]">
+<button class="px-1.5 py-0.5 rounded bg-surface-container-lowest font-bold text-primary shadow-xs" type="button">질병</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">미인정</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">기타</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">인정</button>
+</div>
+<div class="flex-1 min-w-0">
+<input class="w-full px-2 py-1 rounded border border-[#E4E4E7] bg-surface-container-lowest text-on-surface text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="사유 입력 (예: 독감 병원진료)" type="text" value="독감 진단 및 병원 격리 (소견서 제출 예정)"/>
+</div>
+<button class="w-6 h-6 rounded flex items-center justify-center text-outline hover:text-error transition-colors shrink-0" title="삭제" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<!-- 2. 03번 박지후 [지각 - 미인정 - 1교시] -->
+<div class="py-2 px-1.5 hover:bg-surface-container-low/60 rounded-lg transition-colors flex items-center gap-2">
+<div class="w-20 shrink-0 font-title-md text-title-md font-semibold text-on-surface truncate">
+03 박지후
+</div>
+<span class="px-1.5 py-0.5 rounded bg-[#FFE4E6] text-[#9F1239] font-label-sm text-label-sm font-bold shrink-0 border border-[#FECDD3]">지각</span>
+<div class="inline-flex rounded-md border border-[#E4E4E7] p-0.5 bg-surface-container-low shrink-0 text-[11px]">
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">질병</button>
+<button class="px-1.5 py-0.5 rounded bg-surface-container-lowest font-bold text-[#E11D48] shadow-xs" type="button">미인정</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">기타</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">인정</button>
+</div>
+<select class="px-1 py-1 rounded border border-[#E4E4E7] bg-surface-container-lowest text-[11px] font-semibold text-primary outline-none shrink-0" title="기준 교시">
+<option selected="">1교시</option>
+<option>2교시</option>
+<option>3교시</option>
+<option>4교시</option>
+</select>
+<div class="flex-1 min-w-0">
+<input class="w-full px-2 py-1 rounded border border-[#E4E4E7] bg-surface-container-lowest text-on-surface text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="사유 입력" type="text" value="늦잠 및 시내버스 연착"/>
+</div>
+<button class="w-6 h-6 rounded flex items-center justify-center text-outline hover:text-error transition-colors shrink-0" title="삭제" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<!-- 3. 22번 이서윤 [조퇴 - 기타 - 5교시] -->
+<div class="py-2 px-1.5 hover:bg-surface-container-low/60 rounded-lg transition-colors flex items-center gap-2">
+<div class="w-20 shrink-0 font-title-md text-title-md font-semibold text-on-surface truncate">
+22 이서윤
+</div>
+<span class="px-1.5 py-0.5 rounded bg-[#EDE9FE] text-[#5B21B6] font-label-sm text-label-sm font-bold shrink-0 border border-[#DDD6FE]">조퇴</span>
+<div class="inline-flex rounded-md border border-[#E4E4E7] p-0.5 bg-surface-container-low shrink-0 text-[11px]">
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">질병</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">미인정</button>
+<button class="px-1.5 py-0.5 rounded bg-surface-container-lowest font-bold text-[#7C3AED] shadow-xs" type="button">기타</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">인정</button>
+</div>
+<select class="px-1 py-1 rounded border border-[#E4E4E7] bg-surface-container-lowest text-[11px] font-semibold text-primary outline-none shrink-0" title="기준 교시">
+<option>4교시</option>
+<option selected="">5교시</option>
+<option>6교시</option>
+<option>7교시</option>
+</select>
+<div class="flex-1 min-w-0">
+<input class="w-full px-2 py-1 rounded border border-[#E4E4E7] bg-surface-container-lowest text-on-surface text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="사유 입력 (필수)" type="text" value="조모상 가족 행사 참석 (사유서 접수)"/>
+</div>
+<button class="w-6 h-6 rounded flex items-center justify-center text-outline hover:text-error transition-colors shrink-0" title="삭제" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<!-- 4. 07번 최현우 [결석 - 질병] -->
+<div class="py-2 px-1.5 hover:bg-surface-container-low/60 rounded-lg transition-colors flex items-center gap-2">
+<div class="w-20 shrink-0 font-title-md text-title-md font-semibold text-on-surface truncate">
+07 최현우
+</div>
+<span class="px-1.5 py-0.5 rounded bg-[#FEF3C7] text-[#92400E] font-label-sm text-label-sm font-bold shrink-0 border border-[#FDE68A]">결석</span>
+<div class="inline-flex rounded-md border border-[#E4E4E7] p-0.5 bg-surface-container-low shrink-0 text-[11px]">
+<button class="px-1.5 py-0.5 rounded bg-surface-container-lowest font-bold text-primary shadow-xs" type="button">질병</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">미인정</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">기타</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">인정</button>
+</div>
+<div class="flex-1 min-w-0">
+<input class="w-full px-2 py-1 rounded border border-[#E4E4E7] bg-surface-container-lowest text-on-surface text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="사유 입력" type="text" value="고열 및 독감 의심 진료"/>
+</div>
+<button class="w-6 h-6 rounded flex items-center justify-center text-outline hover:text-error transition-colors shrink-0" title="삭제" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<!-- 5. 09번 이도현 [결석 - 질병] -->
+<div class="py-2 px-1.5 hover:bg-surface-container-low/60 rounded-lg transition-colors flex items-center gap-2">
+<div class="w-20 shrink-0 font-title-md text-title-md font-semibold text-on-surface truncate">
+09 이도현
+</div>
+<span class="px-1.5 py-0.5 rounded bg-[#FEF3C7] text-[#92400E] font-label-sm text-label-sm font-bold shrink-0 border border-[#FDE68A]">결석</span>
+<div class="inline-flex rounded-md border border-[#E4E4E7] p-0.5 bg-surface-container-low shrink-0 text-[11px]">
+<button class="px-1.5 py-0.5 rounded bg-surface-container-lowest font-bold text-primary shadow-xs" type="button">질병</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">미인정</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">기타</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">인정</button>
+</div>
+<div class="flex-1 min-w-0">
+<input class="w-full px-2 py-1 rounded border border-[#E4E4E7] bg-surface-container-lowest text-on-surface text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="사유 입력" type="text" value="A형 독감 확진 (처방전 구비)"/>
+</div>
+<button class="w-6 h-6 rounded flex items-center justify-center text-outline hover:text-error transition-colors shrink-0" title="삭제" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<!-- 6. 01번 김서준 [결석 - 질병] -->
+<div class="py-2 px-1.5 hover:bg-surface-container-low/60 rounded-lg transition-colors flex items-center gap-2">
+<div class="w-20 shrink-0 font-title-md text-title-md font-semibold text-on-surface truncate">
+01 김서준
+</div>
+<span class="px-1.5 py-0.5 rounded bg-[#FEF3C7] text-[#92400E] font-label-sm text-label-sm font-bold shrink-0 border border-[#FDE68A]">결석</span>
+<div class="inline-flex rounded-md border border-[#E4E4E7] p-0.5 bg-surface-container-low shrink-0 text-[11px]">
+<button class="px-1.5 py-0.5 rounded bg-surface-container-lowest font-bold text-primary shadow-xs" type="button">질병</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">미인정</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">기타</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">인정</button>
+</div>
+<div class="flex-1 min-w-0">
+<input class="w-full px-2 py-1 rounded border border-[#E4E4E7] bg-surface-container-lowest text-on-surface text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="사유 입력" type="text" value="독감 의심으로 이비인후과 진료"/>
+</div>
+<button class="w-6 h-6 rounded flex items-center justify-center text-outline hover:text-error transition-colors shrink-0" title="삭제" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<!-- 7. 05번 권도윤 [결석 - 질병] -->
+<div class="py-2 px-1.5 hover:bg-surface-container-low/60 rounded-lg transition-colors flex items-center gap-2">
+<div class="w-20 shrink-0 font-title-md text-title-md font-semibold text-on-surface truncate">
+05 권도윤
+</div>
+<span class="px-1.5 py-0.5 rounded bg-[#FEF3C7] text-[#92400E] font-label-sm text-label-sm font-bold shrink-0 border border-[#FDE68A]">결석</span>
+<div class="inline-flex rounded-md border border-[#E4E4E7] p-0.5 bg-surface-container-low shrink-0 text-[11px]">
+<button class="px-1.5 py-0.5 rounded bg-surface-container-lowest font-bold text-primary shadow-xs" type="button">질병</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">미인정</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">기타</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">인정</button>
+</div>
+<div class="flex-1 min-w-0">
+<input class="w-full px-2 py-1 rounded border border-[#E4E4E7] bg-surface-container-lowest text-on-surface text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="사유 입력" type="text" value="두통 및 발열 호소"/>
+</div>
+<button class="w-6 h-6 rounded flex items-center justify-center text-outline hover:text-error transition-colors shrink-0" title="삭제" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<!-- 8. 11번 신유진 [결석 - 출석인정] -->
+<div class="py-2 px-1.5 hover:bg-surface-container-low/60 rounded-lg transition-colors flex items-center gap-2">
+<div class="w-20 shrink-0 font-title-md text-title-md font-semibold text-on-surface truncate">
+11 신유진
+</div>
+<span class="px-1.5 py-0.5 rounded bg-[#CCFBF1] text-[#0F766E] font-label-sm text-label-sm font-bold shrink-0 border border-[#99F6E4]">결석</span>
+<div class="inline-flex rounded-md border border-[#E4E4E7] p-0.5 bg-surface-container-low shrink-0 text-[11px]">
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">질병</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">미인정</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">기타</button>
+<button class="px-1.5 py-0.5 rounded bg-surface-container-lowest font-bold text-[#0D9488] shadow-xs" type="button">인정</button>
+</div>
+<div class="flex-1 min-w-0">
+<input class="w-full px-2 py-1 rounded border border-[#E4E4E7] bg-surface-container-lowest text-on-surface text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="사유 입력" type="text" value="전국 청소년 미술대회 본선 참가"/>
+</div>
+<button class="w-6 h-6 rounded flex items-center justify-center text-outline hover:text-error transition-colors shrink-0" title="삭제" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<!-- 9. 19번 정예린 [결석 - 질병] -->
+<div class="py-2 px-1.5 hover:bg-surface-container-low/60 rounded-lg transition-colors flex items-center gap-2">
+<div class="w-20 shrink-0 font-title-md text-title-md font-semibold text-on-surface truncate">
+19 정예린
+</div>
+<span class="px-1.5 py-0.5 rounded bg-[#FEF3C7] text-[#92400E] font-label-sm text-label-sm font-bold shrink-0 border border-[#FDE68A]">결석</span>
+<div class="inline-flex rounded-md border border-[#E4E4E7] p-0.5 bg-surface-container-low shrink-0 text-[11px]">
+<button class="px-1.5 py-0.5 rounded bg-surface-container-lowest font-bold text-primary shadow-xs" type="button">질병</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">미인정</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">기타</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">인정</button>
+</div>
+<div class="flex-1 min-w-0">
+<input class="w-full px-2 py-1 rounded border border-[#E4E4E7] bg-surface-container-lowest text-on-surface text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="사유 입력" type="text" value="독감 의심증상 진단서 발급"/>
+</div>
+<button class="w-6 h-6 rounded flex items-center justify-center text-outline hover:text-error transition-colors shrink-0" title="삭제" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<!-- 10. 25번 한지민 [결석 - 질병] -->
+<div class="py-2 px-1.5 hover:bg-surface-container-low/60 rounded-lg transition-colors flex items-center gap-2">
+<div class="w-20 shrink-0 font-title-md text-title-md font-semibold text-on-surface truncate">
+25 한지민
+</div>
+<span class="px-1.5 py-0.5 rounded bg-[#FEF3C7] text-[#92400E] font-label-sm text-label-sm font-bold shrink-0 border border-[#FDE68A]">결석</span>
+<div class="inline-flex rounded-md border border-[#E4E4E7] p-0.5 bg-surface-container-low shrink-0 text-[11px]">
+<button class="px-1.5 py-0.5 rounded bg-surface-container-lowest font-bold text-primary shadow-xs" type="button">질병</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">미인정</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">기타</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">인정</button>
+</div>
+<div class="flex-1 min-w-0">
+<input class="w-full px-2 py-1 rounded border border-[#E4E4E7] bg-surface-container-lowest text-on-surface text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="사유 입력" type="text" value="급성 인후염 및 발열 치료"/>
+</div>
+<button class="w-6 h-6 rounded flex items-center justify-center text-outline hover:text-error transition-colors shrink-0" title="삭제" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<!-- 11. 31번 강민서 [지각 - 질병 - 2교시] -->
+<div class="py-2 px-1.5 hover:bg-surface-container-low/60 rounded-lg transition-colors flex items-center gap-2">
+<div class="w-20 shrink-0 font-title-md text-title-md font-semibold text-on-surface truncate">
+31 강민서
+</div>
+<span class="px-1.5 py-0.5 rounded bg-[#FEF3C7] text-[#92400E] font-label-sm text-label-sm font-bold shrink-0 border border-[#FDE68A]">지각</span>
+<div class="inline-flex rounded-md border border-[#E4E4E7] p-0.5 bg-surface-container-low shrink-0 text-[11px]">
+<button class="px-1.5 py-0.5 rounded bg-surface-container-lowest font-bold text-primary shadow-xs" type="button">질병</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">미인정</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">기타</button>
+<button class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">인정</button>
+</div>
+<select class="px-1 py-1 rounded border border-[#E4E4E7] bg-surface-container-lowest text-[11px] font-semibold text-primary outline-none shrink-0" title="기준 교시">
+<option>1교시</option>
+<option selected="">2교시</option>
+<option>3교시</option>
+<option>4교시</option>
+</select>
+<div class="flex-1 min-w-0">
+<input class="w-full px-2 py-1 rounded border border-[#E4E4E7] bg-surface-container-lowest text-on-surface text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="사유 입력" type="text" value="오전 소아과 진료 후 등교 (진료확인서)"/>
+</div>
+<button class="w-6 h-6 rounded flex items-center justify-center text-outline hover:text-error transition-colors shrink-0" title="삭제" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+</div>
+<!-- 4. 패널 하단 푸터 -->
+<div class="p-space-sm bg-surface-container-low border-t border-[#E4E4E7] flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-outline">
+<span class="material-symbols-outlined text-[16px] text-primary">check_circle</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">임시 저장됨 (이 PC)</span>
+</div>
+<button class="px-space-md py-1.5 bg-primary hover:bg-primary-container text-on-primary font-title-md text-title-md rounded-lg shadow-sm transition-all flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-[18px]">check</span>
+<span>완료</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  // App Shell 내 사이드바 '이번 달' 활성화 스타일 동기화
+  document.addEventListener('DOMContentLoaded', () => {
+    const navItems = document.querySelectorAll('aside nav a');
+    navItems.forEach(item => {
+      if (item.getAttribute('data-path') === 'this-month') {
+        item.classList.add('bg-surface-container-high', 'text-on-surface', 'font-medium');
+        item.classList.remove('text-on-surface-variant');
+      } else {
+        item.classList.remove('bg-surface-container-high', 'text-on-surface', 'font-medium');
+        item.classList.add('text-on-surface-variant');
+      }
+    });
+  });
+</script></div></main></div></body></html>

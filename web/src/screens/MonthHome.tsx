@@ -58,9 +58,10 @@ type Props = {
 
 export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: Props) {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
   const today = ymd(now);
+  const [cursor, setCursor] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1));
+  const year = cursor.getFullYear();
+  const month = cursor.getMonth() + 1;
   const cells = useMemo(() => monthCells(year, month), [year, month]);
   const [open, setOpen] = useState<string | null>(weekend(now) ? null : today);
   const [roster, setRoster] = useState<Student[]>([]);
@@ -155,15 +156,29 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
         <div className="mb-4 rounded-xl border border-[#99F6E4] bg-[#F0FDFA] px-4 py-3 text-sm leading-relaxed text-[#134E4A]">
           출결 초안은 계정에 저장됩니다. 같은 날짜는 한 번만 열고, 패널 안에서 학생을 더합니다.
         </div>
-        <header className="flex items-end justify-between mb-4">
-          <h1 className="text-2xl font-semibold tracking-tight m-0">
-            {year}년 {month}월
-          </h1>
-          <button type="button" disabled={weekend(now)} onClick={() => setOpen(today)}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#E4E4E7] bg-white text-sm">
-            <span className="material-symbols-outlined text-[16px]">today</span>
-            오늘로 이동
-          </button>
+        <header className="flex flex-wrap items-end justify-between gap-4 mb-4">
+          <div>
+            <div className="flex items-center gap-1">
+              <button type="button" aria-label="이전 달" className="p-1 rounded text-[#71717A] hover:bg-[#F0EDF1]"
+                onClick={() => setCursor(new Date(year, month-2, 1))}>
+                <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+              </button>
+              <h1 className="text-2xl font-semibold tracking-tight m-0">{year}년 {month}월</h1>
+              <button type="button" className="px-2 py-0.5 rounded text-sm hover:bg-[#F0EDF1]"
+                onClick={() => { setCursor(new Date(now.getFullYear(), now.getMonth(), 1)); if (!weekend(now)) setOpen(today); }}>오늘</button>
+              <button type="button" aria-label="다음 달" className="p-1 rounded text-[#71717A] hover:bg-[#F0EDF1]"
+                onClick={() => setCursor(new Date(year, month, 1))}>
+                <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+              </button>
+            </div>
+            <p className="text-sm text-[#71717A] mt-1 mb-0">예외 인원만 기록하면 크롬 확장이 나이스에 입력합니다.</p>
+          </div>
+          <div className="flex items-center gap-4 bg-[#F0EDF1] px-4 py-2 rounded-xl">
+            <div className="flex flex-col pr-4">
+              <span className="text-xs text-[#71717A]">이번 달 예외 총계</span>
+              <span className="text-lg font-semibold text-[#0F766E]">{rows.filter(r => r.date.startsWith(`${year}-${String(month).padStart(2,"0")}`)).length}<span className="text-xs font-normal text-[#71717A] ml-0.5">건</span></span>
+            </div>
+          </div>
         </header>
         <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-[#E4E4E7]">
           <div className="grid grid-cols-7 bg-[#F4F4F5] text-center select-none py-2">
