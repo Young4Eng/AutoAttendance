@@ -30,3 +30,4 @@
 - #52/0.5.0: 마감 칸을 closeIdx가 아니라 헤더X×행Y(`elementFromPoint`)로 재선택. MAX_DX 상향 없음. 이후 사용자에게 보이는 확장 변경마다 `manifest.json` version을 올린다.
 - #52 follow/0.5.1: 마감칸 클릭 최대 2회(팝업 중첩 방지). 사유 Nexacro 입력. 일자 불일치 시 일자칸+조회.
 - #52 follow/0.5.2: 클릭은 mousedown-up-click 1회+0.5초. P칸은 N교시 헤더X×행Y.
+- 0.5.3: 결석 빗금이 이미 있으면 P칸 다시 안 누름. 날짜 바뀌기 전 저장.

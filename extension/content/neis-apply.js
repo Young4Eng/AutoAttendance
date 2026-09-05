@@ -2776,8 +2776,38 @@
     return best;
   }
 
-  function clickPeriodCell(row, grid, period, cellsOpt) {
+  function rowSlashCount(row, cells, grid) {
+    var n = 0;
+    var list = cells || [];
+    for (var i = 0; i < list.length; i++) {
+      var t = cellLabel(list[i]);
+      if (t && t.indexOf("/") >= 0) n += 1;
+    }
+    if (n > 0) return n;
+    var hxList = [];
+    try {
+      var hits = findPeriodHits(document.body || document.documentElement);
+      for (var h = 0; h < hits.length; h++) {
+        var r = hits[h].rect;
+        if (r && r.width > 0) hxList.push(r.left + r.width / 2);
+      }
+    } catch (eH) {}
+    for (var x = 0; x < hxList.length; x++) {
+      var el = resolveCloseCellByHeaderX(row, list, hxList[x], grid && grid.headerBottom);
+      var tx = cellLabel(el);
+      if (tx && tx.indexOf("/") >= 0) n += 1;
+    }
+    return n;
+  }
+
+  function clickPeriodCell(row, grid, period, cellsOpt, item) {
     var cells = cellsOpt || rowCells(row);
+    var typ = item && item.type;
+    if (typ === "absence") {
+      if (rowSlashCount(row, cells, grid) >= 2) {
+        return { ok: true, skipped: true, code: "absence_already_filled" };
+      }
+    }
     var hx = findPeriodHeaderCenterX(period);
     if (hx == null && grid && grid.headerCenters && grid.periodCols && grid.periodCols[period] != null) {
       hx = grid.headerCenters[grid.periodCols[period]];
@@ -2863,8 +2893,19 @@
     }
 
     var applied = 0;
+    var lastDate = null;
     for (var row = 0; row < items.length; row++) {
       var item = items[row];
+      var nextDate = normalizeDate(item.date);
+      if (!dryRun && lastDate && nextDate && nextDate !== lastDate) {
+        var midSave = clickSaveOnly();
+        if (!midSave.ok) {
+          log(row, item.type || "?", "stop", midSave.code || "save_before_date_change");
+          return { ok: false, code: midSave.code || "save_before_date_change", applied: applied, dryRun: false };
+        }
+        await sleep(700);
+      }
+      lastDate = nextDate || lastDate;
       var fm = await alignNeisDate(item);
       if (!fm.ok) {
         log(row, item.type || "?", "stop", fm.code);
@@ -2895,7 +2936,8 @@
         log(row, item.type || "?", "stop", ap.code);
         return { ok: false, code: ap.code, applied: applied, dryRun: dryRun, diag: ap.diag };
       }
-      var cp = clickPeriodCell(hit.row, grid, item.period, hit.cells);
+      await sleep(500);
+      var cp = clickPeriodCell(hit.row, grid, item.period, hit.cells, item);
       if (!cp.ok) {
         log(row, item.type || "?", "stop", cp.code);
         return { ok: false, code: cp.code, applied: applied, dryRun: dryRun, diag: cp.diag };
