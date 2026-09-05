@@ -1,18 +1,25 @@
-# 웹 배포 (GitHub Pages)
+# 웹 배포 (Vercel)
 
-주소: https://young4eng.github.io/AutoAttendance/
+웹은 Vercel 주소로 연다. 확장은 각 교사 크롬.
 
-확장은 각 PC 크롬. 웹은 이 주소.
-
-## 당신이 할 일
-1. 저장소 Settings → Secrets and variables → Actions 에
+## Vercel
+1. https://vercel.com 구글 계정으로 로그인
+2. Add New → Project → `Young4Eng/AutoAttendance`
+3. Root Directory: `web`
+4. Framework: Vite
+5. Environment Variables
    - VITE_GOOGLE_CLIENT_ID
    - VITE_SUPABASE_URL
    - VITE_SUPABASE_ANON_KEY
    - VITE_EXTENSION_ID
-2. Settings → Pages → Source: GitHub Actions
-3. `docs/pages.yml.example` 내용을 `.github/workflows/pages.yml` 로 저장소에 만든다.
-   (지금 PAT는 workflow 파일을 푸시할 권한이 없음)
-4. 구글 클라우드 origins에 https://young4eng.github.io
-5. Supabase URL Configuration Site URL
-   https://young4eng.github.io/AutoAttendance/
+6. Deploy
+7. 나온 주소(예: https://autoattendance.vercel.app)를 채팅에 보낸다.
+
+service_role 넣지 말 것.
+
+## 그 주소로 해야 할 일
+- 구글 클라우드 웹 클라이언트 Authorized JavaScript origins에 `https://그주소`
+- Supabase Authentication URL Configuration Site URL / Redirect에 `https://그주소`
+- 확장 `externally_connectable`과 `queue/contract.js` ALLOWED_ORIGINS — 주소 받으면 코드에 넣음
+
+로컬 개발은 그대로 http://localhost:5173
