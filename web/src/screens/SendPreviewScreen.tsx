@@ -5,7 +5,7 @@ import {
   listAttendance,
   listAttendanceByDate,
   putAttendance,
-} from '../db/idb';
+} from '../db/store';
 import { PreviewList } from '../components/PreviewList';
 import { SlashRangeHint } from '../components/SlashRangeHint';
 import { ConfirmSendDialog } from '../components/ConfirmSendDialog';

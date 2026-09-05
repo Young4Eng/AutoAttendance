@@ -2,6 +2,7 @@
 
 import { ownerFromCredentialJwt } from './credential';
 import type { Owner } from '../types/models';
+import { getSupabase } from '../db/supabaseClient';
 
 declare global {
   interface Window {
@@ -83,11 +84,32 @@ export async function mountGoogleButton(
   window.google.accounts.id.initialize({
     client_id: clientId,
     callback: (response) => {
-      try {
-        onOwner(ownerFromCredentialJwt(response.credential));
-      } catch {
-        onError('credential 파싱 실패');
-      }
+      void (async () => {
+        try {
+          const local = ownerFromCredentialJwt(response.credential);
+          const sb = getSupabase();
+          if (!sb) {
+            onOwner(local);
+            return;
+          }
+          const { data, error } = await sb.auth.signInWithIdToken({
+            provider: 'google',
+            token: response.credential,
+          });
+          if (error || !data.user) {
+            onError(error?.message || 'supabase_auth');
+            return;
+          }
+          onOwner({
+            ownerSub: data.user.id,
+            email: data.user.email || local.email,
+            displayName:
+              (data.user.user_metadata?.full_name as string | undefined) || local.displayName,
+          });
+        } catch {
+          onError('credential 파싱 실패');
+        }
+      })();
     },
     auto_select: false,
   });
