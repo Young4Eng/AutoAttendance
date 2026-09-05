@@ -3041,11 +3041,13 @@
         }
       }
       if (!hit) continue;
-      var box = el;
-      for (var up = 0; up < 8 && box; up++, box = box.parentElement) {
-        if (!(box instanceof Element)) break;
-        var br = box.getBoundingClientRect();
-        if (br.width > 120 && br.width < 720 && br.height > 80 && br.height < 420) return box;
+      var cur = el;
+      for (var up = 0; up < 12 && cur; up++, cur = cur.parentElement) {
+        if (!(cur instanceof Element)) break;
+        var blob = normText(cur.textContent || "");
+        var br = cur.getBoundingClientRect();
+        if (br.width > 900 || br.height > 620) continue;
+        if (blob.indexOf("저장하시겠습니까") >= 0 && blob.indexOf("취소") >= 0) return cur;
       }
       return el;
     }
@@ -3064,7 +3066,9 @@
     for (var i = 0; i < hits.length; i++) {
       var el = hits[i];
       if (!visible(el)) continue;
-      if (normText(el.textContent || "") !== label) continue;
+      var tx = normText(el.textContent || "");
+      if (tx !== label && tx.indexOf(label) !== 0) continue;
+      if (tx.length > label.length + 2) continue;
       var r = el.getBoundingClientRect();
       if (r.width < 6 || r.height < 6) continue;
       out.push({ el: el, r: r, cx: r.left + r.width / 2, cy: (r.top + r.bottom) / 2 });
@@ -3072,7 +3076,7 @@
     return out;
   }
 
-  /** 제목 「확인」이 아니라 「취소」 왼쪽 파란 확인. */
+  /** 제목 「확인」이 아니라 「취소」 왼쪽·더 아래쪽 확인. */
   function findConfirmButton(scope) {
     var oks = collectExactLabels(scope, "확인");
     var cans = collectExactLabels(scope, "취소");
@@ -3080,10 +3084,10 @@
     var bestScore = 1e15;
     for (var i = 0; i < oks.length; i++) {
       var ok = oks[i];
-      if (ok.r.height > 48 || ok.r.width > 160) continue;
+      if (ok.r.height > 56 || ok.r.width > 180) continue;
       for (var j = 0; j < cans.length; j++) {
         var c = cans[j];
-        if (Math.abs(ok.cy - c.cy) > 22) continue;
+        if (Math.abs(ok.cy - c.cy) > 40) continue;
         if (ok.cx >= c.cx - 2) continue;
         var score = Math.abs(ok.cy - c.cy) * 10 + (c.cx - ok.cx);
         if (score < bestScore) {
@@ -3093,6 +3097,12 @@
       }
     }
     if (best) return climbToolbarBtn(best) || best;
+    if (oks.length) {
+      oks.sort(function (a, b) {
+        return b.cy - a.cy;
+      });
+      return climbToolbarBtn(oks[0].el) || oks[0].el;
+    }
     return null;
   }
 
