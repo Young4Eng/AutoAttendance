@@ -3269,7 +3269,7 @@
         continue;
       }
       clickOnce(okBtn);
-      await sleep(500);
+      await sleep(3000);
     }
     if (!findDialogByNeedles(["저장했습니다", "저장하였습니다"])) return { ok: true };
     return { ok: true, code: "saved_alert_soft" };
@@ -3287,10 +3287,15 @@
       var extra = findConfirmBelowText(["저장했습니다", "저장하였습니다"]);
       if (extra) {
         clickOnce(extra);
-        await sleep(500);
+        await sleep(3000);
       }
     }
+    var waitGone = Date.now() + 3000;
+    while (saveDoneVisible() && Date.now() < waitGone) {
+      await sleep(250);
+    }
     if (saveDoneVisible()) return { ok: false, code: "saved_alert_still_open" };
+    await sleep(3000);
     return { ok: true };
   }
 
