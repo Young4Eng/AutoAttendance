@@ -10,8 +10,9 @@ export async function replaceRoster(
   ownerSub: string,
   students: Omit<Student, "ownerSub">[],
 ): Promise<void> {
+  await idb.replaceRoster(ownerSub, students);
   const client = sb();
-  if (!client) return idb.replaceRoster(ownerSub, students);
+  if (!client) return;
   await client.from("roster").delete().eq("owner_id", ownerSub);
   if (students.length === 0) return;
   const { error } = await client.from("roster").insert(
@@ -23,15 +24,19 @@ export async function replaceRoster(
       name: s.name,
     })),
   );
-  if (error) throw new Error(error.message);
+  if (error) {
+    // 브라우저 DB에는 있음. 클라우드만 실패.
+    console.warn(error.message);
+  }
 }
 
 export async function listRoster(ownerSub: string): Promise<Student[]> {
+  const local = await idb.listRoster(ownerSub);
   const client = sb();
-  if (!client) return idb.listRoster(ownerSub);
+  if (!client) return local;
   const { data, error } = await client.from("roster").select("*").eq("owner_id", ownerSub);
-  if (error) throw new Error(error.message);
-  return (data ?? [])
+  if (error || !data || data.length === 0) return local;
+  return data
     .map((r) => ({
       ownerSub,
       grade: r.grade,
