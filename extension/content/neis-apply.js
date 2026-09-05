@@ -2980,44 +2980,80 @@
     return null;
   }
 
-  function findConfirmButton(scope) {
+  function collectExactLabels(scope, label) {
     var root = scope || document.body || document.documentElement;
     var hits = [];
     try {
-      hits = findElementsByExactText(root, "확인").concat(findLabelHits(root, "확인") || []);
+      hits = findElementsByExactText(root, label).concat(findLabelHits(root, label) || []);
     } catch (eH) {
       hits = [];
     }
+    var out = [];
     for (var i = 0; i < hits.length; i++) {
       var el = hits[i];
       if (!visible(el)) continue;
-      if (normText(el.textContent || "") !== "확인") continue;
-      return climbToolbarBtn(el) || el;
+      if (normText(el.textContent || "") !== label) continue;
+      var r = el.getBoundingClientRect();
+      if (r.width < 6 || r.height < 6) continue;
+      out.push({ el: el, r: r, cx: r.left + r.width / 2, cy: (r.top + r.bottom) / 2 });
     }
+    return out;
+  }
+
+  /** 제목 「확인」이 아니라 「취소」 왼쪽 파란 확인. */
+  function findConfirmButton(scope) {
+    var oks = collectExactLabels(scope, "확인");
+    var cans = collectExactLabels(scope, "취소");
+    var best = null;
+    var bestScore = 1e15;
+    for (var i = 0; i < oks.length; i++) {
+      var ok = oks[i];
+      if (ok.r.height > 48 || ok.r.width > 160) continue;
+      for (var j = 0; j < cans.length; j++) {
+        var c = cans[j];
+        if (Math.abs(ok.cy - c.cy) > 22) continue;
+        if (ok.cx >= c.cx - 2) continue;
+        var score = Math.abs(ok.cy - c.cy) * 10 + (c.cx - ok.cx);
+        if (score < bestScore) {
+          bestScore = score;
+          best = ok.el;
+        }
+      }
+    }
+    if (best) return climbToolbarBtn(best) || best;
     return null;
   }
 
+  function saveConfirmStillOpen() {
+    return !!findSaveConfirmRoot();
+  }
+
   async function confirmSaveDialog() {
-    var deadline = Date.now() + 2800;
+    var deadline = Date.now() + 4000;
+    var clicked = false;
     while (Date.now() < deadline) {
       var box = findSaveConfirmRoot();
       if (box) {
         var okBtn = findConfirmButton(box) || findConfirmButton(document.body);
         if (okBtn) {
           clickOnce(okBtn);
-          await sleep(400);
-          return { ok: true };
+          clicked = true;
+          await sleep(500);
+          if (!saveConfirmStillOpen()) return { ok: true };
         }
+      } else if (clicked) {
+        return { ok: true };
       }
-      await sleep(120);
+      await sleep(150);
     }
-    return { ok: false, code: "save_confirm_not_found" };
+    if (clicked && !saveConfirmStillOpen()) return { ok: true };
+    return { ok: false, code: clicked ? "save_confirm_still_open" : "save_confirm_not_found" };
   }
 
   async function saveDateAndConfirm() {
     var sv = clickSaveOnly();
     if (!sv.ok) return sv;
-    await sleep(300);
+    await sleep(500);
     return confirmSaveDialog();
   }
 
