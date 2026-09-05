@@ -6,7 +6,7 @@ import {
   listRoster,
   putAttendance,
   replaceRoster,
-} from "../db/idb";
+} from "../db/store";
 import type { AttendanceRecord, AttendanceType, Category, Student } from "../types/models";
 import "./MonthHome.css";
 
