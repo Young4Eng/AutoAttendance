@@ -151,199 +151,165 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
 
   return (
     <Shell screen={screen} teacherLabel={teacherLabel} rosterCount={roster.length} onNav={onNav} onLogout={onLogout}>
-      <main className={"mh-main" + (open ? " split" : "")}>
-        <div className="mh-banner">
+      <main className={"flex-1 p-6 " + (open ? "max-w-[calc(100%-24rem)]" : "")}>
+        <div className="mb-4 rounded-xl border border-[#99F6E4] bg-[#F0FDFA] px-4 py-3 text-sm leading-relaxed text-[#134E4A]">
           출결 초안은 계정에 저장됩니다. 같은 날짜는 한 번만 열고, 패널 안에서 학생을 더합니다.
         </div>
-        <header className="mh-head">
-          <h1>
+        <header className="flex items-end justify-between mb-4">
+          <h1 className="text-2xl font-semibold tracking-tight m-0">
             {year}년 {month}월
           </h1>
-          <button type="button" className="x" disabled={weekend(now)} onClick={() => setOpen(today)}>
+          <button type="button" disabled={weekend(now)} onClick={() => setOpen(today)}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#E4E4E7] bg-white text-sm">
+            <span className="material-symbols-outlined text-[16px]">today</span>
             오늘로 이동
           </button>
         </header>
-        <div className="mh-cal">
-          {DOW.map((d) => (
-            <div key={d} className={"mh-dow" + (d === "토" || d === "일" ? " wk" : "")}>
-              {d}
-            </div>
-          ))}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-[#E4E4E7]">
+          <div className="grid grid-cols-7 bg-[#F4F4F5] text-center select-none py-2">
+            {DOW.map((d) => (
+              <div key={d} className={"text-sm font-semibold py-1 " + (d==="토"||d==="일" ? "text-[#A1A1AA]" : "text-[#18181B]")}>{d}</div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 border-t border-[#E4E4E7]">
           {cells.map((d) => {
             const key = ymd(d);
             const out = d.getMonth() !== month - 1;
             const wk = weekend(d);
             const list = namesByDate[key] || [];
             const n = list.length;
-            const heat = n >= 3 ? "h3" : n === 2 ? "h2" : n === 1 ? "h1" : "";
+            const sel = open === key;
             return (
               <button
                 key={key + String(out)}
                 type="button"
                 disabled={wk || out}
-                className={`mh-cell${out ? " out" : ""}${wk ? " wk" : ""}${open === key ? " sel" : ""} ${heat}`}
-                onClick={() => {
-                  setOpen(key);
-                  setPending(null);
-                  setBulk(false);
-                }}
+                onClick={() => { setOpen(key); setPending(null); setBulk(false); }}
+                className={
+                  "min-h-[110px] p-2 flex flex-col text-left border-r border-b border-[#E4E4E7] " +
+                  (wk || out ? "bg-[#F4F4F5] text-[#A1A1AA] cursor-default " : "bg-white hover:bg-[#FAFAFA] cursor-pointer ") +
+                  (out ? "opacity-40 " : "") +
+                  (sel ? "ring-2 ring-inset ring-[#0F766E] bg-gradient-to-b from-[#0F766E]/5 to-transparent " : "")
+                }
               >
-                <span>{d.getDate()}</span>
-                {n > 0 && !wk ? <b>예외 {n}명</b> : null}
-                {list.slice(0, 2).map((r) => (
-                  <div key={r.number + r.type} className="mh-mini">
-                    {String(r.number).padStart(2, "0")} {TYPE_KO[r.type]}
-                  </div>
-                ))}
+                <div className="flex items-center justify-between">
+                  <span className={"text-sm font-semibold " + (sel ? "text-[#0F766E]" : "")}>{d.getDate()}</span>
+                  {n > 0 && !wk ? (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-[#0F766E] text-white text-[11px] font-semibold">예외 {n}명</span>
+                  ) : null}
+                </div>
+                <div className="flex flex-col gap-1 mt-1">
+                  {list.slice(0, 2).map((r) => (
+                    <div key={r.number + r.type} className="flex items-center justify-between px-1.5 py-0.5 rounded bg-[#F4F4F5] text-[11px]">
+                      <span>{String(r.number).padStart(2,"0")} {TYPE_KO[r.type]}</span>
+                    </div>
+                  ))}
+                  {n === 0 && !wk && !out ? (
+                    <span className="opacity-0 hover:opacity-60 text-[#6E7977] text-xs text-center mt-auto">기록 추가 +</span>
+                  ) : null}
+                </div>
               </button>
             );
           })}
+          </div>
         </div>
       </main>
       {open ? (
-        <section className="mh-panel">
-          <div className="mh-panel-h">
+        <section className="w-[24rem] border-l border-[#E4E4E7] bg-white p-4 flex flex-col gap-3">
+          <div className="flex items-start justify-between">
             <div>
-              <h2>
-                {open.slice(5).replace("-", "월 ")}일 ({weekdayKo})
-              </h2>
-              <p>
-                {dayRows.length ? `예외 ${dayRows.length}명` : "이날 예외 없음"} · 결석{" "}
-                {dayRows.filter((r) => r.type === "absence").length} · 지각{" "}
-                {dayRows.filter((r) => r.type === "late").length}
+              <h2 className="text-lg font-semibold m-0">{open.slice(5).replace("-", "월 ")}일 ({weekdayKo})</h2>
+              <p className="text-xs text-[#71717A] m-0 mt-1">
+                {dayRows.length ? `예외 ${dayRows.length}명` : "이날 예외 없음"} · 결석 {dayRows.filter((r) => r.type === "absence").length} · 지각 {dayRows.filter((r) => r.type === "late").length}
               </p>
             </div>
-            <button type="button" className="x" onClick={() => setOpen(null)}>
-              닫기
-            </button>
+            <button type="button" className="material-symbols-outlined text-[#71717A]" onClick={() => setOpen(null)}>close</button>
           </div>
-          <div className="mh-actions">
-            {KINDS.map((k) => (
-              <button
-                key={k}
-                type="button"
-                className={pending === k && !bulk ? "on" : ""}
-                onClick={() => {
-                  setPending(k);
-                  setBulk(false);
-                  setPicked([]);
-                }}
-              >
-                + {TYPE_KO[k]}
+          <div className="flex flex-wrap gap-1.5">
+            {([
+              ["absence","+ 결석","person_add","#B45309"],
+              ["late","+ 지각","schedule","#BE123C"],
+              ["early_leave","+ 조퇴","logout","#5B21B6"],
+              ["result","+ 결과","hourglass_bottom","#0F766E"],
+            ] as const).map(([k, lab, ic, col]) => (
+              <button key={k} type="button"
+                onClick={() => { setPending(k); setBulk(false); setPicked([]); }}
+                className={"flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg border text-sm bg-white " + (pending===k && !bulk ? "border-[#0F766E] ring-1 ring-[#0F766E]" : "border-[#E4E4E7]")}>
+                <span className="material-symbols-outlined text-[15px]" style={{color: col}}>{ic}</span>
+                {lab}
               </button>
             ))}
-            <button
-              type="button"
-              className={bulk ? "on" : ""}
-              onClick={() => {
-                setBulk(true);
-                setPending(pending || "absence");
-              }}
-            >
+            <button type="button" onClick={() => { setBulk(true); setPending(pending || "absence"); }}
+              className={"w-full flex items-center justify-center gap-1 py-1.5 rounded-lg border text-sm " + (bulk ? "border-[#0F766E]" : "border-[#E4E4E7]")}>
+              <span className="material-symbols-outlined text-[15px]">playlist_add_check</span>
               + 다수 일괄 등록
             </button>
           </div>
-          <div className="mh-reasons">
-            <span>자주 쓰는 사유</span>
+          <div className="flex flex-wrap items-center gap-1 text-[11px] text-[#3E4947]">
+            <span className="font-medium">자주 쓰는 사유:</span>
             {REASONS.map((r) => (
-              <button key={r} type="button" onClick={() => void applyReason(r)}>
-                {r}
-              </button>
+              <button key={r} type="button" onClick={() => void applyReason(r)}
+                className="px-1.5 py-0.5 rounded bg-[#F0EDF1] hover:bg-[#EAE7EB] border border-[#E4E4E7]">{r}</button>
             ))}
           </div>
           {pending ? (
             <>
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="번호 또는 이름 일부" />
-              <div className="mh-cards">
-                {roster.length === 0 ? <p>명단에서 CSV를 먼저 가져오세요.</p> : null}
+              <input className="h-9 rounded-lg border border-[#E4E4E7] px-3 text-sm" value={q} onChange={(e) => setQ(e.target.value)} placeholder="번호 또는 이름 일부" />
+              <div className="flex flex-col gap-1">
+                {roster.length === 0 ? <p className="text-sm text-[#71717A]">명단에서 CSV를 먼저 가져오세요.</p> : null}
                 {hits.map((s) => (
-                  <button
-                    key={s.number}
-                    type="button"
-                    className={picked.includes(s.number) ? "on" : ""}
+                  <button key={s.number} type="button"
+                    className={"text-left px-2 py-1.5 rounded-lg text-sm " + (picked.includes(s.number) ? "bg-[#CCFBF1]" : "hover:bg-[#F4F4F5]")}
                     onClick={() => {
-                      if (bulk) {
-                        setPicked((p) =>
-                          p.includes(s.number) ? p.filter((n) => n !== s.number) : [...p, s.number],
-                        );
-                      } else {
-                        void addOne(s, pending).then(() => {
-                          setPending(null);
-                          setQ("");
-                        });
-                      }
-                    }}
-                  >
-                    {s.number} {s.name}
-                  </button>
+                      if (bulk) setPicked((p) => p.includes(s.number) ? p.filter((n) => n !== s.number) : [...p, s.number]);
+                      else void addOne(s, pending).then(() => { setPending(null); setQ(""); });
+                    }}>{s.number} {s.name}</button>
                 ))}
-                {bulk ? (
-                  <button type="button" className="x" onClick={() => void confirmPicks()}>
-                    {picked.length}명 등록
-                  </button>
-                ) : null}
+                {bulk ? <button type="button" className="rounded-lg border border-[#E4E4E7] py-1.5 text-sm" onClick={() => void confirmPicks()}>{picked.length}명 등록</button> : null}
               </div>
             </>
           ) : (
-            <p className="mh-muted">+결석을 누른 뒤 학생을 고르면 줄이 생깁니다. 구분·교시·사유는 그 줄에서.</p>
+            <p className="text-xs text-[#71717A]">+결석을 누른 뒤 학생을 고르면 줄이 생깁니다.</p>
           )}
-          <div className="mh-cards">
+          <div className="flex flex-col gap-1 overflow-auto">
             {dayRows.map((c) => {
               const key = `${c.number}-${c.type}-${c.period}`;
               return (
-                <article key={key} onClick={() => setFocusKey(key)}>
-                  <strong>
-                    {String(c.number).padStart(2, "0")} {c.name}
-                  </strong>
-                  <em>{TYPE_KO[c.type]}</em>
-                  <button
-                    type="button"
-                    className="x"
-                    onClick={() => void deleteAttendanceRecord(ownerSub, c).then(reload)}
-                  >
-                    ×
-                  </button>
-                  <div className="cats">
+                <div key={key} onClick={() => setFocusKey(key)} className="py-2 px-1.5 hover:bg-[#F4F4F5]/80 rounded-lg flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-24 shrink-0 font-semibold truncate">{String(c.number).padStart(2,"0")} {c.name}</div>
+                    <span className="px-1.5 py-0.5 rounded bg-[#FEF3C7] text-[#92400E] text-[11px] font-bold border border-[#FDE68A]">{TYPE_KO[c.type]}</span>
+                    <button type="button" className="ml-auto material-symbols-outlined text-[16px] text-[#A1A1AA]"
+                      onClick={() => void deleteAttendanceRecord(ownerSub, c).then(reload)}>close</button>
+                  </div>
+                  <div className="inline-flex rounded-md border border-[#E4E4E7] p-0.5 bg-[#F4F4F5] w-fit text-[11px]">
                     {CATS.map((cat) => (
-                      <button
-                        key={cat}
-                        type="button"
-                        className={c.category === cat ? "on" : ""}
-                        onClick={() => void save({ ...c, category: cat })}
-                      >
+                      <button key={cat} type="button" onClick={() => void save({ ...c, category: cat })}
+                        className={"px-1.5 py-0.5 rounded " + (c.category===cat ? "bg-white font-bold text-[#0F766E] shadow-sm" : "text-[#71717A]")}>
                         {CAT_KO[cat]}
                       </button>
                     ))}
                   </div>
                   {c.type !== "absence" ? (
-                    <div className="ps">
-                      {[1, 2, 3, 4, 5, 6, 7].map((p) => (
-                        <button
-                          key={p}
-                          type="button"
-                          className={c.period === p ? "on" : ""}
-                          onClick={() => void save({ ...c, period: p })}
-                        >
-                          {p}교시
+                    <div className="flex flex-wrap gap-1">
+                      {[1,2,3,4,5,6,7].map((pr) => (
+                        <button key={pr} type="button" onClick={() => void save({ ...c, period: pr })}
+                          className={"px-1.5 py-0.5 rounded text-[11px] border " + (c.period===pr ? "bg-[#0F766E] text-white border-[#0F766E]" : "border-[#E4E4E7]")}>
+                          {pr}교시
                         </button>
                       ))}
                     </div>
                   ) : null}
-                  <input
-                    defaultValue={c.reason}
-                    placeholder={c.category === "other" ? "사유 필수" : "사유"}
-                    onFocus={() => setFocusKey(key)}
-                    onBlur={(e) => void save({ ...c, reason: e.target.value })}
-                  />
-                </article>
+                  <input className="h-8 rounded-md border border-[#E4E4E7] px-2 text-sm"
+                    defaultValue={c.reason} placeholder={c.category==="other" ? "사유 필수" : "사유"}
+                    onFocus={() => setFocusKey(key)} onBlur={(e) => void save({ ...c, reason: e.target.value })} />
+                </div>
               );
             })}
           </div>
-          <div className="mh-panel-f">
+          <div className="mt-auto flex items-center justify-between text-xs text-[#71717A]">
             <span>계정에 저장됨</span>
-            <button type="button" className="x" onClick={() => setOpen(null)}>
-              완료
-            </button>
+            <button type="button" className="px-3 py-1.5 rounded-lg bg-[#0F766E] text-white text-sm" onClick={() => setOpen(null)}>완료</button>
           </div>
         </section>
       ) : null}
