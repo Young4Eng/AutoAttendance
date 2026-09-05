@@ -81,6 +81,17 @@ export async function putAttendance(
   if (error) console.warn(error.message);
 }
 
+function recKey(r: Pick<AttendanceRecord, "date" | "grade" | "class" | "number" | "type" | "period">) {
+  return `${r.date}|${r.grade}|${r.class}|${r.number}|${r.type}|${r.period}`;
+}
+
+function mergeAttendance(local: AttendanceRecord[], remote: AttendanceRecord[]) {
+  const map = new Map<string, AttendanceRecord>();
+  for (const r of remote) map.set(recKey(r), r);
+  for (const r of local) map.set(recKey(r), r);
+  return [...map.values()];
+}
+
 function asRecord(r: Record<string, unknown>): AttendanceRecord {
   return {
     ownerSub: String(r.owner_id),
@@ -103,23 +114,24 @@ export async function listAttendance(ownerSub: string): Promise<AttendanceRecord
   const client = sb();
   if (!client) return local;
   const { data, error } = await client.from("entries").select("*").eq("owner_id", ownerSub);
-  if (error || !data || data.length === 0) return local;
-  return data.map((r) => asRecord(r as Record<string, unknown>));
+  if (error || !data) return local;
+  return mergeAttendance(local, data.map((r) => asRecord(r as Record<string, unknown>)));
 }
 
 export async function listAttendanceByDate(
   ownerSub: string,
   date: string,
 ): Promise<AttendanceRecord[]> {
+  const local = await idb.listAttendanceByDate(ownerSub, date);
   const client = sb();
-  if (!client) return idb.listAttendanceByDate(ownerSub, date);
+  if (!client) return local;
   const { data, error } = await client
     .from("entries")
     .select("*")
     .eq("owner_id", ownerSub)
     .eq("date", date);
-  if (error) throw new Error(error.message);
-  return (data ?? []).map((r) => asRecord(r as Record<string, unknown>));
+  if (error || !data) return local;
+  return mergeAttendance(local, data.map((r) => asRecord(r as Record<string, unknown>)));
 }
 
 export async function deleteAttendance(

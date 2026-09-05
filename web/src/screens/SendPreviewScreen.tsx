@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { AttendanceRecord, Owner } from '../types/models';
 import {
-  deleteAllAttendance,
   listAttendance,
   listAttendanceByDate,
   putAttendance,
@@ -118,7 +117,7 @@ export function SendPreviewScreen({ owner, date, periodCount, onBack }: Props) {
 
   const openClear = () => {
     if (records.length === 0) {
-      setError('지울 기록이 없습니다');
+      setError('되돌릴 대기가 없습니다');
       return;
     }
     setError(null);
@@ -134,8 +133,13 @@ export function SendPreviewScreen({ owner, date, periodCount, onBack }: Props) {
     setClearOpen(false);
     setError(null);
     try {
-      const n = await deleteAllAttendance(owner.ownerSub);
-      setStatus(`초안·대기 ${n}건 삭제`);
+      let n = 0;
+      for (const r of records.filter((x) => x.status === 'queued')) {
+        const { ownerSub: _o, ...rest } = r;
+        await putAttendance(owner.ownerSub, { ...rest, status: 'draft' });
+        n += 1;
+      }
+      setStatus(`대기 ${n}건을 초안으로 되돌렸습니다. 달력 기록은 그대로입니다.`);
       await load();
     } catch {
       setError('삭제 실패');
@@ -180,7 +184,7 @@ export function SendPreviewScreen({ owner, date, periodCount, onBack }: Props) {
             대기열에 넣기 ({draftCount})
           </button>
           <button type="button" className="btn danger" onClick={openClear}>
-            draft 지우기
+            대기만 초안으로
           </button>
         </div>
         <p className="muted tiny">
