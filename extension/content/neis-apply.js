@@ -167,7 +167,49 @@
   }
 
   function clickEl(el) {
-    return clickNexa(el, { usePoint: false });
+    return clickOnce(el);
+  }
+
+  /** 실제 클릭 1회. pointer+click+elementFromPoint 이중 시퀀스 금지. */
+  function clickOnce(el) {
+    if (!el || !(el instanceof Element)) return false;
+    var doc = el.ownerDocument || document;
+    var view = doc.defaultView || window;
+    var r = el.getBoundingClientRect();
+    if (!(r.width > 0 && r.height > 0)) return false;
+    var cx = r.left + r.width / 2;
+    var cy = r.top + r.height / 2;
+    var at = el;
+    try {
+      var hit = doc.elementFromPoint(cx, cy);
+      if (hit && hit instanceof Element) at = hit;
+    } catch (eP) {}
+    try {
+      if (typeof at.focus === "function") at.focus();
+    } catch (eF) {}
+    var init = {
+      bubbles: true,
+      cancelable: true,
+      view: view,
+      clientX: cx,
+      clientY: cy,
+      screenX: cx,
+      screenY: cy,
+      button: 0,
+      buttons: 1,
+      detail: 1,
+    };
+    try {
+      at.dispatchEvent(new MouseEvent("mousedown", init));
+      init.buttons = 0;
+      at.dispatchEvent(new MouseEvent("mouseup", init));
+      at.dispatchEvent(new MouseEvent("click", init));
+    } catch (eM) {
+      try {
+        if (typeof at.click === "function") at.click();
+      } catch (eC) {}
+    }
+    return true;
   }
 
   /**
@@ -2043,7 +2085,7 @@
       var cands = reasonFieldCandidates(popup, labels[i]);
       for (var c = 0; c < cands.length; c++) {
         try {
-          clickNexa(cands[c], { usePoint: true, mode: "full" });
+          clickOnce(cands[c]);
         } catch (eC) {}
         if (setNexaText(cands[c], want)) return true;
       }
@@ -2582,14 +2624,14 @@
       }
       targets = [cell];
     }
-    var modes = ["full"];
-    var modesTried = ["full"];
+    var modes = ["once"];
+    var modesTried = ["once"];
     var popup = null;
     var target = targets[0];
-    // #52 follow: 한 칸을 여러 모드로 연타하면 팝업이 겹친다. 클릭 1 + 실패 시 1.
     for (var attempt = 0; attempt < 2; attempt++) {
-      clickNexa(target, { usePoint: true, mode: "full" });
-      popup = await waitForVisiblePopup(1800);
+      clickOnce(target);
+      await sleep(500);
+      popup = await waitForVisiblePopup(1200);
       if (popup) {
         var afterInPopup = {
           titleVisible: titleVisibleIn(popup),
@@ -2716,45 +2758,41 @@
     };
   }
 
-  function clickPeriodCell(row, grid, period, cellsOpt) {
-    var idx = grid.periodCols[period];
-    var cells = cellsOpt || rowCells(row);
-    var cell = idx != null ? cells[idx] : null;
-
-    // spatial re-snap if missing
-    if (!cell && grid.kind === "spatial" && grid.headerCenters && grid.periodCols[period] != null) {
-      var center = grid.headerCenters[grid.periodCols[period]];
-      var rr = row.getBoundingClientRect ? row.getBoundingClientRect() : null;
-      var rowTop = rr ? rr.top : 0;
-      var rowBottom = rr ? rr.bottom : rowTop + 24;
-      if (cellsOpt && cellsOpt.length) {
-        for (var i = 0; i < cellsOpt.length; i++) {
-          if (!cellsOpt[i] || !cellsOpt[i].getBoundingClientRect) continue;
-          var cr = cellsOpt[i].getBoundingClientRect();
-          rowTop = Math.min(rowTop || cr.top, cr.top);
-          rowBottom = Math.max(rowBottom || cr.bottom, cr.bottom);
-        }
+  function findPeriodHeaderCenterX(period) {
+    var want = Number(period);
+    if (!Number.isFinite(want) || want < 1) return null;
+    var hits = findPeriodHits(document.body || document.documentElement);
+    var best = null;
+    var bestY = 1e15;
+    for (var i = 0; i < hits.length; i++) {
+      if (Number(hits[i].period) !== want) continue;
+      var r = hits[i].rect;
+      if (!r || !(r.width > 0)) continue;
+      if (r.top < bestY) {
+        bestY = r.top;
+        best = r.left + r.width / 2;
       }
-      cell = findCellNear(
-        grid.root || document,
-        center,
-        rowTop,
-        rowBottom,
-        grid.headerBottom || 0,
-      );
     }
+    return best;
+  }
 
-    if (idx == null) {
-      return { ok: false, code: "period_col_missing", diag: periodCellDiag(grid, period, cells) };
+  function clickPeriodCell(row, grid, period, cellsOpt) {
+    var cells = cellsOpt || rowCells(row);
+    var hx = findPeriodHeaderCenterX(period);
+    if (hx == null && grid && grid.headerCenters && grid.periodCols && grid.periodCols[period] != null) {
+      hx = grid.headerCenters[grid.periodCols[period]];
+    }
+    var cell = hx != null ? resolveCloseCellByHeaderX(row, cells, hx, grid && grid.headerBottom) : null;
+    if (!cell && grid && grid.periodCols && grid.periodCols[period] != null) {
+      cell = cells[grid.periodCols[period]] || null;
     }
     if (!cell) {
       return { ok: false, code: "period_cell_missing", diag: periodCellDiag(grid, period, cells) };
     }
-    var target =
-      cell.querySelector(
-        "a, button, input, [onclick], [class*='contentsbox'], [class*='ContentsBox'], div, span",
-      ) || cell;
-    clickEl(target);
+    if (hx != null && !closeHeaderAlignedOk(cellCenterX(cell), hx)) {
+      return { ok: false, code: "period_col_misaligned", diag: periodCellDiag(grid, period, cells) };
+    }
+    clickOnce(cell);
     return { ok: true };
   }
 
