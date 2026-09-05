@@ -28,3 +28,4 @@
 - #48/0.4.8: placeholder(cl-text/cl-placeholder) 리프 → 부모 GridCell/contentsbox 상승 클릭. class 토큰 cl- 접두 분리·closeCellDump JSON.stringify·마감 헤더 dx 열 검증. 픽스처+단위테스트. 권한 추가 없음.
 - #50/0.4.9: 마감 셀 클릭 전 「마감」헤더 centerX 정렬 필수(|dx|≤40 또는 열폭/2). aligned=0이면 클릭 없이 `close_col_misaligned`+dump(headerX/cellX/closeHeaderDx/closeHeaderAligned). 폴백 오클릭 제거. 클릭 모드·출결마감 추가 없음. 픽스처+단위테스트. 권한 추가 없음.
 - #52/0.5.0: 마감 칸을 closeIdx가 아니라 헤더X×행Y(`elementFromPoint`)로 재선택. MAX_DX 상향 없음. 이후 사용자에게 보이는 확장 변경마다 `manifest.json` version을 올린다.
+- #52 follow/0.5.1: 마감칸 클릭 최대 2회(팝업 중첩 방지). 사유 Nexacro 입력. 일자 불일치 시 일자칸+조회.

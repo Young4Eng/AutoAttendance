@@ -1460,6 +1460,82 @@
     return { ok: true };
   }
 
+  function findDateControls() {
+    var root = document.body || document.documentElement;
+    var labels = [];
+    try {
+      labels = findElementsByExactText(root, "일자").concat(findLabelHits(root, "일자") || []);
+    } catch (eL) {
+      labels = [];
+    }
+    var out = [];
+    function push(el) {
+      if (!el || out.indexOf(el) >= 0) return;
+      if (!visible(el) && (el.tagName || "") !== "INPUT") return;
+      out.push(el);
+    }
+    for (var i = 0; i < labels.length; i++) {
+      var lab = labels[i];
+      var box = lab.closest("div, td, li, [class*='contentsbox']") || lab.parentElement;
+      if (box) {
+        var ins = box.querySelectorAll("input, [class*='Edit'], [class*='calendar'], [class*='Date']");
+        for (var k = 0; k < ins.length; k++) push(ins[k]);
+      }
+      var lr = lab.getBoundingClientRect();
+      var all = root.querySelectorAll("input, [class*='calendar']");
+      for (var j = 0; j < all.length && j < 80; j++) {
+        var r = all[j].getBoundingClientRect();
+        if (r.left + 4 < lr.right - 40) continue;
+        if (Math.abs((r.top + r.bottom) / 2 - (lr.top + lr.bottom) / 2) > 22) continue;
+        push(all[j]);
+      }
+    }
+    return out;
+  }
+
+  function findLookupButton() {
+    var root = document.body || document.documentElement;
+    var hits = [];
+    try {
+      hits = findElementsByExactText(root, "조회").concat(findLabelHits(root, "조회") || []);
+    } catch (eB) {
+      hits = [];
+    }
+    for (var i = 0; i < hits.length; i++) {
+      var el = hits[i];
+      if (!visible(el)) continue;
+      var t = normText(el.textContent || "");
+      if (t === "조회" || t.indexOf("조회") === 0) return el;
+    }
+    return null;
+  }
+
+  /** 화면 일자가 대기열과 다르면 일자칸을 바꾸고 조회한다. */
+  async function alignNeisDate(item) {
+    var want = normalizeDate(item && item.date);
+    if (!want) return { ok: false, code: "date_unreadable" };
+    var filters = readFilters();
+    var fm = filtersMatchItem(filters, item);
+    if (fm.ok) return fm;
+    if (fm.code !== "date_mismatch" && fm.code !== "date_unreadable") return fm;
+    var dotted = want.replace(/-/g, ".");
+    var controls = findDateControls();
+    var wrote = false;
+    for (var i = 0; i < controls.length; i++) {
+      clickNexa(controls[i], { usePoint: true, mode: "full" });
+      if (setNexaText(controls[i], dotted) || setNexaText(controls[i], want)) {
+        wrote = true;
+        break;
+      }
+    }
+    if (!wrote) return fm;
+    var btn = findLookupButton();
+    if (btn) clickEl(btn);
+    await sleep(900);
+    filters = readFilters();
+    return filtersMatchItem(filters, item);
+  }
+
   function cellText(cell) {
     return ((cell && cell.textContent) || "").replace(/\s+/g, " ").trim();
   }
@@ -1897,49 +1973,87 @@
     return selectRadioIn(popup, labelText, requireEnabled);
   }
 
+  function setNexaText(el, text) {
+    if (!el) return false;
+    var v = String(text || "");
+    try {
+      el.focus();
+    } catch (eF) {}
+    var tag = (el.tagName || "").toUpperCase();
+    if (tag === "INPUT" || tag === "TEXTAREA") {
+      try {
+        var proto = tag === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+        var desc = Object.getOwnPropertyDescriptor(proto, "value");
+        if (desc && desc.set) desc.set.call(el, v);
+        else el.value = v;
+      } catch (eV) {
+        el.value = v;
+      }
+    } else if (el.isContentEditable || el.getAttribute("contenteditable") === "true") {
+      el.textContent = v;
+    } else {
+      try {
+        el.value = v;
+      } catch (eX) {}
+    }
+    try {
+      el.dispatchEvent(new InputEvent("input", { bubbles: true, cancelable: true, data: v, inputType: "insertText" }));
+    } catch (eI) {
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+    el.dispatchEvent(new Event("blur", { bubbles: true }));
+    return true;
+  }
+
+  function reasonFieldCandidates(popup, labelEl) {
+    var out = [];
+    function push(el) {
+      if (!el || !(el instanceof Element)) return;
+      if (out.indexOf(el) >= 0) return;
+      if (!visible(el) && (el.tagName || "") !== "INPUT") return;
+      out.push(el);
+    }
+    var box = labelEl.closest("tr, li, td, [class*='contentsbox'], [class*='form'], div") || labelEl.parentElement;
+    if (box) {
+      var near = box.querySelectorAll("input, textarea, [contenteditable='true'], [class*='Edit'], [class*='edit'], [class*='input']");
+      for (var i = 0; i < near.length; i++) push(near[i]);
+    }
+    var lr = labelEl.getBoundingClientRect();
+    var all = popup.querySelectorAll("input, textarea, [contenteditable='true'], [class*='Edit']");
+    for (var j = 0; j < all.length; j++) {
+      var el = all[j];
+      var r = el.getBoundingClientRect();
+      if (!(r.width > 8 && r.height > 8)) continue;
+      if (r.left + 4 < lr.right - 20) continue;
+      if (r.top > lr.bottom + 28 || r.bottom < lr.top - 28) continue;
+      push(el);
+    }
+    return out;
+  }
+
   function fillReason(popup, reason) {
+    var want = String(reason || "").trim();
+    if (!popup) return !want;
     var labels = findElementsByExactText(popup, "사유");
     if (!labels.length) {
-      var soft = findLabelHits(popup, "사유");
-      labels = soft;
+      labels = findLabelHits(popup, "사유") || [];
     }
     for (var i = 0; i < labels.length; i++) {
-      var box = labels[i].closest("tr, div, li, td, [class*='contentsbox']") || labels[i].parentElement;
-      var inp =
-        box &&
-        box.querySelector(
-          "input[type='text'], textarea, input:not([type]), input[type='search']",
-        );
-      if (inp && (visible(inp) || inp.type === "hidden")) {
-        if (!visible(inp) && inp.type !== "hidden") continue;
-        inp.focus();
-        inp.value = reason || "";
-        inp.dispatchEvent(new Event("input", { bubbles: true }));
-        inp.dispatchEvent(new Event("change", { bubbles: true }));
-        return true;
-      }
-      // Nexacro editable div
-      var edit =
-        box &&
-        box.querySelector("[contenteditable='true'], [class*='edit'], input");
-      if (edit && visible(edit)) {
-        if (edit.tagName === "INPUT" || edit.tagName === "TEXTAREA") {
-          edit.value = reason || "";
-          edit.dispatchEvent(new Event("input", { bubbles: true }));
-        } else {
-          edit.textContent = reason || "";
-          edit.dispatchEvent(new Event("input", { bubbles: true }));
-        }
-        return true;
+      var cands = reasonFieldCandidates(popup, labels[i]);
+      for (var c = 0; c < cands.length; c++) {
+        try {
+          clickNexa(cands[c], { usePoint: true, mode: "full" });
+        } catch (eC) {}
+        if (setNexaText(cands[c], want)) return true;
       }
     }
-    var fallback = popup.querySelector("input[type='text'], textarea");
+    var fallback = popup.querySelector("input[type='text'], textarea, input:not([type])");
     if (fallback && visible(fallback)) {
-      fallback.value = reason || "";
-      fallback.dispatchEvent(new Event("input", { bubbles: true }));
-      return true;
+      clickNexa(fallback, { usePoint: true, mode: "full" });
+      return setNexaText(fallback, want);
     }
-    return !(reason && String(reason).trim());
+    return !want;
   }
 
   function findApplyControl(popup) {
@@ -2468,47 +2582,13 @@
       }
       targets = [cell];
     }
-    var modes = ["full", "mouseOnly", "dblclick"];
-    var modesTried = [];
+    var modes = ["full"];
+    var modesTried = ["full"];
     var popup = null;
-    var attempts = Math.max(6, targets.length * modes.length);
-    for (var attempt = 0; attempt < attempts; attempt++) {
-      var target = targets[attempt % targets.length];
-      var mode = modes[Math.floor(attempt / targets.length) % modes.length];
-      if (modesTried.indexOf(mode) < 0) modesTried.push(mode);
-
-      // 상승한 부모 GridCell/contentsbox 우선 클릭 (placeholder 리프만 찍지 않음)
-      clickNexa(target, { usePoint: true, mode: mode });
-      // cell 내부 input 별도 시도
-      var inp =
-        cell.querySelector &&
-        cell.querySelector("input, textarea, [contenteditable='true']");
-      if (inp && inp !== target) {
-        clickNexa(inp, { usePoint: true, mode: mode });
-      }
-      // nexacontentsbox / contentsbox 자식·부모 재시도
-      var nexaBox =
-        (cell.querySelector &&
-          cell.querySelector(
-            "[class*='nexacontentsbox'], [class*='nexaContentsBox'], [class*='contentsbox'], [class*='ContentsBox']",
-          )) ||
-        null;
-      if (nexaBox && nexaBox !== target && nexaBox !== inp) {
-        clickNexa(nexaBox, { usePoint: true, mode: mode });
-      }
-      var climbParent =
-        cell.parentElement &&
-        /gridcell|cellcontrol|nexacontentsbox|contentsbox/i.test(clsBlob(cell.parentElement))
-          ? cell.parentElement
-          : null;
-      if (climbParent && climbParent !== target && climbParent !== nexaBox) {
-        clickNexa(climbParent, { usePoint: true, mode: mode });
-        clickNexaAtCenter(climbParent, mode);
-      }
-      // 셀·타깃 중심 coordinate / elementFromPoint
-      clickNexaAtCenter(cell, mode);
-      if (target !== cell) clickNexaAtCenter(target, mode);
-
+    var target = targets[0];
+    // #52 follow: 한 칸을 여러 모드로 연타하면 팝업이 겹친다. 클릭 1 + 실패 시 1.
+    for (var attempt = 0; attempt < 2; attempt++) {
+      clickNexa(target, { usePoint: true, mode: "full" });
       popup = await waitForVisiblePopup(1800);
       if (popup) {
         var afterInPopup = {
@@ -2747,7 +2827,7 @@
     var applied = 0;
     for (var row = 0; row < items.length; row++) {
       var item = items[row];
-      var fm = filtersMatchItem(filters, item);
+      var fm = await alignNeisDate(item);
       if (!fm.ok) {
         log(row, item.type || "?", "stop", fm.code);
         return { ok: false, code: fm.code, applied: applied, dryRun: dryRun };
