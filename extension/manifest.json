@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "출결메이트",
-  "version": "0.4.9",
+  "version": "0.5.0",
   "description": "나이스 담임용 출결: 감지·대기열·라벨 기준 마감/P칸/저장. 출결마감·로그인 자동화 없음.",
   "minimum_chrome_version": "116",
   "permissions": [
