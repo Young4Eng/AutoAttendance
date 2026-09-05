@@ -7,6 +7,8 @@ import { RosterScreen } from './screens/RosterScreen';
 import { RepeatScreen } from './screens/RepeatScreen';
 import { GuideScreen } from './screens/GuideScreen';
 import { QaScreen } from './screens/QaScreen';
+import { StitchMain } from './screens/StitchMain';
+import { Shell } from './screens/Shell';
 import type { AppScreen } from './screens/Shell';
 import './App.css';
 
@@ -40,12 +42,11 @@ export default function App() {
 
   if (screen === 'preview') {
     return (
-      <SendPreviewScreen
-        owner={owner}
-        date=""
-        periodCount={previewPeriods}
-        onBack={() => setScreen('month')}
-      />
+      <Shell screen={screen} teacherLabel={label} onNav={nav} onLogout={logout}>
+        <div className="flex flex-col flex-1 min-w-0">
+          <SendPreviewScreen owner={owner} date="" periodCount={previewPeriods} onBack={() => setScreen('month')} />
+        </div>
+      </Shell>
     );
   }
   if (screen === 'roster') {
