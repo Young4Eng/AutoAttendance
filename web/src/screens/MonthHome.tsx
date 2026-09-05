@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { parseRosterCsv } from "../csv/parseRoster";
+import { useEffect, useMemo, useState } from "react";
 import {
   deleteAttendanceRecord,
   listAttendance,
   listRoster,
   putAttendance,
-  replaceRoster,
-} from "../db/idb";
+} from "../db/store";
 import type { AttendanceRecord, AttendanceType, Category, Student } from "../types/models";
 import "./MonthHome.css";
 import { Shell, type AppScreen } from "./Shell";
@@ -25,7 +23,6 @@ const TYPE_KO: Record<AttendanceType, string> = {
   result: "결과",
 };
 const CATS = Object.keys(CAT_KO) as Category[];
-const KINDS = Object.keys(TYPE_KO) as AttendanceType[];
 const REASONS = ["독감 진단", "감기몸살", "교통 지연", "가정사(경조사)", "체험학습"];
 
 function ymd(d: Date): string {
@@ -45,8 +42,6 @@ function monthCells(year: number, month: number): Date[] {
     return x;
   });
 }
-
-type AppScreen = "month" | "preview" | "roster" | "repeat" | "guide" | "qa";
 
 type Props = {
   ownerSub: string;
@@ -70,9 +65,7 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
   const [bulk, setBulk] = useState(false);
   const [picked, setPicked] = useState<number[]>([]);
   const [q, setQ] = useState("");
-  const [msg, setMsg] = useState("");
   const [focusKey, setFocusKey] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   async function reload() {
     const [st, att] = await Promise.all([listRoster(ownerSub), listAttendance(ownerSub)]);
@@ -80,14 +73,9 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
     setRows(att);
   }
   useEffect(() => {
-    void reload().catch((e) => setMsg(String(e)));
+    void reload().catch((e) => void(String(e)));
   }, [ownerSub]);
 
-  const counts = useMemo(() => {
-    const m: Record<string, number> = {};
-    for (const r of rows) m[r.date] = (m[r.date] || 0) + 1;
-    return m;
-  }, [rows]);
   const namesByDate = useMemo(() => {
     const m: Record<string, AttendanceRecord[]> = {};
     for (const r of rows) (m[r.date] ||= []).push(r);
@@ -136,12 +124,6 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
     setQ("");
   }
 
-  async function onCsv(file: File) {
-    const parsed = parseRosterCsv(await file.text());
-    await replaceRoster(ownerSub, parsed);
-    setMsg(`명단 ${parsed.length}명`);
-    await reload();
-  }
 
   async function applyReason(text: string) {
     const target =

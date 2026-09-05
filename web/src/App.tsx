@@ -7,7 +7,6 @@ import { RosterScreen } from './screens/RosterScreen';
 import { RepeatScreen } from './screens/RepeatScreen';
 import { GuideScreen } from './screens/GuideScreen';
 import { QaScreen } from './screens/QaScreen';
-import { StitchMain } from './screens/StitchMain';
 import { Shell } from './screens/Shell';
 import type { AppScreen } from './screens/Shell';
 import './App.css';
