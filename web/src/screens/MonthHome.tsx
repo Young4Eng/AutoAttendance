@@ -6,7 +6,7 @@ import {
   listRoster,
   putAttendance,
   replaceRoster,
-} from "../db/store";
+} from "../db/idb";
 import type { AttendanceRecord, AttendanceType, Category, Student } from "../types/models";
 import "./MonthHome.css";
 
@@ -45,14 +45,16 @@ function monthCells(year: number, month: number): Date[] {
   });
 }
 
+type AppScreen = "month" | "preview" | "roster" | "repeat" | "guide" | "qa";
+
 type Props = {
   ownerSub: string;
   teacherLabel: string;
   onLogout: () => void;
-  onOpenPreview: () => void;
+  onNav: (s: AppScreen) => void;
 };
 
-export function MonthHome({ ownerSub, teacherLabel, onLogout, onOpenPreview }: Props) {
+export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav }: Props) {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
@@ -158,10 +160,11 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onOpenPreview }: P
         <span className="mh-chip">구글 계정에 저장</span>
         <nav>
           <button type="button" className="on">이번 달</button>
-          <button type="button" onClick={onOpenPreview}>미리보기</button>
-          <button type="button" onClick={() => fileRef.current?.click()}>명단</button>
-          <button type="button" disabled>장기·반복</button>
-          <button type="button" disabled>사용 방법</button>
+          <button type="button" onClick={() => onNav("preview")}>미리보기</button>
+          <button type="button" onClick={() => onNav("roster")}>명단</button>
+          <button type="button" onClick={() => onNav("repeat")}>장기·반복</button>
+          <button type="button" onClick={() => onNav("guide")}>사용 방법</button>
+          <button type="button" onClick={() => onNav("qa")}>패치 노트 및 Q&A</button>
         </nav>
         <input
           ref={fileRef}
