@@ -1665,10 +1665,23 @@
     var controls = findDateControls();
     if (!controls.length) return pre.ok ? pre : { ok: false, code: pre.code || "date_unreadable" };
     pasteYmd(controls[0], ymd);
-    await sleep(500);
-    var btn = findLookupButton();
-    if (!btn) return { ok: false, code: "lookup_not_found" };
-    clickOnce(btn);
+    await sleep(400);
+    try {
+      controls[0].focus();
+    } catch (eF) {}
+    try {
+      var ent = {
+        key: "Enter",
+        code: "Enter",
+        keyCode: 13,
+        which: 13,
+        bubbles: true,
+        cancelable: true,
+      };
+      controls[0].dispatchEvent(new KeyboardEvent("keydown", ent));
+      controls[0].dispatchEvent(new KeyboardEvent("keypress", ent));
+      controls[0].dispatchEvent(new KeyboardEvent("keyup", ent));
+    } catch (eE) {}
     await sleep(4000);
     filters = readFilters();
     var fm = filtersMatchItem(filters, item);
