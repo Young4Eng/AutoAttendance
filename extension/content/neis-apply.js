@@ -3029,25 +3029,28 @@
   }
 
   async function confirmSaveDialog() {
-    var deadline = Date.now() + 4000;
-    var clicked = false;
-    while (Date.now() < deadline) {
-      var box = findSaveConfirmRoot();
-      if (box) {
-        var okBtn = findConfirmButton(box) || findConfirmButton(document.body);
-        if (okBtn) {
-          clickOnce(okBtn);
-          clicked = true;
-          await sleep(500);
-          if (!saveConfirmStillOpen()) return { ok: true };
-        }
-      } else if (clicked) {
-        return { ok: true };
-      }
+    var waitUntil = Date.now() + 3000;
+    var appeared = null;
+    while (Date.now() < waitUntil) {
+      appeared = findSaveConfirmRoot();
+      if (appeared) break;
       await sleep(150);
     }
-    if (clicked && !saveConfirmStillOpen()) return { ok: true };
-    return { ok: false, code: clicked ? "save_confirm_still_open" : "save_confirm_not_found" };
+    if (!appeared) return { ok: false, code: "save_confirm_not_found" };
+
+    for (var n = 0; n < 2; n++) {
+      var box = findSaveConfirmRoot();
+      if (!box) return { ok: true };
+      var okBtn = findConfirmButton(box) || findConfirmButton(document.body);
+      if (!okBtn) return { ok: false, code: "save_confirm_btn_missing" };
+      clickOnce(okBtn);
+      await sleep(500);
+      if (!saveConfirmStillOpen()) return { ok: true };
+    }
+    return {
+      ok: !saveConfirmStillOpen(),
+      code: saveConfirmStillOpen() ? "save_confirm_still_open" : undefined,
+    };
   }
 
   async function saveDateAndConfirm() {
