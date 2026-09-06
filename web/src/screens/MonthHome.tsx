@@ -4,7 +4,6 @@ import {
   listAttendance,
   listRoster,
   putAttendance,
-  deleteAttendanceRecord,
 } from "../db/store";
 import type { AttendanceRecord, AttendanceType, Student } from "../types/models";
 import { Shell, type AppScreen } from "./Shell";
