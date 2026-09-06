@@ -180,6 +180,7 @@ export function RepeatScreen({ ownerSub, teacherLabel, screen, onNav, onLogout }
                 value={reason}
                 onChange={setReason}
                 required={cat === 'other'}
+                category={cat}
               />
 
               <div className="pt-2 flex items-center justify-end gap-3">

@@ -1,7 +1,6 @@
-import type { AttendanceRecord, AttendanceType, Student } from "../../types/models";
+import type { AttendanceRecord, AttendanceType, Category, Student } from "../../types/models";
+import { REASON_PRESETS } from "../../lib/reasonPresets";
 import { DayExceptionRow } from "./DayExceptionRow";
-
-const REASONS = ["독감 진단", "감기몸살", "교통 지연", "가정사(경조사)", "체험학습"];
 
 const TYPE_BTNS = [
   ["absence", "+ 결석", "person_add", "#B45309"],
@@ -67,6 +66,9 @@ export function DayPanel({
   const early = dayRows.filter((r) => r.type === "early_leave").length;
   const result = dayRows.filter((r) => r.type === "result").length;
   const present = Math.max(0, rosterCount - new Set(dayRows.map((r) => r.number)).size);
+  const focused = dayRows.find((r) => `${r.number}-${r.type}-${r.period}` === focusKey) || dayRows[0];
+  const cat: Category = focused?.category ?? "illness";
+  const reasons = REASON_PRESETS[cat];
 
   const md = open.slice(5, 7);
   const dd = open.slice(8, 10);
@@ -148,16 +150,20 @@ export function DayPanel({
         </div>
         <div className="flex items-center gap-1 text-[11px] text-on-surface-variant overflow-x-auto">
           <span className="shrink-0 font-medium">자주 쓰는 사유:</span>
-          {REASONS.map((r) => (
-            <button
-              key={r}
-              type="button"
-              onClick={() => onApplyReason(r)}
-              className="px-1.5 py-0.5 rounded bg-surface-container hover:bg-surface-container-high border border-[#E4E4E7] transition-colors whitespace-nowrap"
-            >
-              {r}
-            </button>
-          ))}
+          {reasons.length === 0 ? (
+            <span className="text-outline">기타는 직접 입력</span>
+          ) : (
+            reasons.map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => onApplyReason(r)}
+                className="px-1.5 py-0.5 rounded bg-surface-container hover:bg-surface-container-high border border-[#E4E4E7] transition-colors whitespace-nowrap"
+              >
+                {r}
+              </button>
+            ))
+          )}
         </div>
         <div className="mt-1 p-2 rounded-lg bg-primary/5 border border-primary/20 flex items-center justify-between gap-2">
           <div className="flex items-start gap-1.5 min-w-0">
