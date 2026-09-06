@@ -1,7 +1,7 @@
 # web/ 보안 메모 (이슈 #2 · #3 · 계정 DB)
 
 - 구글 GIS 범위는 `openid email profile`만. Client Secret·`service_role`을 프론트에 두지 않는다.
-- 세션은 Supabase Auth가 검증한다. Access/refresh를 임의로 직접 `localStorage`에 두지 않는다(Auth SDK 기본 저장은 SECURITY·auth 문서 기준).
+- 세션은 Supabase Auth가 검증한다. Access/refresh를 앱이 임의로 `localStorage`에 두지 않는다. **#67:** SDK `persistSession`/`autoRefreshToken`만 허용(SECURITY·auth 문서).
 - IndexedDB 키는 항상 `ownerSub|…`로 시작한다. 로그인 전 명단·출결 쓰기 금지.
 - **계정 DB(Supabase):** `roster`/`entries`에 이름·사유 포함 저장·동기화 허용. RLS `owner_id = auth.uid()`. env 없으면 로컬만.
 - GitHub·CI·Analytics에는 가명 픽스처(`학생01`, `test-owner-aaa`)만. 실명·사유 원문 커밋 금지.

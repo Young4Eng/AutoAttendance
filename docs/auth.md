@@ -42,6 +42,17 @@ Drive, Gmail, Contacts, 캘린더 권한은 받지 않는다.
 > 나이스에 이미 저장한 출결은 나이스에 있습니다. 이 DB는 초안입니다.  
 > 「계정 초안 삭제」를 누르면 이 계정 초안이 DB에서 삭제됩니다.
 
+## 세션 유지 (#67)
+
+유효한 Supabase Auth 세션이 있으면 새로고침·재방문 시 로그인 화면을 건너뛴다. 로그아웃·만료·refresh 실패 시에만 로그인.
+
+- 부팅: `getSession()` — 세션 있으면 홈, 없으면 로그인
+- 저장: Auth SDK `persistSession: true` + `autoRefreshToken: true`만 사용 (SDK 스토리지)
+- 금지: 앱 코드의 `localStorage.setItem('access_token', …)` 등 임의 토큰 덤프, 토큰을 로그/UI에 표시
+- 로그아웃: `auth.signOut()` + 로컬 세션 제거 → 반드시 로그인 화면
+- 범위: `openid email profile` 유지
+- HttpOnly 쿠키 세션은 후속(선택). 상세는 `SECURITY.md` #67 예외.
+
 ## 토큰
 
 - ID 토큰은 서버(또는 Supabase Auth)가 검증하기 전 신원으로 쓰지 않는다
