@@ -1,15 +1,66 @@
+import { useEffect, useState } from "react";
+import { QaHero, type QaTab } from "../components/qa/QaHero";
+import { QaStatusCards } from "../components/qa/QaStatusCards";
+import { QaReleaseList } from "../components/qa/QaReleaseList";
+import { QaFaqList } from "../components/qa/QaFaqList";
 import { Shell, type AppScreen } from "./Shell";
-type Props = { teacherLabel: string; screen: AppScreen; onNav: (s: AppScreen) => void; onLogout: () => void };
-export function QaScreen(p: Props) {
+
+type Props = {
+  teacherLabel: string;
+  screen: AppScreen;
+  onNav: (s: AppScreen) => void;
+  onLogout: () => void;
+};
+
+export function QaScreen({ teacherLabel, screen, onNav, onLogout }: Props) {
+  const [tab, setTab] = useState<QaTab>("all");
+
+  useEffect(() => {
+    if (tab !== "suggest") return;
+    const t = window.setTimeout(() => {
+      document.getElementById("suggest-box")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+    return () => window.clearTimeout(t);
+  }, [tab]);
+
+  const showRelease = tab === "all" || tab === "release";
+  const showFaq = tab === "all" || tab === "faq" || tab === "suggest";
+
   return (
-    <Shell {...p}>
-      <main className="flex-1 p-6 max-w-3xl">
-        <h1 className="text-2xl font-semibold">패치 노트 및 Q&A</h1>
-        <div className="mt-4 space-y-4 text-sm">
-          <p><b>캐시 지우면 초안이 사라지나요?</b><br/>계정 DB에 있으면 남습니다. 같은 구글로 다시 들어오면 됩니다.</p>
-          <p><b>출결마감을 누르나요?</b><br/>아니요.</p>
-          <p><b>번호가 비면?</b><br/>행 순번이 아니라 출석번호+성명으로 맞춥니다.</p>
-          <p><b>장기 화면 종류가 질병으로 되어 있는데요?</b><br/>시안 오류입니다. 종류는 결석·지각·조퇴·결과입니다. (#55)</p>
+    <Shell
+      screen={screen}
+      teacherLabel={teacherLabel}
+      onNav={onNav}
+      onLogout={onLogout}
+      fillViewport
+    >
+      <main className="relative bg-surface min-h-0 h-full flex-1 overflow-y-auto">
+        <div className="max-w-[var(--max-content-width)] mx-auto px-8 py-6">
+          <div className="flex flex-col w-full gap-8">
+            <QaHero tab={tab} onTab={setTab} />
+            <QaStatusCards />
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {showRelease ? (
+                <div
+                  className={
+                    tab === "release" ? "lg:col-span-12" : "lg:col-span-7"
+                  }
+                >
+                  <QaReleaseList />
+                </div>
+              ) : null}
+              {showFaq ? (
+                <div
+                  className={
+                    tab === "all" ? "lg:col-span-5" : "lg:col-span-12"
+                  }
+                >
+                  <QaFaqList highlightSuggest={tab === "suggest"} />
+                </div>
+              ) : null}
+            </div>
+          </div>
         </div>
       </main>
     </Shell>

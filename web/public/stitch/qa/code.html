@@ -82,11 +82,11 @@
       <div class="pt-1.5 border-t border-slate-200/70 flex flex-col gap-1 text-[11px]">
         <div class="flex items-center justify-between">
           <span class="text-slate-400">개발자</span>
-          <span class="font-medium text-slate-700">서울 대명중학교 조영욱</span>
+          <span class="font-medium text-slate-700">출결메이트 개발자</span>
         </div>
         <div class="flex items-center justify-between whitespace-nowrap">
           <span class="text-slate-400">문의</span>
-          <a href="mailto:whduddnr@daemyeong.sen.ms.kr" class="text-teal-700 hover:underline">whduddnr@daemyeong.sen.ms.kr</a>
+          <a href="mailto:support@example.com" class="text-teal-700 hover:underline">support@example.com</a>
         </div>
       </div>
     </div>
@@ -99,8 +99,8 @@
             <span class="material-symbols-outlined text-[15px]">person</span>
           </div>
           <div class="flex flex-col min-w-0">
-            <span class="text-xs font-semibold text-slate-800 truncate">김선생 교사</span>
-            <span class="text-[10px] text-slate-400 truncate">teacher.kim@school.go.kr</span>
+            <span class="text-xs font-semibold text-slate-800 truncate">담임 교사</span>
+            <span class="text-[10px] text-slate-400 truncate">teacher@example.com</span>
           </div>
         </div>
         <button type="button" class="text-[11px] text-slate-500 hover:text-slate-800 transition-colors px-1 py-0.5 rounded hover:bg-slate-200/60 shrink-0">
@@ -430,11 +430,11 @@
 <div class="p-space-sm rounded-lg bg-surface-container flex flex-col gap-space-xs">
 <div class="flex items-center justify-between text-body-md">
 <span class="text-on-surface-variant font-label-md text-label-md">개발자</span>
-<span class="font-semibold text-on-surface">서울 대명중학교 조영욱</span>
+<span class="font-semibold text-on-surface">출결메이트 개발자</span>
 </div>
 <div class="flex items-center justify-between text-body-md">
 <span class="text-on-surface-variant font-label-md text-label-md">문의 메일</span>
-<span class="font-body-code text-body-code text-primary font-medium select-all">whduddnr@daemyeong.sen.ms.kr</span>
+<span class="font-body-code text-body-code text-primary font-medium select-all">support@example.com</span>
 </div>
 <div class="flex items-center gap-space-2xs text-on-surface-variant font-label-sm text-label-sm pt-space-2xs">
 <span class="material-symbols-outlined text-[15px] text-primary">schedule</span>
@@ -443,7 +443,7 @@
 </div>
 <!-- 문의 발송 버튼 -->
 <div class="flex flex-col sm:flex-row items-center gap-space-xs pt-space-2xs">
-<a class="w-full sm:flex-1 py-space-xs px-space-md rounded-lg bg-primary text-on-primary font-title-md text-title-md text-center hover:bg-primary-container transition-colors shadow-sm inline-flex items-center justify-center gap-space-2xs" href="mailto:whduddnr@daemyeong.sen.ms.kr?subject=[출결메이트%20문의%20및%20제안]&amp;body=1.%20학교명%20및%20학년도%3A%0A2.%20발생한%20현상%20또는%20제안%20내용%3A%0A3.%20스크린샷%20첨부%20시%20빠른%20해결이%20가능합니다.">
+<a class="w-full sm:flex-1 py-space-xs px-space-md rounded-lg bg-primary text-on-primary font-title-md text-title-md text-center hover:bg-primary-container transition-colors shadow-sm inline-flex items-center justify-center gap-space-2xs" href="mailto:support@example.com?subject=[출결메이트%20문의%20및%20제안]&amp;body=1.%20학교명%20및%20학년도%3A%0A2.%20발생한%20현상%20또는%20제안%20내용%3A%0A3.%20스크린샷%20첨부%20시%20빠른%20해결이%20가능합니다.">
 <span class="material-symbols-outlined text-[18px]">outgoing_mail</span>
 <span class="">문의 메일 보내기</span>
 </a>
@@ -527,7 +527,7 @@
 
   if (copyBtn && toast) {
     copyBtn.addEventListener('click', () => {
-      navigator.clipboard.writeText('whduddnr@daemyeong.sen.ms.kr').then(() => {
+      navigator.clipboard.writeText('support@example.com').then(() => {
         toast.classList.remove('translate-y-12', 'opacity-0', 'pointer-events-none');
         toast.classList.add('translate-y-0', 'opacity-100');
         setTimeout(() => {
