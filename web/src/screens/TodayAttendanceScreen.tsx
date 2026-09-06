@@ -11,7 +11,8 @@ import {
   putAttendance,
   replaceRoster,
 } from '../db/idb';
-import { parseRosterCsv } from '../csv/parseRoster';
+import { decodeRosterCsvFile } from '../csv/decodeRoster';
+import { formatRosterCsvError, parseRosterCsv } from '../csv/parseRoster';
 import { PERIOD_COUNT } from '../lib/slashRange';
 import { DateBar } from '../components/DateBar';
 import { RosterList } from '../components/RosterList';
@@ -220,14 +221,13 @@ export function TodayAttendanceScreen({ owner, onLogout, onPreview }: Props) {
     setError(null);
     setStatus(null);
     try {
-      const text = await file.text();
+      const text = await decodeRosterCsvFile(file);
       const rows = parseRosterCsv(text);
       await replaceRoster(owner.ownerSub, rows);
       await load();
       setStatus(`명단 ${rows.length}명 저장 (빈 번호는 채우지 않음)`);
     } catch (e) {
-      const code = e instanceof Error ? e.message : 'csv_error';
-      setError(`CSV 처리 실패: ${code}`);
+      setError(formatRosterCsvError(e));
     }
   };
 
@@ -308,7 +308,8 @@ export function TodayAttendanceScreen({ owner, onLogout, onPreview }: Props) {
         {csvOpen ? (
           <>
             <p className="muted tiny">
-              형식: grade,class,number,name · 빈 출석번호는 만들지 않습니다.
+              grade·class·number는 숫자만 / UTF-8 CSV / 실명 커밋 금지.
+              엑셀은 CSV UTF-8로 저장(CP949도 자동 시도). 빈 출석번호는 만들지 않습니다.
             </p>
             <label className="file-label">
               CSV 선택

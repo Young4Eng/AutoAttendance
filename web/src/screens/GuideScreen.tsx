@@ -11,6 +11,11 @@ export function GuideScreen(p: Props) {
           나이스에 넣은 값은 나이스에 있습니다. 인증서·비밀번호는 받지 않습니다. 전문은 docs/privacy.md.
         </div>
         <h2 className="mt-6 text-lg font-semibold">4단계</h2>
+        <h2 className="mt-6 text-lg font-semibold">명단 CSV</h2>
+        <p className="mt-2 text-sm text-[#71717A] leading-relaxed">
+          헤더 <code>grade,class,number,name</code>. grade·class·number는 숫자만(예: 2,3,1 — 「2학년」불가).
+          UTF-8 CSV 권장(엑셀: CSV UTF-8). CP949도 지원. 실명 샘플·커밋 금지. 픽스처는 학생01·결번(1·2·3·4·7·9).
+        </p>
         <ol className="mt-2 space-y-2 text-sm list-decimal pl-5">
           <li>명단 CSV를 가져온다. 결번은 만들지 않는다.</li>
           <li>이번 달에서 날짜를 한 번 연다.</li>
