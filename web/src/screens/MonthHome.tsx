@@ -4,6 +4,7 @@ import {
   listAttendance,
   listRoster,
   putAttendance,
+  deleteAttendanceRecord,
 } from "../db/store";
 import type { AttendanceRecord, AttendanceType, Student } from "../types/models";
 import { Shell, type AppScreen } from "./Shell";
@@ -127,8 +128,18 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
     return semesterWeekdays(until);
   }, [year, month, today]);
 
-  async function save(partial: Omit<AttendanceRecord, "ownerSub">) {
-    await putAttendance(ownerSub, { ...partial, status: partial.status || "draft" });
+  async function save(
+    partial: Omit<AttendanceRecord, "ownerSub">,
+    previous?: Omit<AttendanceRecord, "ownerSub">,
+  ) {
+    const next = { ...partial, status: partial.status || "draft" };
+    if (
+      previous &&
+      (previous.period !== next.period || previous.type !== next.type)
+    ) {
+      await deleteAttendanceRecord(ownerSub, previous);
+    }
+    await putAttendance(ownerSub, next);
     await reload();
   }
 

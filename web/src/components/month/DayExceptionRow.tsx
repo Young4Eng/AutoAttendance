@@ -9,7 +9,7 @@ type Props = {
   row: AttendanceRecord;
   focused: boolean;
   onFocus: () => void;
-  onSave: (partial: AttendanceRecord) => void;
+  onSave: (next: AttendanceRecord, previous?: AttendanceRecord) => void;
   onDelete: () => void;
 };
 
@@ -66,7 +66,7 @@ export function DayExceptionRow({ row, focused, onFocus, onSave, onDelete }: Pro
           title="기준 교시"
           value={row.period || 1}
           onClick={(e) => e.stopPropagation()}
-          onChange={(e) => onSave({ ...row, period: Number(e.target.value) })}
+          onChange={(e) => onSave({ ...row, period: Number(e.target.value) }, row)}
         >
           {[1, 2, 3, 4, 5, 6, 7].map((pr) => (
             <option key={pr} value={pr}>
