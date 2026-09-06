@@ -1,4 +1,4 @@
-# 크롬 웹스토어 제출 초안 (출결메이트 0.7.0)
+# 크롬 웹스토어 제출 초안 (출결메이트 1.0.0)
 
 대시보드: https://chrome.google.com/webstore/devconsole  
 패키지: `extension` 폴더 내용만 zip. 루트에 `manifest.json`이 있어야 한다.
