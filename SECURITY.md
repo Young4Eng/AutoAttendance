@@ -81,7 +81,8 @@ GitHub·CI·커밋·공개 이슈의 테스트·스크린샷·픽스처는 `학�
 - 출결 초안(이름·사유 포함)은 **소유 교사 계정 DB(Supabase)** 에 둔다. IndexedDB는 `ownerSub`로 나눈 캐시.
 - Firestore·Analytics·공개 API로 보내지 않는다. “로그인 UI만 있고 DB는 하나(공유)”는 최악이다. 가온이 반려한다.
 - Supabase는 anon 키만 브라우저에. RLS: `owner_id = auth.uid()`. `service_role` 프론트 금지.
-- Client Secret / refresh token을 프론트·확장 저장소에 두지 않는다. Access token은 `localStorage` 금지.
+- Client Secret / refresh token을 프론트·확장 저장소에 두지 않는다. Access token은 앱 코드가 임의로 `localStorage`에 두지 않는다.
+- **#67 예외 (가온):** Supabase Auth SDK `persistSession` + `autoRefreshToken` 기본 저장만 허용(교사 세션 유지). 앱이 `localStorage.setItem('access_token', …)` 류로 토큰을 따로 두지 않는다. 토큰·세션을 console/로그에 출력 금지. HttpOnly 쿠키 세션은 후속(선택).
 - 기기 잠금(선택)은 Web Crypto + 교사 암호 유도 키. 암호 자체는 저장하지 않는다.
 - 나이스 로그인을 우리 코드가 대신하지 않는다. 인증서·SSO·VPN 자동화 금지.
 - 구글 계정과 나이스 계정은 다르다. 구글 로그인으로 나이스에 들어가지 않는다.

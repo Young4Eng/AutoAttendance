@@ -70,7 +70,8 @@ GitHub·CI·커밋·공개 이슈의 테스트·스크린샷·픽스처는 `학�
 - **구글 로그인(1차):** 신원은 구글에게 맡긴다. 우리 창에서 비밀번호를 받지 않는다. 상세는 `docs/auth.md`.
 - 출결 원문은 구글·Firestore·우리 API로 올리지 않는다. IndexedDB를 `ownerSub`로 나눈다.
 - “로그인 UI만 있고 DB는 하나”는 최악이다. 가온이 반려한다.
-- Client Secret / refresh token을 프론트·확장 저장소에 두지 않는다. Access token은 `localStorage` 금지.
+- Client Secret / refresh token을 프론트·확장 저장소에 두지 않는다. Access token은 앱 코드가 임의로 `localStorage`에 두지 않는다.
+- **#67 예외 (가온):** Supabase Auth SDK `persistSession` + `autoRefreshToken` 기본 저장만 허용(교사 세션 유지). 앱이 임의 토큰 키를 두지 않는다. HttpOnly 쿠키는 후속.
 - 기기 잠금(선택)은 Web Crypto + 교사 암호 유도 키. 암호 자체는 저장하지 않는다.
 - 나이스 로그인을 우리 코드가 대신하지 않는다. 인증서·SSO·VPN 자동화 금지.
 - 구글 계정과 나이스 계정은 다르다. 구글 로그인으로 나이스에 들어가지 않는다.
