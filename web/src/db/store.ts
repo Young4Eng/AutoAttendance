@@ -121,7 +121,8 @@ function rowOf(ownerSub: string, r: Omit<AttendanceRecord, "ownerSub">) {
   };
 }
 
-PUTMARK  ownerSub: string,
+export async function putAttendance(
+  ownerSub: string,
   record: Omit<AttendanceRecord, "ownerSub">,
 ): Promise<void> {
   record = {
