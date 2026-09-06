@@ -249,7 +249,6 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
                   dayRows={dayRows}
                   rosterCount={roster.length}
                   pending={pending}
-                  pendingCat={pendingCat}
                   bulk={bulk}
                   picked={picked}
                   q={q}
@@ -261,7 +260,6 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
                     setBulk(false);
                   }}
                   onPending={setPending}
-                  onPendingCat={setPendingCat}
                   onBulk={setBulk}
                   onQ={setQ}
                   onTogglePick={(n) =>

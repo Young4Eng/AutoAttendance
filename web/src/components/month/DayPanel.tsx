@@ -1,12 +1,5 @@
-import type { AttendanceRecord, AttendanceType, Category, Student } from "../../types/models";
+import type { AttendanceRecord, AttendanceType, Student } from "../../types/models";
 import { DayExceptionRow } from "./DayExceptionRow";
-
-const TYPE_BTNS = [
-  ["absence", "+ 결석", "person_add", "#B45309"],
-  ["late", "+ 지각", "schedule", "#BE123C"],
-  ["early_leave", "+ 조퇴", "logout", "#5B21B6"],
-  ["result", "+ 결과", "hourglass_bottom", "#0F766E"],
-] as const;
 
 type Props = {
   open: string;
@@ -15,7 +8,6 @@ type Props = {
   dayRows: AttendanceRecord[];
   rosterCount: number;
   pending: AttendanceType | null;
-  pendingCat: Category;
   bulk: boolean;
   picked: number[];
   q: string;
@@ -23,7 +15,6 @@ type Props = {
   focusKey: string | null;
   onClose: () => void;
   onPending: (t: AttendanceType | null) => void;
-  onPendingCat: (c: Category) => void;
   onBulk: (v: boolean) => void;
   onQ: (v: string) => void;
   onTogglePick: (n: number) => void;
@@ -44,7 +35,6 @@ export function DayPanel({
   dayRows,
   rosterCount,
   pending,
-  pendingCat,
   bulk,
   picked,
   q,
@@ -52,7 +42,6 @@ export function DayPanel({
   focusKey,
   onClose,
   onPending,
-  onPendingCat,
   onBulk,
   onQ,
   onTogglePick,
@@ -69,12 +58,6 @@ export function DayPanel({
   const early = dayRows.filter((r) => r.type === "early_leave").length;
   const result = dayRows.filter((r) => r.type === "result").length;
   const present = Math.max(0, rosterCount - new Set(dayRows.map((r) => r.number)).size);
-  const CATS: { id: Category; label: string }[] = [
-    { id: "illness", label: "질병" },
-    { id: "unexcused", label: "미인정" },
-    { id: "other", label: "기타" },
-    { id: "recognized", label: "인정" },
-  ];
 
   const md = open.slice(5, 7);
   const dd = open.slice(8, 10);
@@ -131,54 +114,14 @@ export function DayPanel({
       </div>
 
       <div className="p-3 bg-surface-container-low/40 border-b border-[#E4E4E7] flex flex-col gap-2">
-        <div className="grid grid-cols-4 gap-1.5">
-          {CATS.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => onPendingCat(c.id)}
-              className={
-                "py-2 rounded-lg bg-surface-container-lowest border text-sm " +
-                (pendingCat === c.id
-                  ? "border-primary ring-1 ring-primary font-semibold"
-                  : "border-[#E4E4E7]")
-              }
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
-        <div className="grid grid-cols-4 gap-1.5">
-          {TYPE_BTNS.map(([k, lab, ic, col]) => (
-            <button
-              key={k}
-              type="button"
-              onClick={() => {
-                onPending(k);
-                onBulk(false);
-              }}
-              className={
-                "flex items-center justify-center gap-1 py-2 px-2 rounded-lg bg-surface-container-lowest border text-on-surface text-sm transition-colors shadow-xs " +
-                (pending === k && !bulk
-                  ? "border-primary ring-1 ring-primary"
-                  : "border-[#E4E4E7] hover:border-primary/50")
-              }
-            >
-              <span className="material-symbols-outlined text-[14px]" style={{ color: col }}>
-                {ic}
-              </span>
-              <span>{lab}</span>
-            </button>
-          ))}
-        </div>
         <div className="mt-1 p-2 rounded-lg bg-primary/5 border border-primary/20 flex items-center justify-between gap-2">
           <div className="flex items-start gap-1.5 min-w-0">
             <span className="material-symbols-outlined text-[16px] text-primary shrink-0 mt-0.5">
               tips_and_updates
             </span>
             <p className="text-[11px] text-on-surface-variant leading-tight truncate m-0">
-              <span className="font-medium text-on-surface">일괄 입력 팁:</span> 동일 사유·연속
-              결석은 일괄 등록을 활용하세요.
+              <span className="font-medium text-on-surface">연속 입력:</span> 학생을 고른 뒤 줄에서
+              종류·구분·종료일을 정하세요.
             </p>
           </div>
           <button
