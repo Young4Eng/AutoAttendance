@@ -5,7 +5,7 @@ import {
   listRoster,
   putAttendance,
 } from "../db/store";
-import type { AttendanceRecord, AttendanceType, Category, Student } from "../types/models";
+import type { AttendanceRecord, AttendanceType, Student } from "../types/models";
 import { Shell, type AppScreen } from "./Shell";
 import { MonthHero } from "../components/month/MonthHero";
 import { MonthCalendar } from "../components/month/MonthCalendar";
@@ -61,7 +61,6 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
   const [roster, setRoster] = useState<Student[]>([]);
   const [rows, setRows] = useState<AttendanceRecord[]>([]);
   const [pending, setPending] = useState<AttendanceType | null>(null);
-  const [pendingCat, setPendingCat] = useState<Category>("illness");
   const [bulk, setBulk] = useState(false);
   const [picked, setPicked] = useState<number[]>([]);
   const [q, setQ] = useState("");
@@ -143,7 +142,7 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
       class: s.class,
       number: s.number,
       name: s.name,
-      category: pendingCat,
+      category: "illness",
       type,
       period: type === "absence" ? 0 : 1,
       reason: "",
@@ -163,7 +162,7 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
         class: s.class,
         number: s.number,
         name: s.name,
-        category: pendingCat,
+        category: "illness",
         type: pending,
         period: pending === "absence" ? 0 : 1,
         reason: "",
