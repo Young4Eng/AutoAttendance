@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "출결메이트",
-  "version": "0.6.12",
+  "version": "0.7.0",
   "description": "나이스 담임용 출결: 감지·대기열·라벨 기준 마감/P칸/저장. 출결마감·로그인 자동화 없음.",
   "minimum_chrome_version": "116",
   "permissions": [
@@ -13,9 +13,19 @@
     "service_worker": "background.js",
     "type": "module"
   },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "action": {
     "default_title": "출결메이트",
-    "default_popup": "popup/popup.html"
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
   "host_permissions": [
     "*://*.neis.go.kr/*",
