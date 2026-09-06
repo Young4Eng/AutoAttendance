@@ -68,7 +68,7 @@ export function RepeatScreen({ ownerSub, teacherLabel, screen, onNav, onLogout }
   const days = useMemo(() => weekdays(start, end), [start, end]);
   const hits = roster
     .filter((s) => !q || String(s.number).startsWith(q) || s.name.includes(q))
-    .slice(0, 8);
+    ;
 
   function resetForm() {
     setQ('');

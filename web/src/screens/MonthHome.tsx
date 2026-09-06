@@ -111,7 +111,7 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
     : "";
   const hits = roster
     .filter((s) => !q.trim() || String(s.number).startsWith(q.trim()) || s.name.includes(q.trim()))
-    .slice(0, 12);
+    ;
 
   const classLabel = useMemo(() => {
     const s = roster[0];
