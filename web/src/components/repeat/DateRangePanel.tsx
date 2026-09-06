@@ -171,15 +171,21 @@ export function DateRangePanel({
                 <button
                   key={key + String(out)}
                   type="button"
-                  disabled={wk || out}
-                  onClick={() => onTogglePick(key)}
+                  disabled={wk}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!wk) onTogglePick(key);
+                  }}
                   className={
                     'h-8 rounded text-xs ' +
-                    (wk || out
+                    (wk
                       ? 'text-outline/40 cursor-default'
                       : on
                         ? 'bg-primary-container text-on-primary font-semibold'
-                        : 'bg-surface-container-lowest hover:bg-teal-50')
+                        : out
+                          ? 'bg-surface-container-lowest text-outline hover:bg-teal-50'
+                          : 'bg-surface-container-lowest hover:bg-teal-50')
                   }
                 >
                   {d.getDate()}

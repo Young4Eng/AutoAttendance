@@ -134,7 +134,9 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
     const next = { ...partial, status: partial.status || "draft" };
     if (
       previous &&
-      (previous.period !== next.period || previous.type !== next.type)
+      (previous.period !== next.period ||
+        previous.type !== next.type ||
+        previous.date !== next.date)
     ) {
       await deleteAttendanceRecord(ownerSub, previous);
     }
@@ -278,7 +280,7 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
                   onAddOne={(s, t) => void addOne(s, t)}
                   onApplyReason={(text) => void applyReason(text)}
                   onFocusKey={setFocusKey}
-                  onSave={(r) => void save(r)}
+                  onSave={(next, prev) => void save(next, prev)}
                   onDelete={(r) => void deleteAttendanceRecord(ownerSub, r).then(reload)}
                   onNavRepeat={() => onNav("repeat")}
                 />

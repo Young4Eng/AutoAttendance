@@ -30,7 +30,7 @@ type Props = {
   onAddOne: (s: Student, t: AttendanceType) => void;
   onApplyReason: (text: string) => void;
   onFocusKey: (k: string | null) => void;
-  onSave: (r: AttendanceRecord) => void;
+  onSave: (next: AttendanceRecord, previous?: AttendanceRecord) => void;
   onDelete: (r: AttendanceRecord) => void;
   onNavRepeat: () => void;
 };
@@ -258,7 +258,7 @@ export function DayPanel({
               row={c}
               focused={focusKey === key}
               onFocus={() => onFocusKey(key)}
-              onSave={(r) => onSave(r)}
+              onSave={(next, prev) => onSave(next, prev)}
               onDelete={() => onDelete(c)}
             />
           );
