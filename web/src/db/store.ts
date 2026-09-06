@@ -128,7 +128,7 @@ export async function putAttendance(
   const client = sb();
   if (client) {
     const { error } = await client.rpc("upsert_entry", {
-      row: rowOf(ownerSub, record),
+      p_row: rowOf(ownerSub, record),
     });
     if (error) throw new Error(rpcErrorMessage(error));
     await idb.putAttendance(ownerSub, record);
