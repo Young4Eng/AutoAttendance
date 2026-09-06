@@ -183,7 +183,7 @@ $$;
 revoke all on function replace_roster(jsonb) from public;
 grant execute on function replace_roster(jsonb) to authenticated;
 
-create or replace function upsert_entry(row jsonb)
+create or replace function upsert_entry(p_row jsonb)
 returns void
 language plpgsql
 security invoker
@@ -207,17 +207,17 @@ begin
     raise exception 'not_authenticated';
   end if;
 
-  v_date := (row->>'date')::date;
-  v_year := coalesce((row->>'year')::int, extract(year from v_date)::int);
-  v_grade := (row->>'grade')::int;
-  v_class := (row->>'class')::int;
-  v_number := (row->>'number')::int;
-  v_name := trim(coalesce(row->>'name', ''));
-  v_category := row->>'category';
-  v_type := row->>'type';
-  v_period := coalesce((row->>'period')::int, 0);
-  v_reason := coalesce(row->>'reason', '');
-  v_status := coalesce(nullif(trim(row->>'status'), ''), 'draft');
+  v_date := (p_row->>'date')::date;
+  v_year := coalesce((p_row->>'year')::int, extract(year from v_date)::int);
+  v_grade := (p_row->>'grade')::int;
+  v_class := (p_row->>'class')::int;
+  v_number := (p_row->>'number')::int;
+  v_name := trim(coalesce(p_row->>'name', ''));
+  v_category := p_row->>'category';
+  v_type := p_row->>'type';
+  v_period := coalesce((p_row->>'period')::int, 0);
+  v_reason := coalesce(p_row->>'reason', '');
+  v_status := coalesce(nullif(trim(p_row->>'status'), ''), 'draft');
 
   if v_name = '' or v_number is null or v_grade is null or v_class is null then
     raise exception 'bad_entry_row';
