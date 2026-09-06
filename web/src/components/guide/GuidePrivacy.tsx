@@ -18,7 +18,7 @@ export function GuidePrivacy() {
       <div className="rounded-xl border border-[#99F6E4] bg-[#F0FDFA] p-4 text-sm leading-relaxed text-on-surface">
         출결 초안(번호·성명·사유)은 출결메이트 계정 DB에 저장됩니다. 캐시를 지워도 남고, 같은 구글이면
         다른 PC에서도 보입니다. 나이스에 넣은 값은 나이스에 있습니다. 인증서·비밀번호는 받지
-        않습니다. 전문은 docs/privacy.md.
+        않습니다.
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {[

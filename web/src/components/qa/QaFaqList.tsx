@@ -110,18 +110,14 @@ export function QaFaqList({ highlightSuggest }: Props) {
           </div>
         </div>
         <p className="text-[13px] leading-5 text-on-surface-variant m-0">
-          실명·학교명·학생 원문 사유는 제보에 넣지 마세요. 재현 단계와 화면 이름(#69 guide/qa 등)만
-          적으면 충분합니다. 레포 이슈로 남겨 주세요.
+          문의는 아래 연락처로 보내 주세요. 제보에는 학생 실명과 원문 사유를 넣지 말아 주세요.
         </p>
-        <a
-          className="inline-flex items-center justify-center gap-1.5 py-2 px-4 rounded-lg bg-primary text-on-primary text-[15px] font-semibold hover:bg-primary-container transition-colors shadow-sm w-fit"
-          href="https://github.com/Young4Eng/AutoAttendance/issues"
-          target="_blank"
-          rel="noreferrer"
-        >
-          <span className="material-symbols-outlined text-[18px]">open_in_new</span>
-          <span>GitHub 이슈 열기</span>
-        </a>
+        <div className="flex flex-col gap-1 text-[13px] text-on-surface">
+          <span>개발자: 서울 대명중학교 조영욱</span>
+          <a className="text-primary hover:underline w-fit" href="mailto:whduddnr@daemyeong.sen.ms.kr">
+            이메일: whduddnr@daemyeong.sen.ms.kr
+          </a>
+        </div>
       </div>
     </section>
   );
