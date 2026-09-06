@@ -19,7 +19,7 @@ type Props = {
   onNav: (s: AppScreen) => void;
   onLogout: () => void;
   children: ReactNode;
-  /** Lock to viewport; sidebar + main scroll independently (preview). */
+  /** Lock to viewport; sidebar + main scroll independently (preview/repeat). */
   fillViewport?: boolean;
 };
 
