@@ -31,6 +31,7 @@ type Props = {
   onAddOne: (s: Student, t: AttendanceType) => void;
   onFocusKey: (k: string | null) => void;
   onSave: (next: AttendanceRecord, previous?: AttendanceRecord) => void;
+  onEndDate: (row: AttendanceRecord, end: string) => void;
   onDelete: (r: AttendanceRecord) => void;
   onNavRepeat: () => void;
 };
@@ -59,6 +60,7 @@ export function DayPanel({
   onAddOne,
   onFocusKey,
   onSave,
+  onEndDate,
   onDelete,
   onNavRepeat,
 }: Props) {
@@ -93,12 +95,12 @@ export function DayPanel({
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold tracking-tight text-on-surface m-0 truncate">{title}</h2>
             {isToday ? (
-              <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
+              <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-sm font-bold shrink-0">
                 오늘
               </span>
             ) : null}
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-on-surface-variant mt-0.5 flex-wrap">
+          <div className="flex items-center gap-1.5 text-sm text-on-surface-variant mt-0.5 flex-wrap">
             <span className="font-semibold text-on-surface">
               {dayRows.length ? `출결 특이 사항 ${dayRows.length}명` : "이날 출결 특이 사항 없음"}
             </span>
@@ -136,7 +138,7 @@ export function DayPanel({
               type="button"
               onClick={() => onPendingCat(c.id)}
               className={
-                "py-1.5 rounded-lg bg-surface-container-lowest border text-xs " +
+                "py-2 rounded-lg bg-surface-container-lowest border text-sm " +
                 (pendingCat === c.id
                   ? "border-primary ring-1 ring-primary font-semibold"
                   : "border-[#E4E4E7]")
@@ -156,7 +158,7 @@ export function DayPanel({
                 onBulk(false);
               }}
               className={
-                "flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg bg-surface-container-lowest border text-on-surface text-xs transition-colors shadow-xs " +
+                "flex items-center justify-center gap-1 py-2 px-2 rounded-lg bg-surface-container-lowest border text-on-surface text-sm transition-colors shadow-xs " +
                 (pending === k && !bulk
                   ? "border-primary ring-1 ring-primary"
                   : "border-[#E4E4E7] hover:border-primary/50")
@@ -195,7 +197,7 @@ export function DayPanel({
             onPending(pending || "absence");
           }}
           className={
-            "w-full flex items-center justify-center gap-1 py-1.5 rounded-lg border text-sm " +
+            "w-full flex items-center justify-center gap-1 py-2 rounded-lg border text-sm " +
             (bulk ? "border-primary ring-1 ring-primary" : "border-[#E4E4E7]")
           }
         >
@@ -204,31 +206,30 @@ export function DayPanel({
         </button>
       </div>
 
-      {pending ? (
-        <div className="px-3 py-2 border-b border-[#E4E4E7] flex flex-col gap-1.5">
+      <div className="px-3 py-2 border-b border-[#E4E4E7] flex flex-col gap-2">
           <input
-            className="h-9 rounded-lg border border-[#E4E4E7] px-3 text-sm"
+            className="h-11 rounded-lg border border-[#E4E4E7] px-3 text-base"
             value={q}
             onChange={(e) => onQ(e.target.value)}
-            placeholder="번호 또는 이름 일부"
+            placeholder="학생 번호 또는 이름"
           />
-          <div className="grid grid-cols-2 gap-1 max-h-28 overflow-y-auto pr-0.5">
+          <div className="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto pr-0.5">
             {hits.length === 0 ? (
-              <p className="col-span-2 text-xs text-on-surface-variant m-0">명단에서 CSV를 먼저 가져오세요.</p>
+              <p className="col-span-2 text-sm text-on-surface-variant m-0">명단에서 CSV를 먼저 가져오세요.</p>
             ) : null}
             {hits.map((s) => (
               <button
                 key={s.number}
                 type="button"
                 className={
-                  "text-left px-2 py-1 rounded-md text-[12px] leading-tight border transition-colors " +
+                  "text-left px-3 py-2 rounded-lg text-sm leading-tight border transition-colors " +
                   (picked.includes(s.number)
                     ? "bg-teal-50 border-teal-200 text-teal-900"
                     : "bg-white border-[#E4E4E7] hover:border-teal-300 hover:bg-teal-50/40")
                 }
                 onClick={() => {
                   if (bulk) onTogglePick(s.number);
-                  else if (pending) void onAddOne(s, pending);
+                  else void onAddOne(s, pending || "absence");
                 }}
               >
                 <span className="font-semibold">{String(s.number).padStart(2,"0")}</span>
@@ -239,14 +240,13 @@ export function DayPanel({
           {bulk ? (
             <button
               type="button"
-              className="rounded-lg border border-[#E4E4E7] py-1.5 text-sm"
+              className="rounded-lg border border-[#E4E4E7] py-2 text-sm"
               onClick={() => void onConfirmPicks()}
             >
               {picked.length}명 등록
             </button>
           ) : null}
         </div>
-      ) : null}
 
       <div className="max-h-[440px] overflow-y-auto divide-y divide-[#E4E4E7]/70 px-3 py-1 bg-surface-container-lowest flex-1">
         {dayRows.length === 0 && !pending ? (
@@ -263,17 +263,18 @@ export function DayPanel({
               focused={focusKey === key}
               onFocus={() => onFocusKey(key)}
               onSave={(next, prev) => onSave(next, prev)}
+              onEndDate={onEndDate}
               onDelete={() => onDelete(c)}
             />
           );
         })}
       </div>
 
-      <div className="mt-auto flex items-center justify-between text-xs text-on-surface-variant px-4 py-3 border-t border-[#E4E4E7]">
+      <div className="mt-auto flex items-center justify-between text-sm text-on-surface-variant px-4 py-3 border-t border-[#E4E4E7]">
         <span>계정에 저장됨</span>
         <button
           type="button"
-          className="px-3 py-1.5 rounded-lg bg-primary-container text-on-primary text-sm font-semibold"
+          className="px-3 py-2 rounded-lg bg-primary-container text-on-primary text-sm font-semibold"
           onClick={onClose}
         >
           완료

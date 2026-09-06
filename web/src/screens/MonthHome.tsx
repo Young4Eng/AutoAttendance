@@ -19,6 +19,17 @@ function weekend(d: Date) {
   const n = d.getDay();
   return n === 0 || n === 6;
 }
+function weekdaysBetween(start: string, end: string): string[] {
+  const out: string[] = [];
+  const cur = new Date(start + "T12:00:00");
+  const last = new Date(end + "T12:00:00");
+  if (Number.isNaN(cur.getTime()) || Number.isNaN(last.getTime()) || cur > last) return out;
+  while (cur <= last) {
+    if (!weekend(cur)) out.push(ymd(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+  return out;
+}
 function monthCells(year: number, month: number): Date[] {
   const first = new Date(year, month - 1, 1);
   const pad = (first.getDay() + 6) % 7;
@@ -165,6 +176,21 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
   }
 
 
+  async function applyEndDate(row: AttendanceRecord, end: string) {
+    if (!end || end <= row.date) return;
+    for (const date of weekdaysBetween(row.date, end)) {
+      if (date === row.date) continue;
+      await putAttendance(ownerSub, {
+        ...row,
+        date,
+        year: Number(date.slice(0, 4)),
+        period: row.type === "absence" ? 0 : row.period,
+        status: "draft",
+      });
+    }
+    await reload();
+  }
+
   function selectDay(key: string) {
     setOpen(key);
     setPending(null);
@@ -245,6 +271,7 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
                   onAddOne={(s, t) => void addOne(s, t)}
                   onFocusKey={setFocusKey}
                   onSave={(next, prev) => void save(next, prev)}
+                  onEndDate={(row, end) => void applyEndDate(row, end)}
                   onDelete={(r) => void deleteAttendanceRecord(ownerSub, r).then(reload)}
                   onNavRepeat={() => onNav("repeat")}
                 />

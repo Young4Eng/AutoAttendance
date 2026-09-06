@@ -1,10 +1,11 @@
 import type { AttendanceRecord, AttendanceType, Category } from "../../types/models";
 import { CATEGORY_LABELS, TYPE_LABELS } from "../../lib/labels";
+import { REASON_PRESETS } from "../../lib/reasonPresets";
 import { typeChipClass } from "./chipStyles";
 import { displayName, padNum } from "./displayName";
-import { REASON_PRESETS } from "../../lib/reasonPresets";
 
-const CATS = Object.keys(CATEGORY_LABELS) as Category[];
+const CATS: Category[] = ["illness", "unexcused", "other", "recognized"];
+const TYPES: AttendanceType[] = ["absence", "late", "early_leave", "result"];
 
 type Props = {
   row: AttendanceRecord;
@@ -12,108 +13,126 @@ type Props = {
   onFocus: () => void;
   onSave: (next: AttendanceRecord, previous?: AttendanceRecord) => void;
   onDelete: () => void;
+  onEndDate: (row: AttendanceRecord, end: string) => void;
 };
 
-/** Dense one-line exception row (day-panel.html) — #55: P hidden for absence. */
-export function DayExceptionRow({ row, focused, onFocus, onSave, onDelete }: Props) {
+export function DayExceptionRow({ row, focused, onFocus, onSave, onDelete, onEndDate }: Props) {
   const otherBad = row.category === "other" && !row.reason.trim();
+  const reasons = REASON_PRESETS[row.category];
   return (
     <div
       className={
-        "py-1.5 px-1 rounded-md transition-colors flex items-center gap-1.5 flex-wrap " +
-        (focused ? "bg-surface-container-low/80" : "hover:bg-surface-container-low/60")
+        "py-3 px-2 rounded-lg transition-colors flex flex-col gap-2 " +
+        (focused ? "bg-surface-container-low" : "hover:bg-surface-container-low/50")
       }
       onClick={onFocus}
     >
-      <div className="w-16 shrink-0 text-sm font-semibold text-on-surface truncate tnum">
-        {padNum(row.number)} {displayName(row.number, row.name)}
+      <div className="flex items-center gap-2">
+        <div className="text-base font-semibold text-on-surface truncate">
+          {padNum(row.number)} {displayName(row.number, row.name)}
+        </div>
+        <button
+          type="button"
+          title="삭제"
+          className="ml-auto w-8 h-8 rounded-lg flex items-center justify-center text-outline hover:text-error"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+        >
+          <span className="material-symbols-outlined text-[18px]">close</span>
+        </button>
       </div>
-      <span
-        className={
-          "px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 border " + typeChipClass(row.type)
-        }
-      >
-        {TYPE_LABELS[row.type]}
-      </span>
-      <div className="inline-flex rounded border border-[#E4E4E7] p-0.5 bg-surface-container-low shrink-0 text-[10px]">
+
+      <div className="grid grid-cols-4 gap-1.5">
+        {TYPES.map((t) => (
+          <button
+            key={t}
+            type="button"
+            className={
+              "py-2 rounded-lg text-sm font-semibold border " +
+              (row.type === t
+                ? typeChipClass(t) + " ring-1 ring-primary"
+                : "bg-white border-[#E4E4E7] text-on-surface-variant")
+            }
+            onClick={(e) => {
+              e.stopPropagation();
+              const period = t === "absence" ? 0 : row.period || 1;
+              onSave({ ...row, type: t, period }, row);
+            }}
+          >
+            {TYPE_LABELS[t]}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-4 gap-1.5">
         {CATS.map((cat) => (
           <button
             key={cat}
             type="button"
+            className={
+              "py-2 rounded-lg text-sm border " +
+              (row.category === cat
+                ? "bg-white border-primary font-semibold ring-1 ring-primary"
+                : "bg-white border-[#E4E4E7] text-on-surface-variant")
+            }
             onClick={(e) => {
               e.stopPropagation();
               onSave({ ...row, category: cat });
             }}
-            className={
-              row.category === cat
-                ? "px-1.5 py-0.5 rounded bg-surface-container-lowest font-bold shadow-xs " +
-                  (cat === "illness"
-                    ? "text-primary"
-                    : cat === "unexcused"
-                      ? "text-[#E11D48]"
-                      : cat === "other"
-                        ? "text-[#7C3AED]"
-                        : "text-[#0D9488]")
-                : "px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface"
-            }
           >
             {cat === "recognized" ? "인정" : CATEGORY_LABELS[cat]}
           </button>
         ))}
       </div>
+
       {row.type !== "absence" ? (
-        <select
-          className="px-1 py-1 rounded border border-[#E4E4E7] bg-surface-container-lowest text-[10px] font-semibold text-primary outline-none shrink-0"
-          title="기준 교시"
-          value={row.period || 1}
-          onClick={(e) => e.stopPropagation()}
-          onChange={(e) => onSave({ ...row, period: Number(e.target.value) }, row)}
-        >
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-sm text-on-surface-variant shrink-0">교시</span>
           {[1, 2, 3, 4, 5, 6, 7].map((pr) => (
-            <option key={pr} value={pr}>
-              {pr}교시
-            </option>
+            <button
+              key={pr}
+              type="button"
+              className={
+                "w-9 h-9 rounded-lg text-sm font-semibold border " +
+                (row.period === pr
+                  ? "bg-primary-container text-on-primary border-primary"
+                  : "bg-white border-[#E4E4E7]")
+              }
+              onClick={(e) => {
+                e.stopPropagation();
+                onSave({ ...row, period: pr }, row);
+              }}
+            >
+              {pr}
+            </button>
           ))}
-        </select>
+        </div>
       ) : null}
-      <div className="flex-1 min-w-[6rem]">
-        <input
-          className={
-            "w-full px-2 py-1 rounded border bg-surface-container-lowest text-on-surface text-[11px] outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary " +
-            (otherBad ? "border-[var(--error)]" : "border-[#E4E4E7]")
-          }
-          placeholder={otherBad ? "사유 입력 (필수)" : "사유 입력"}
-          defaultValue={row.reason}
-          onFocus={onFocus}
-          onClick={(e) => e.stopPropagation()}
-          onBlur={(e) => onSave({ ...row, reason: e.target.value })}
-        />
-      </div>
-      <button
-        type="button"
-        title="삭제"
-        className="w-5 h-5 rounded flex items-center justify-center text-outline hover:text-error transition-colors shrink-0"
-        onClick={(e) => {
-          e.stopPropagation();
-          onDelete();
-        }}
-      >
-        <span className="material-symbols-outlined text-[14px]">close</span>
-      </button>
-      {otherBad ? (
-        <p className="w-full text-[11px] text-[var(--error)] m-0 pl-1">기타는 사유가 필요합니다</p>
-      ) : null}
-      {REASON_PRESETS[row.category].length > 0 ? (
-        <div className="w-full flex flex-wrap gap-1 pl-[4.25rem] pt-0.5">
-          {REASON_PRESETS[row.category].map((r) => (
+
+      <input
+        className={
+          "w-full h-10 px-3 rounded-lg border text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary " +
+          (otherBad ? "border-[var(--error)]" : "border-[#E4E4E7]")
+        }
+        placeholder={otherBad ? "사유 입력 (필수)" : "구체적 사유"}
+        defaultValue={row.reason}
+        onFocus={onFocus}
+        onClick={(e) => e.stopPropagation()}
+        onBlur={(e) => onSave({ ...row, reason: e.target.value })}
+      />
+      {reasons.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {reasons.map((r) => (
             <button
               key={r}
               type="button"
               className={
-                "px-1.5 py-0.5 rounded text-[10px] border " +
+                "px-2.5 py-1.5 rounded-lg text-sm border " +
                 (row.reason === r
                   ? "bg-primary/10 border-primary text-primary"
-                  : "bg-surface-container border-[#E4E4E7] text-on-surface-variant")
+                  : "bg-white border-[#E4E4E7] text-on-surface-variant")
               }
               onClick={(e) => {
                 e.stopPropagation();
@@ -125,8 +144,23 @@ export function DayExceptionRow({ row, focused, onFocus, onSave, onDelete }: Pro
           ))}
         </div>
       ) : null}
+      {otherBad ? <p className="text-sm text-[var(--error)] m-0">기타는 사유가 필요합니다</p> : null}
+
+      <label className="flex items-center gap-2 text-sm text-on-surface-variant">
+        <span className="shrink-0">종료일</span>
+        <input
+          type="date"
+          className="h-10 px-2 rounded-lg border border-[#E4E4E7] text-sm bg-white"
+          defaultValue={row.date}
+          min={row.date}
+          onClick={(e) => e.stopPropagation()}
+          onChange={(e) => {
+            const end = e.target.value;
+            if (end && end !== row.date) onEndDate(row, end);
+          }}
+        />
+        <span className="text-xs text-outline">비우면 이날만</span>
+      </label>
     </div>
   );
 }
-
-export type AddType = AttendanceType;
