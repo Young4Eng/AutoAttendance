@@ -114,10 +114,8 @@ export default function App() {
 
   if (screen === 'preview') {
     return (
-      <Shell screen={screen} teacherLabel={label} onNav={nav} onLogout={logout}>
-        <div className="flex flex-col flex-1 min-w-0">
-          <SendPreviewScreen owner={owner} date="" periodCount={previewPeriods} onBack={() => setScreen('month')} />
-        </div>
+      <Shell screen={screen} teacherLabel={label} onNav={nav} onLogout={logout} fillViewport>
+        <SendPreviewScreen owner={owner} date="" periodCount={previewPeriods} onBack={() => setScreen('month')} />
       </Shell>
     );
   }

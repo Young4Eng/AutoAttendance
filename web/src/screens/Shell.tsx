@@ -19,13 +19,32 @@ type Props = {
   onNav: (s: AppScreen) => void;
   onLogout: () => void;
   children: ReactNode;
+  /** Lock to viewport; sidebar + main scroll independently (preview). */
+  fillViewport?: boolean;
 };
 
-export function Shell({ screen, rosterCount, onNav, onLogout, children }: Props) {
+export function Shell({
+  screen,
+  rosterCount,
+  onNav,
+  onLogout,
+  children,
+  fillViewport = false,
+}: Props) {
   return (
-    <div className="min-h-screen bg-[var(--canvas)] text-[var(--text)]">
+    <div
+      className={
+        fillViewport
+          ? "h-screen overflow-hidden bg-[var(--canvas)] text-[var(--text)] flex"
+          : "min-h-screen bg-[var(--canvas)] text-[var(--text)]"
+      }
+    >
       <aside
-        className="fixed left-0 top-0 h-screen w-[var(--sidebar-width)] bg-[var(--canvas)] border-r border-[var(--border)] z-50 flex flex-col justify-between select-none"
+        className={
+          fillViewport
+            ? "w-[var(--sidebar-width)] h-screen shrink-0 bg-[var(--canvas)] border-r border-[var(--border)] z-50 flex flex-col justify-between select-none overflow-y-auto"
+            : "fixed left-0 top-0 h-screen w-[var(--sidebar-width)] bg-[var(--canvas)] border-r border-[var(--border)] z-50 flex flex-col justify-between select-none"
+        }
         aria-label="주 메뉴"
       >
         <div className="flex flex-col">
@@ -71,7 +90,15 @@ export function Shell({ screen, rosterCount, onNav, onLogout, children }: Props)
           </button>
         </div>
       </aside>
-      <div className="ml-[var(--sidebar-width)] min-h-screen flex">{children}</div>
+      <div
+        className={
+          fillViewport
+            ? "flex-1 min-w-0 h-screen flex flex-col overflow-hidden"
+            : "ml-[var(--sidebar-width)] min-h-screen flex"
+        }
+      >
+        {children}
+      </div>
     </div>
   );
 }
