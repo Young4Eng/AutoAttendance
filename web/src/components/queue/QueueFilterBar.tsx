@@ -2,7 +2,7 @@ import type { Category } from '../../types/models';
 import { CATEGORY_LABELS } from '../../lib/labels';
 import type { CategoryFilter } from '../../lib/recordKey';
 
-export type ScopeTab = 'month' | 'range';
+export type ScopeTab = 'month' | 'lastMonth' | 'range';
 
 interface Props {
   total: number;
@@ -69,6 +69,7 @@ export function QueueFilterBar({
       <div className="flex items-center gap-2 flex-wrap px-2 pb-1">
         <div className="flex items-center rounded-lg bg-surface-container-low p-0.5 border border-[#E4E4E7]">
           <button type="button" className={scope === 'month' ? 'px-2.5 py-1 rounded-md bg-white text-on-surface text-xs font-semibold shadow-sm' : 'px-2 py-1 rounded-md text-on-surface-variant text-xs'} onClick={() => onScope('month')}>이번 달</button>
+          <button type="button" className={scope === 'lastMonth' ? 'px-2.5 py-1 rounded-md bg-white text-on-surface text-xs font-semibold shadow-sm' : 'px-2 py-1 rounded-md text-on-surface-variant text-xs'} onClick={() => onScope('lastMonth')}>저번 달</button>
           <button type="button" className={scope === 'range' ? 'px-2.5 py-1 rounded-md bg-white text-on-surface text-xs font-semibold shadow-sm' : 'px-2 py-1 rounded-md text-on-surface-variant text-xs'} onClick={() => onScope('range')}>기간</button>
         </div>
         <label className="text-xs text-on-surface-variant flex items-center gap-1">

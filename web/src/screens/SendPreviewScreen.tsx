@@ -58,6 +58,14 @@ export function SendPreviewScreen({ owner, date, periodCount: _periodCount, onBa
     const last = new Date(y, d.getMonth() + 1, 0).getDate();
     return { from: `${y}-${m}-01`, to: `${y}-${m}-${String(last).padStart(2, '0')}` };
   };
+  const lastMonthNow = () => {
+    const d = new Date();
+    const dt = new Date(d.getFullYear(), d.getMonth() - 1, 1);
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, '0');
+    const last = new Date(y, dt.getMonth() + 1, 0).getDate();
+    return { from: `${y}-${m}-01`, to: `${y}-${m}-${String(last).padStart(2, '0')}` };
+  };
   const initial = monthNow();
   const [scope, setScope] = useState<ScopeTab>('month');
   const [from, setFrom] = useState(initial.from);
@@ -348,6 +356,11 @@ export function SendPreviewScreen({ owner, date, periodCount: _periodCount, onBa
               setScope(s);
               if (s === 'month') {
                 const m = monthNow();
+                setFrom(m.from);
+                setTo(m.to);
+              }
+              if (s === 'lastMonth') {
+                const m = lastMonthNow();
                 setFrom(m.from);
                 setTo(m.to);
               }

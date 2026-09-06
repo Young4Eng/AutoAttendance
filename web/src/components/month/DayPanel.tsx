@@ -100,7 +100,7 @@ export function DayPanel({
           </div>
           <div className="flex items-center gap-1.5 text-xs text-on-surface-variant mt-0.5 flex-wrap">
             <span className="font-semibold text-on-surface">
-              {dayRows.length ? `예외 학생 ${dayRows.length}명` : "이날 예외 없음"}
+              {dayRows.length ? `출결 특이 사항 ${dayRows.length}명` : "이날 출결 특이 사항 없음"}
             </span>
             {bits.map((b) => (
               <span key={b.label} className="inline-flex items-center gap-1">
@@ -251,7 +251,7 @@ export function DayPanel({
       <div className="max-h-[440px] overflow-y-auto divide-y divide-[#E4E4E7]/70 px-3 py-1 bg-surface-container-lowest flex-1">
         {dayRows.length === 0 && !pending ? (
           <p className="text-sm text-on-surface-variant bg-[#F0FDFA] border border-[#99F6E4] rounded-xl px-3 py-2 my-2">
-            오늘 예외 없음 · 전원 출석. +결석 등으로 예외만 추가하세요.
+            오늘 출결 특이 사항 없음 · 전원 출석. +결석 등으로만 추가하세요.
           </p>
         ) : null}
         {dayRows.map((c) => {

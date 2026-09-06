@@ -189,7 +189,7 @@ function FullCell({
                   : "bg-primary-fixed text-on-primary-fixed")
               }
             >
-              예외 {n}명
+              특이 {n}명
             </span>
           ) : (
             <span className="text-[11px] text-outline opacity-70 group-hover:opacity-100 transition-opacity shrink-0">
@@ -273,7 +273,7 @@ function CompactCell({
     } else if (sel) {
       summary = (
         <div className="px-1.5 py-0.5 rounded bg-primary/10 border border-primary/30 text-primary text-[10px] font-semibold flex items-center justify-between truncate">
-          <span className="truncate">예외 {n}명</span>
+          <span className="truncate">특이 {n}명</span>
           <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 ml-0.5" />
         </div>
       );
@@ -308,7 +308,7 @@ function CompactCell({
       } else {
         summary = (
           <div className="px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20 text-primary text-[10px] font-semibold truncate">
-            예외 {n}명
+            특이 {n}명
           </div>
         );
       }

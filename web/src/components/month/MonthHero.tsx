@@ -3,31 +3,21 @@ type Props = {
   month: number;
   classLabel?: string;
   rosterCount: number;
-  semesterDays: number;
   monthTotal: number;
-  /** Zero counts omitted (gaps). */
   breakdown: { label: string; count: number }[];
   onPrev: () => void;
-  onToday: () => void;
   onNext: () => void;
-  onThisMonth: () => void;
-  onLastMonth: () => void;
 };
 
-/** Month title, nav, and stats chips (month.html density). */
 export function MonthHero({
   year,
   month,
   classLabel,
   rosterCount,
-  semesterDays,
   monthTotal,
   breakdown,
   onPrev,
-  onToday,
   onNext,
-  onThisMonth,
-  onLastMonth,
 }: Props) {
   const parts = breakdown.filter((b) => b.count > 0);
   return (
@@ -59,27 +49,6 @@ export function MonthHero({
             </button>
             <button
               type="button"
-              className="px-2 py-0.5 rounded text-sm text-on-surface hover:bg-surface-container-highest transition-colors"
-              onClick={onLastMonth}
-            >
-              저번 달
-            </button>
-            <button
-              type="button"
-              className="px-2 py-0.5 rounded text-sm text-on-surface hover:bg-surface-container-highest transition-colors"
-              onClick={onThisMonth}
-            >
-              이번 달
-            </button>
-            <button
-              type="button"
-              className="px-2 py-0.5 rounded text-sm text-on-surface hover:bg-surface-container-highest transition-colors"
-              onClick={onToday}
-            >
-              오늘
-            </button>
-            <button
-              type="button"
               aria-label="다음 달"
               className="p-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-colors"
               onClick={onNext}
@@ -89,20 +58,12 @@ export function MonthHero({
           </div>
         </div>
         <p className="text-sm text-on-surface-variant m-0">
-          예외 인원만 기록하면 크롬 확장이 나이스에 바로 입력합니다.
+          출결 특이 사항만 기록하면 크롬 확장이 나이스에 바로 입력합니다.
         </p>
       </div>
       <div className="flex items-center gap-3 self-start md:self-auto bg-surface-container-low px-4 py-2 rounded-xl shadow-sm">
         <div className="flex flex-col shrink-0">
-          <span className="text-xs text-on-surface-variant">학기 누적 수업일수</span>
-          <span className="text-lg font-semibold text-on-surface">
-            {semesterDays}
-            <span className="text-xs font-normal text-on-surface-variant ml-0.5">일</span>
-          </span>
-        </div>
-        <div className="h-6 w-px bg-surface-container-high shrink-0" />
-        <div className="flex flex-col shrink-0">
-          <span className="text-xs text-on-surface-variant">이번 달 예외 총계</span>
+          <span className="text-xs text-on-surface-variant">이번 달 출결 특이 사항</span>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-lg font-semibold text-primary">
               {monthTotal}

@@ -30,22 +30,6 @@ function monthCells(year: number, month: number): Date[] {
   });
 }
 
-/** Weekdays from semester start through `until` (inclusive). No holiday table. */
-function semesterWeekdays(until: Date): number {
-  const y = until.getFullYear();
-  const m = until.getMonth() + 1;
-  let start: Date;
-  if (m >= 3 && m <= 8) start = new Date(y, 2, 1);
-  else if (m >= 9) start = new Date(y, 8, 1);
-  else start = new Date(y - 1, 8, 1);
-  let n = 0;
-  const cur = new Date(start);
-  while (cur <= until) {
-    if (!weekend(cur)) n += 1;
-    cur.setDate(cur.getDate() + 1);
-  }
-  return n;
-}
 
 type Props = {
   ownerSub: string;
@@ -121,12 +105,6 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
     return `${year}학년도 ${sem} · ${s.grade}학년 ${s.class}반`;
   }, [roster, year, month]);
 
-  const semesterDays = useMemo(() => {
-    const endOfCursor = new Date(year, month, 0);
-    const todayDate = new Date(today + "T12:00:00");
-    const until = endOfCursor < todayDate ? endOfCursor : todayDate;
-    return semesterWeekdays(until);
-  }, [year, month, today]);
 
   async function save(
     partial: Omit<AttendanceRecord, "ownerSub">,
@@ -218,17 +196,10 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
             month={month}
             classLabel={classLabel}
             rosterCount={roster.length}
-            semesterDays={semesterDays}
             monthTotal={monthRows.length}
             breakdown={breakdown}
             onPrev={() => setCursor(new Date(year, month - 2, 1))}
-            onToday={() => {
-              setCursor(new Date(now.getFullYear(), now.getMonth(), 1));
-              if (!weekend(now)) selectDay(today);
-            }}
             onNext={() => setCursor(new Date(year, month, 1))}
-            onThisMonth={() => setCursor(new Date(now.getFullYear(), now.getMonth(), 1))}
-            onLastMonth={() => setCursor(new Date(now.getFullYear(), now.getMonth() - 1, 1))}
           />
 
           {open ? (
