@@ -1,42 +1,161 @@
+/* DESIGN.md tokens — light-only classroom (no dark prefers-color-scheme) */
 :root {
-  --text: #4b5563;
-  --text-h: #111827;
-  --bg: #f8fafc;
+  /* Brand (Editorial Utility) */
+  --primary: #005c55;
+  --on-primary: #ffffff;
+  --primary-container: #0f766e;
+  --on-primary-container: #a3faef;
+  --secondary: #ba0035;
+  --on-secondary: #ffffff;
+  --secondary-container: #e21e49;
+  --error: #ba1a1a;
+  --on-error: #ffffff;
+  --error-container: #ffdad6;
+
+  /* Canvas & surfaces */
+  --canvas: #fbfbfa;
+  --surface: #fbf8fc;
+  --surface-bright: #fbf8fc;
+  --surface-container: #f0edf1;
+  --surface-container-low: #f6f2f7;
+  --surface-container-high: #eae7eb;
+  --surface-container-highest: #e4e1e6;
+  --surface-muted: #f4f4f5;
   --card: #ffffff;
-  --border: #e5e7eb;
-  --code-bg: #f3f4f6;
-  --accent: #2563eb;
-  --accent-bg: rgba(37, 99, 235, 0.1);
-  --accent-border: rgba(37, 99, 235, 0.45);
-  --shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-  --sans: system-ui, Segoe UI, Roboto, Noto Sans KR, sans-serif;
+  --on-surface: #1b1b1e;
+  --on-surface-variant: #3e4947;
+  --outline: #6e7977;
+  --outline-variant: #bdc9c6;
+  --border: #e4e4e7;
+
+  /* Text (warm zinc) */
+  --text: #18181b;
+  --text-secondary: #71717a;
+  --text-placeholder: #a1a1aa;
+  --text-h: #18181b;
+
+  /* Interactive teal accents */
+  --accent: #0f766e;
+  --accent-hover: #115e59;
+  --accent-active: #134e4a;
+  --accent-bg: #f0fdfa;
+  --accent-border: #99f6e4;
+
+  /* High-impact send (coral) */
+  --send: #e11d48;
+  --send-hover: #be123c;
+  --send-bg: #fff1f2;
+
+  /* Status chips — text + color */
+  --chip-illness-fg: #b45309;
+  --chip-illness-bg: #fef3c7;
+  --chip-illness-border: #fde68a;
+  --chip-unexcused-fg: #be123c;
+  --chip-unexcused-bg: #ffe4e6;
+  --chip-unexcused-border: #fecdd3;
+  --chip-other-fg: #5b21b6;
+  --chip-other-bg: #ede9fe;
+  --chip-other-border: #ddd6fe;
+  --chip-recognized-fg: #0f766e;
+  --chip-recognized-bg: #ccfbf1;
+  --chip-recognized-border: #99f6e4;
+
+  /* Layout */
+  --sidebar-width: 16rem;
+  --max-content-width: 78rem;
+  --row-height: 48px;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --shadow: 0 1px 2px 0 rgba(24, 24, 27, 0.04);
+
+  /* Typography */
+  --sans: "Hanken Grotesk", "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
+
+  /* Legacy aliases used by App.css */
+  --bg: var(--canvas);
+  --code-bg: var(--surface-muted);
+
   font: 16px/1.5 var(--sans);
   color: var(--text);
-  background: var(--bg);
+  background: var(--canvas);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #cbd5e1;
-    --text-h: #f8fafc;
-    --bg: #0f172a;
-    --card: #1e293b;
-    --border: #334155;
-    --code-bg: #0b1220;
-    --accent: #60a5fa;
-    --accent-bg: rgba(96, 165, 250, 0.12);
-    --accent-border: rgba(96, 165, 250, 0.45);
-    --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-  }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-*, *::before, *::after { box-sizing: border-box; }
-body { margin: 0; min-width: 320px; min-height: 100vh; }
-#root { min-height: 100vh; }
-button, input { font: inherit; }
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--canvas);
+  color: var(--text);
+  font-family: var(--sans);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.tnum {
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Category / status chips — text + color */
+.CategoryChip,
+.chip-cat {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.CategoryChip--illness,
+.chip-cat-illness {
+  color: var(--chip-illness-fg);
+  background: var(--chip-illness-bg);
+  border-color: var(--chip-illness-border);
+}
+
+.CategoryChip--unexcused,
+.chip-cat-unexcused {
+  color: var(--chip-unexcused-fg);
+  background: var(--chip-unexcused-bg);
+  border-color: var(--chip-unexcused-border);
+}
+
+.CategoryChip--other,
+.chip-cat-other {
+  color: var(--chip-other-fg);
+  background: var(--chip-other-bg);
+  border-color: var(--chip-other-border);
+}
+
+.CategoryChip--recognized,
+.chip-cat-recognized {
+  color: var(--chip-recognized-fg);
+  background: var(--chip-recognized-bg);
+  border-color: var(--chip-recognized-border);
+}

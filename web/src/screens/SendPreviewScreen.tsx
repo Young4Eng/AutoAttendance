@@ -69,7 +69,7 @@ export function SendPreviewScreen({ owner, date, periodCount, onBack }: Props) {
 
   const openSend = () => {
     if (toSend.length === 0) {
-      setError('보낼 초안·대기가 없습니다');
+      setError('보낼 사람 없음');
       return;
     }
     const bad = toSend.filter(
@@ -151,11 +151,11 @@ export function SendPreviewScreen({ owner, date, periodCount, onBack }: Props) {
   };
 
   return (
-    <div className="flex-1 p-6">
-      <header className="flex items-start justify-between mb-4">
+    <div className="flex-1 p-6 max-w-[var(--max-content-width)]">
+      <header className="flex items-start justify-between mb-4 gap-3">
         <div>
-          <h1>전송 미리보기</h1>
-          <p className="muted">
+          <h1 className="text-2xl font-semibold tracking-tight m-0">전송 미리보기 (대기열)</h1>
+          <p className="muted mt-1 mb-0">
             {date || '전체 날짜'} · 비출석 {records.length}건 · 출결마감 없음 · queued만 확장
           </p>
         </div>
@@ -187,7 +187,7 @@ export function SendPreviewScreen({ owner, date, periodCount, onBack }: Props) {
           <button type="button" className="btn secondary" onClick={openSend}>
             대기열에 넣기 ({draftCount})
           </button>
-          <button type="button" className="btn danger" onClick={openClear}>
+          <button type="button" className="btn ghost" onClick={openClear}>
             대기만 초안으로
           </button>
         </div>

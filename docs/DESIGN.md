@@ -229,3 +229,10 @@ The design system maintains a balanced geometry characterized by refined 12px to
 
 ### Quick Attendance Toggle Group
 - Segmented pill container (`#F4F4F5` background, 6px padding) with sliding `#FFFFFF` active state thumb, allowing teachers to mark an entire row with a single keystroke or click without opening modal dialogues.
+
+---
+
+## Web token wiring (#57)
+
+CSS variables live in `web/src/index.css` (light-only classroom). Font stack: `"Hanken Grotesk", "Pretendard", system-ui`. Shell sidebar width `--sidebar-width: 16rem`. Status chips: illness amber / unexcused coral / other violet / recognized teal (`CategoryChip`). Send CTA uses `--send` coral; other primary actions use `--primary-container` teal.
+

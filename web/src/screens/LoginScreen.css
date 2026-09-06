@@ -41,7 +41,7 @@
 .ls-note b { color: #0f766e; }
 .ls-meta { display: flex; gap: 24px; justify-content: center; margin-top: 24px; font-size: 12px; color: #71717a; }
 .ls-foot { font-size: 12px; color: #a1a1aa; }
-.ls .error { color: #be123c; font-size: 13px; margin-top: 8px; }
+.ls .error { color: var(--error, #ba1a1a); font-size: 13px; margin-top: 8px; }
 .ls .gis-host { display: flex; justify-content: center; }
 .ls .btn.secondary {
   width: 100%; margin-top: 10px; height: 36px; border-radius: 10px;

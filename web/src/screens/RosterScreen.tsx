@@ -118,8 +118,8 @@ export function RosterScreen({ ownerSub, teacherLabel, screen, onNav, onLogout }
         <div className="flex flex-wrap gap-2 mb-3">
           {(["all", "enrolled", "transferred"] as const).map((f) => (
             <button key={f} type="button" onClick={() => setFilter(f)}
-              className={"px-3 py-1 rounded-full text-sm border " + (filter === f ? "border-[#0F766E] bg-[#F0FDFA]" : "border-[#E4E4E7]")}>
-              {f === "all" ? "전체" : f === "enrolled" ? "재학" : "전출행"}
+              className={"px-3 py-1 rounded-full text-sm border " + (filter === f ? "border-[var(--primary-container)] bg-[var(--accent-bg)] text-[var(--primary-container)] font-medium" : "border-[var(--border)]")}>
+              {f === "all" ? "전체" : f === "enrolled" ? "재학" : "결번(전출)"}
             </button>
           ))}
           <input className="h-9 flex-1 min-w-[10rem] rounded-xl border border-[#E4E4E7] px-3" value={q} onChange={(e) => setQ(e.target.value)} placeholder="번호 또는 이름" />
@@ -150,13 +150,18 @@ export function RosterScreen({ ownerSub, teacherLabel, screen, onNav, onLogout }
         ) : null}
         <p className="text-sm text-[#71717A]">{msg}</p>
         <p className="text-xs text-[#71717A] mb-2">결번은 당기지 않습니다.</p>
+        {rows.length === 0 ? (
+          <div className="mb-4 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-bg)] px-4 py-3 text-sm text-[var(--accent-active)]">
+            명단 없음 · CSV 양식으로 등록하거나 「학생 추가」로 시작하세요. 빈 번호(결번)는 채우지 않습니다.
+          </div>
+        ) : null}
         <div className="bg-white rounded-xl border border-[#E4E4E7] overflow-hidden">
           <div className="grid grid-cols-[3rem_6rem_1fr_5rem_4rem] gap-2 px-4 py-2 text-xs text-[#71717A] border-b bg-[#FAFAFA]">
             <span>번호</span><span>성명</span><span>특이사항 및 학적</span><span>출결 메모</span><span>관리</span>
           </div>
           {shown.map((s) => (
-            <div key={`${s.grade}-${s.class}-${s.number}`} className="grid grid-cols-[3rem_6rem_1fr_5rem_4rem] gap-2 px-4 py-3 border-b border-[#F4F4F5] items-center relative">
-              <span className="font-semibold">{String(s.number).padStart(2, "0")}</span>
+            <div key={`${s.grade}-${s.class}-${s.number}`} className="grid grid-cols-[3rem_6rem_1fr_5rem_4rem] gap-2 px-4 h-12 border-b border-[#F4F4F5] items-center relative">
+              <span className="font-semibold tnum">{String(s.number).padStart(2, "0")}</span>
               <span>{s.name}</span>
               <span className="text-sm">{s.status === "transferred" ? "전출" : "재학"}{s.note ? ` · ${s.note}` : ""}</span>
               <button type="button" className="text-sm text-[#0F766E]" onClick={() => onNav("month")}>{counts[s.number] ? `${counts[s.number]}건` : "—"}</button>
