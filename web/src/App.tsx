@@ -37,7 +37,8 @@ export default function App() {
   }
 
   const nav = (s: AppScreen) => setScreen(s);
-  const label = owner.displayName || owner.email || owner.ownerSub;
+  // Real names must not appear in shell/sidebar (issue #57).
+  const label = '담임 전용';
 
   if (screen === 'preview') {
     return (

@@ -8,6 +8,7 @@ import {
 import type { AttendanceRecord, AttendanceType, Category, Student } from "../types/models";
 import "./MonthHome.css";
 import { Shell, type AppScreen } from "./Shell";
+import { CategoryChip } from "../components/CategoryChip";
 
 const DOW = ["월", "화", "수", "목", "금", "토", "일"];
 const CAT_KO: Record<Category, string> = {
@@ -270,24 +271,32 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
                 {bulk ? <button type="button" className="rounded-lg border border-[#E4E4E7] py-1.5 text-sm" onClick={() => void confirmPicks()}>{picked.length}명 등록</button> : null}
               </div>
             </>
+          ) : dayRows.length === 0 ? (
+            <p className="text-sm text-[#71717A] bg-[#F0FDFA] border border-[#99F6E4] rounded-xl px-3 py-2">
+              오늘 예외 없음 · 전원 출석. +결석 등으로 예외만 추가하세요.
+            </p>
           ) : (
             <p className="text-xs text-[#71717A]">+결석을 누른 뒤 학생을 고르면 줄이 생깁니다.</p>
           )}
           <div className="flex flex-col gap-1 overflow-auto">
+            {dayRows.length === 0 && !pending && roster.length === 0 ? (
+              <p className="text-sm text-[#71717A]">명단이 없습니다. 사이드에서 「명단」으로 이동해 CSV로 등록하세요.</p>
+            ) : null}
             {dayRows.map((c) => {
               const key = `${c.number}-${c.type}-${c.period}`;
               return (
-                <div key={key} onClick={() => setFocusKey(key)} className="py-2 px-1.5 hover:bg-[#F4F4F5]/80 rounded-lg flex flex-col gap-1">
+                <div key={key} onClick={() => setFocusKey(key)} className="min-h-[48px] py-2 px-1.5 hover:bg-[#F4F4F5]/80 rounded-lg flex flex-col gap-1 border-b border-[#F4F4F5]">
                   <div className="flex items-center gap-2">
-                    <div className="w-24 shrink-0 font-semibold truncate">{String(c.number).padStart(2,"0")} {c.name}</div>
-                    <span className="px-1.5 py-0.5 rounded bg-[#FEF3C7] text-[#92400E] text-[11px] font-bold border border-[#FDE68A]">{TYPE_KO[c.type]}</span>
+                    <div className="w-24 shrink-0 font-semibold truncate tnum">{String(c.number).padStart(2,"0")} {c.name}</div>
+                    <span className="px-1.5 py-0.5 rounded text-[11px] font-semibold border border-[#E4E4E7] bg-white text-[#18181B]">{TYPE_KO[c.type]}</span>
+                    <CategoryChip category={c.category} />
                     <button type="button" className="ml-auto material-symbols-outlined text-[16px] text-[#A1A1AA]"
                       onClick={() => void deleteAttendanceRecord(ownerSub, c).then(reload)}>close</button>
                   </div>
-                  <div className="inline-flex rounded-md border border-[#E4E4E7] p-0.5 bg-[#F4F4F5] w-fit text-[11px]">
+                  <div className="inline-flex flex-wrap gap-1 w-fit text-[11px]">
                     {CATS.map((cat) => (
                       <button key={cat} type="button" onClick={() => void save({ ...c, category: cat })}
-                        className={"px-1.5 py-0.5 rounded " + (c.category===cat ? "bg-white font-bold text-[#0F766E] shadow-sm" : "text-[#71717A]")}>
+                        className={"CategoryChip CategoryChip--" + cat + (c.category===cat ? " ring-2 ring-offset-1 ring-[#0F766E]" : " opacity-70 hover:opacity-100")}>
                         {CAT_KO[cat]}
                       </button>
                     ))}
@@ -296,15 +305,18 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
                     <div className="flex flex-wrap gap-1">
                       {[1,2,3,4,5,6,7].map((pr) => (
                         <button key={pr} type="button" onClick={() => void save({ ...c, period: pr })}
-                          className={"px-1.5 py-0.5 rounded text-[11px] border " + (c.period===pr ? "bg-[#0F766E] text-white border-[#0F766E]" : "border-[#E4E4E7]")}>
+                          className={"px-1.5 py-0.5 rounded text-[11px] border tnum " + (c.period===pr ? "bg-[#0F766E] text-white border-[#0F766E]" : "border-[#E4E4E7]")}>
                           {pr}교시
                         </button>
                       ))}
                     </div>
                   ) : null}
-                  <input className="h-8 rounded-md border border-[#E4E4E7] px-2 text-sm"
+                  <input className={"h-8 rounded-md border px-2 text-sm " + (c.category==="other" && !c.reason.trim() ? "border-[var(--error)]" : "border-[#E4E4E7]")}
                     defaultValue={c.reason} placeholder={c.category==="other" ? "사유 필수" : "사유"}
                     onFocus={() => setFocusKey(key)} onBlur={(e) => void save({ ...c, reason: e.target.value })} />
+                  {c.category==="other" && !c.reason.trim() ? (
+                    <p className="text-[11px] text-[var(--error)] m-0">기타는 사유가 필요합니다</p>
+                  ) : null}
                 </div>
               );
             })}

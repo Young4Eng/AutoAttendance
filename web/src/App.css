@@ -1,9 +1,9 @@
 
 :root {
-  font-family: system-ui, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  font-family: var(--sans);
   line-height: 1.5;
-  color: #1a1a1a;
-  background: #f4f6f8;
+  color: var(--text);
+  background: var(--canvas);
 }
 
 * { box-sizing: border-box; }
@@ -31,13 +31,13 @@ body {
   gap: 1rem;
 }
 
-.muted { color: #5c6570; margin: 0.25rem 0; }
-.error { color: #b42318; }
-.ok { color: #027a48; }
+.muted { color: var(--text-secondary); margin: 0.25rem 0; }
+.error { color: var(--error); }
+.ok { color: var(--primary-container); }
 
 .card {
-  background: #fff;
-  border: 1px solid #e4e7ec;
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1.25rem 1.35rem;
   margin-top: 1rem;
@@ -60,20 +60,29 @@ body {
 
 .btn {
   appearance: none;
-  border: 1px solid #d0d5dd;
-  background: #fff;
-  color: #1a1a1a;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
   border-radius: 8px;
   padding: 0.55rem 0.9rem;
   font: inherit;
   cursor: pointer;
 }
 
+.btn.primary {
+  background: var(--primary-container);
+  border-color: var(--primary-container);
+  color: var(--on-primary);
+}
+.btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
 .btn.secondary {
-  background: #1d4ed8;
-  border-color: #1d4ed8;
+  /* Send / queue CTA — coral only */
+  background: var(--send);
+  border-color: var(--send);
   color: #fff;
 }
+.btn.secondary:hover { background: var(--send-hover); border-color: var(--send-hover); }
 
 .btn.ghost {
   background: transparent;
@@ -105,7 +114,7 @@ th, td {
   border-bottom: 1px solid #eef1f4;
 }
 
-th { color: #475467; font-weight: 600; font-size: 0.9rem; }
+th { color: var(--text-secondary); font-weight: 600; font-size: 0.9rem; }
 
 
 .tiny { font-size: 0.85rem; }
@@ -129,7 +138,7 @@ th { color: #475467; font-weight: 600; font-size: 0.9rem; }
 
 .btn.danger {
   background: #b42318;
-  border-color: #b42318;
+  border-color: var(--error);
   color: #fff;
 }
 
@@ -142,7 +151,7 @@ th { color: #475467; font-weight: 600; font-size: 0.9rem; }
   padding-left: 0;
   border: none;
   text-decoration: underline;
-  color: #1d4ed8;
+  color: var(--primary-container);
 }
 
 .row-controls,
@@ -160,13 +169,13 @@ th { color: #475467; font-weight: 600; font-size: 0.9rem; }
   font-size: 0.9rem;
 }
 
-.field.compact span { font-weight: 600; color: #475467; }
+.field.compact span { font-weight: 600; color: var(--text-secondary); }
 
 .field input,
 .field select {
   font: inherit;
   padding: 0.4rem 0.5rem;
-  border: 1px solid #d0d5dd;
+  border: 1px solid var(--border);
   border-radius: 8px;
   min-width: 0;
 }
@@ -241,20 +250,39 @@ th { color: #475467; font-weight: 600; font-size: 0.9rem; }
 }
 
 .RowStatusChip {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
   font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.15rem 0.45rem;
+  font-weight: 500;
+  padding: 0 10px;
   border-radius: 999px;
-  background: #eef2ff;
-  color: #3538cd;
+  border: 1px solid transparent;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
 }
 
-.RowStatusChip.present { background: #ecfdf3; color: #027a48; }
-.RowStatusChip.status-draft { background: #f2f4f7; color: #475467; }
-.RowStatusChip.status-queued { background: #fffaeb; color: #b54708; }
-.RowStatusChip.status-synced { background: #ecfdf3; color: #027a48; }
-.RowStatusChip.status-error { background: #fef3f2; color: #b42318; }
+.RowStatusChip.present {
+  background: var(--chip-recognized-bg);
+  color: var(--chip-recognized-fg);
+  border-color: var(--chip-recognized-border);
+}
+.RowStatusChip.status-draft { background: var(--surface-muted); color: var(--text-secondary); }
+.RowStatusChip.status-queued {
+  background: var(--chip-illness-bg);
+  color: var(--chip-illness-fg);
+  border-color: var(--chip-illness-border);
+}
+.RowStatusChip.status-synced {
+  background: var(--chip-recognized-bg);
+  color: var(--chip-recognized-fg);
+  border-color: var(--chip-recognized-border);
+}
+.RowStatusChip.status-error {
+  background: var(--error-container);
+  color: var(--error);
+  border-color: #fecdd3;
+}
 
 .PreviewList-meta { margin: 0.15rem 0; font-size: 0.92rem; }
 
@@ -263,7 +291,8 @@ th { color: #475467; font-weight: 600; font-size: 0.9rem; }
 .dialog-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(16, 24, 40, 0.45);
+  background: rgba(24, 24, 27, 0.35);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
