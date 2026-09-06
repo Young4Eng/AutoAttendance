@@ -111,7 +111,11 @@ export function DayExceptionRow({ row, focused, onFocus, onSave, onDelete, onEnd
             }
             onClick={(e) => {
               e.stopPropagation();
-              onSave({ ...row, category: cat });
+              onSave({
+                ...row,
+                category: cat,
+                reason: cat === "other" && !row.reason.trim() ? "기타" : row.reason,
+              });
             }}
           >
             {cat === "recognized" ? "인정" : CATEGORY_LABELS[cat]}
