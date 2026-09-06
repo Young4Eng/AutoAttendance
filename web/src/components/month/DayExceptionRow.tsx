@@ -1,6 +1,6 @@
 import type { AttendanceRecord, AttendanceType, Category } from "../../types/models";
 import { CATEGORY_LABELS, TYPE_LABELS } from "../../lib/labels";
-import { REASON_PRESETS } from "../../lib/reasonPresets";
+import { REASON_PRESETS, reasonParts, toggleReason } from "../../lib/reasonPresets";
 import { typeChipClass } from "./chipStyles";
 import { displayName, padNum } from "./displayName";
 
@@ -149,6 +149,7 @@ export function DayExceptionRow({ row, focused, onFocus, onSave, onDelete, onEnd
           (otherBad ? "border-[var(--error)]" : "border-[#E4E4E7]")
         }
         placeholder={otherBad ? "사유 입력 (필수)" : "구체적 사유"}
+        key={row.reason}
         defaultValue={row.reason}
         onFocus={onFocus}
         onClick={(e) => e.stopPropagation()}
@@ -162,13 +163,13 @@ export function DayExceptionRow({ row, focused, onFocus, onSave, onDelete, onEnd
               type="button"
               className={
                 "px-2.5 py-1.5 rounded-lg text-sm border " +
-                (row.reason === r
+                (reasonParts(row.reason).includes(r)
                   ? "bg-primary/10 border-primary text-primary"
                   : "bg-white border-[#E4E4E7] text-on-surface-variant")
               }
               onClick={(e) => {
                 e.stopPropagation();
-                onSave({ ...row, reason: r });
+                onSave({ ...row, reason: toggleReason(row.reason, r) });
               }}
             >
               {r}

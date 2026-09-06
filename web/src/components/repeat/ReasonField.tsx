@@ -1,5 +1,5 @@
 import type { Category } from '../../types/models';
-import { REASON_PRESETS } from '../../lib/reasonPresets';
+import { REASON_PRESETS, reasonParts, toggleReason } from '../../lib/reasonPresets';
 
 const MAX = 50;
 
@@ -32,8 +32,13 @@ export function ReasonField({ value, onChange, required, category }: Props) {
             <button
               key={r}
               type="button"
-              className="px-2 py-0.5 rounded bg-surface-container-low border border-[#E4E4E7] text-[12px] hover:bg-teal-50"
-              onClick={() => onChange(r)}
+              className={
+                "px-2 py-0.5 rounded border text-[12px] " +
+                (reasonParts(value).includes(r)
+                  ? "bg-primary/10 border-primary text-primary"
+                  : "bg-surface-container-low border-[#E4E4E7] hover:bg-teal-50")
+              }
+              onClick={() => onChange(toggleReason(value, r))}
             >
               {r}
             </button>
