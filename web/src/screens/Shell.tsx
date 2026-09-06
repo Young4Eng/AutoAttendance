@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { PuzzleIcon } from "../components/PuzzleIcon";
 
 export type AppScreen = "month" | "preview" | "roster" | "repeat" | "guide" | "qa";
 
@@ -85,7 +86,11 @@ export function Shell({
             <ol className="m-0 pl-4 flex flex-col gap-0.5">
               <li>미리보기에서 대기열을 확장으로 보낸다.</li>
               <li>나이스 일일출결(담임용) 화면을 연다.</li>
-              <li>그 탭을 둔 채 크롬 오른쪽 위 퍼즐(확장)에서 출결메이트를 연다.</li>
+              <li className="flex items-start gap-1">
+                <span>그 탭을 둔 채 크롬 오른쪽 위</span>
+                <PuzzleIcon className="inline-block w-4 h-4 mt-0.5 shrink-0 text-[var(--text)]" />
+                <span>에서 출결메이트를 연다.</span>
+              </li>
               <li>「적용 후 저장」을 누른다. 출결마감은 누르지 않는다.</li>
             </ol>
             <button type="button" className="mt-1.5 text-[var(--primary-container)] font-semibold" onClick={() => onNav("guide")}>
