@@ -30,7 +30,7 @@ function refresh() {
 }
 
 function run(dryRun) {
-  elResult.textContent = dryRun ? "시운전 중…" : "저장 포함 적용 중…";
+  elResult.textContent = (dryRun ? "시운전 중…" : "저장 포함 적용 중…") + " Esc로 중단";
   btnDry.disabled = true;
   btnSave.disabled = true;
   chrome.runtime.sendMessage({ type: "run-apply", dryRun: dryRun }, (res) => {
@@ -77,3 +77,10 @@ btnClear.addEventListener("click", () => {
 });
 
 refresh();
+
+document.addEventListener("keydown", function (ev) {
+  if (ev.key !== "Escape" && ev.key !== "Esc") return;
+  chrome.runtime.sendMessage({ type: "abort-apply" }, function () {
+    elResult.textContent = "중단 요청";
+  });
+});

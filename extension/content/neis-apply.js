@@ -3385,6 +3385,7 @@
   }
 
   async function applyQueue(opts) {
+    window.__mateAbort = false;
     var items = ((opts && opts.items) || []).slice();
     var dryRun = !opts || opts.dryRun !== false;
     if (!items.length) return { ok: false, code: "empty_items" };
@@ -3419,6 +3420,9 @@
     var applied = 0;
     var lastDate = null;
     for (var row = 0; row < items.length; row++) {
+      if (aborted()) {
+        return { ok: false, code: "aborted", applied: applied, dryRun: dryRun };
+      }
       var item = items[row];
       var nextDate = normalizeDate(item.date);
       if (!dryRun && lastDate && nextDate && nextDate !== lastDate) {
@@ -3503,6 +3507,11 @@
     }
     if (message.type === "mate-ping") {
       sendResponse({ ok: true, ping: true });
+      return false;
+    }
+    if (message.type === "abort-apply") {
+      requestAbort();
+      sendResponse({ ok: true, aborted: true });
       return false;
     }
     if (message.type === "apply-queue") {

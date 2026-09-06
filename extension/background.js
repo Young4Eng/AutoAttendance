@@ -252,6 +252,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.type === "abort-apply" || message.type === "apply-aborted") {
+    findNeisTab().then(async (tab) => {
+      if (!tab?.id) {
+        sendResponse({ ok: true });
+        return;
+      }
+      const frames = await listFrames(tab.id);
+      await Promise.all(
+        frames.map((f) =>
+          chrome.tabs.sendMessage(tab.id, { type: "abort-apply" }, { frameId: f.frameId }).catch(() => null),
+        ),
+      );
+      sendResponse({ ok: true });
+    });
+    return true;
+  }
+
   if (message.type === "run-apply") {
     // dryRun 기본 true
     const dryRun = message.dryRun !== false;
