@@ -182,7 +182,6 @@ $$;
 
 revoke all on function replace_roster(jsonb) from public;
 grant execute on function replace_roster(jsonb) to authenticated;
-grant execute on function replace_roster(jsonb) to anon;
 
 create or replace function upsert_entry(row jsonb)
 returns void
@@ -245,7 +244,6 @@ $$;
 
 revoke all on function upsert_entry(jsonb) from public;
 grant execute on function upsert_entry(jsonb) to authenticated;
-grant execute on function upsert_entry(jsonb) to anon;
 
 create or replace function apply_repeat(
   p_grade int,
@@ -338,4 +336,3 @@ $$;
 
 revoke all on function apply_repeat(int, int, int, text, text, text, int, text, date, date) from public;
 grant execute on function apply_repeat(int, int, int, text, text, text, int, text, date, date) to authenticated;
-grant execute on function apply_repeat(int, int, int, text, text, text, int, text, date, date) to anon;
