@@ -1,3 +1,4 @@
+import { stripCsvFormula } from '../lib/csvSafe';
 /** grade,class,number,name — keep number gaps; never invent missing numbers. */
 
 export interface ParsedStudentRow {
@@ -75,7 +76,7 @@ export function parseRosterCsv(text: string): ParsedStudentRow[] {
     const gradeRaw = cols[gi] ?? '';
     const classRaw = cols[ci] ?? '';
     const numberRaw = cols[ni] ?? '';
-    const name = cols[namei] ?? '';
+    const name = stripCsvFormula(cols[namei] ?? '');
     // Reject "2학년"/"3반" style — digits only (readable csv_number in UI).
     if (!isDigitsOnly(gradeRaw) || !isDigitsOnly(classRaw) || !isDigitsOnly(numberRaw)) {
       throw new Error('csv_number');

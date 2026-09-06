@@ -4,6 +4,7 @@
  * read fallback when Supabase is unset / unreachable. Never dual-write ahead
  * of the server. No service_role in the browser.
  */
+import { stripCsvFormula } from '../lib/csvSafe';
 import type {
   AttendanceRecord,
   AttendanceType,
@@ -115,15 +116,19 @@ function rowOf(ownerSub: string, r: Omit<AttendanceRecord, "ownerSub">) {
     category: r.category,
     type: r.type,
     period: r.period,
-    reason: r.reason,
+    reason: stripCsvFormula(r.reason),
     status: r.status,
   };
 }
 
-export async function putAttendance(
-  ownerSub: string,
+PUTMARK  ownerSub: string,
   record: Omit<AttendanceRecord, "ownerSub">,
 ): Promise<void> {
+  record = {
+    ...record,
+    name: stripCsvFormula(record.name),
+    reason: stripCsvFormula(record.reason),
+  };
   clientValidate(record);
   const client = sb();
   if (client) {
@@ -155,6 +160,11 @@ export async function applyRepeat(
     end: string;
   },
 ): Promise<ApplyRepeatResult> {
+  args = {
+    ...args,
+    name: stripCsvFormula(args.name),
+    reason: stripCsvFormula(args.reason),
+  };
   const period = args.type === "absence" ? 0 : args.period;
   if (args.category === "other" && !args.reason.trim()) {
     throw new Error("reason_required");
