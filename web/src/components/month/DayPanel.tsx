@@ -1,5 +1,4 @@
 import type { AttendanceRecord, AttendanceType, Category, Student } from "../../types/models";
-import { REASON_PRESETS } from "../../lib/reasonPresets";
 import { DayExceptionRow } from "./DayExceptionRow";
 
 const TYPE_BTNS = [
@@ -16,6 +15,7 @@ type Props = {
   dayRows: AttendanceRecord[];
   rosterCount: number;
   pending: AttendanceType | null;
+  pendingCat: Category;
   bulk: boolean;
   picked: number[];
   q: string;
@@ -23,6 +23,7 @@ type Props = {
   focusKey: string | null;
   onClose: () => void;
   onPending: (t: AttendanceType | null) => void;
+  onPendingCat: (c: Category) => void;
   onBulk: (v: boolean) => void;
   onQ: (v: string) => void;
   onTogglePick: (n: number) => void;
@@ -43,6 +44,7 @@ export function DayPanel({
   dayRows,
   rosterCount,
   pending,
+  pendingCat,
   bulk,
   picked,
   q,
@@ -50,6 +52,7 @@ export function DayPanel({
   focusKey,
   onClose,
   onPending,
+  onPendingCat,
   onBulk,
   onQ,
   onTogglePick,
@@ -66,9 +69,12 @@ export function DayPanel({
   const early = dayRows.filter((r) => r.type === "early_leave").length;
   const result = dayRows.filter((r) => r.type === "result").length;
   const present = Math.max(0, rosterCount - new Set(dayRows.map((r) => r.number)).size);
-  const focused = dayRows.find((r) => `${r.number}-${r.type}-${r.period}` === focusKey) || dayRows[0];
-  const cat: Category = focused?.category ?? "illness";
-  const reasons = REASON_PRESETS[cat];
+  const CATS: { id: Category; label: string }[] = [
+    { id: "illness", label: "질병" },
+    { id: "unexcused", label: "미인정" },
+    { id: "other", label: "기타" },
+    { id: "recognized", label: "인정" },
+  ];
 
   const md = open.slice(5, 7);
   const dd = open.slice(8, 10);
@@ -126,6 +132,23 @@ export function DayPanel({
 
       <div className="p-3 bg-surface-container-low/40 border-b border-[#E4E4E7] flex flex-col gap-2">
         <div className="grid grid-cols-4 gap-1.5">
+          {CATS.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => onPendingCat(c.id)}
+              className={
+                "py-1.5 rounded-lg bg-surface-container-lowest border text-xs " +
+                (pendingCat === c.id
+                  ? "border-primary ring-1 ring-primary font-semibold"
+                  : "border-[#E4E4E7]")
+              }
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+        <div className="grid grid-cols-4 gap-1.5">
           {TYPE_BTNS.map(([k, lab, ic, col]) => (
             <button
               key={k}
@@ -147,23 +170,6 @@ export function DayPanel({
               <span>{lab}</span>
             </button>
           ))}
-        </div>
-        <div className="flex items-center gap-1 text-[11px] text-on-surface-variant overflow-x-auto">
-          <span className="shrink-0 font-medium">자주 쓰는 사유:</span>
-          {reasons.length === 0 ? (
-            <span className="text-outline">기타는 직접 입력</span>
-          ) : (
-            reasons.map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => onApplyReason(r)}
-                className="px-1.5 py-0.5 rounded bg-surface-container hover:bg-surface-container-high border border-[#E4E4E7] transition-colors whitespace-nowrap"
-              >
-                {r}
-              </button>
-            ))
-          )}
         </div>
         <div className="mt-1 p-2 rounded-lg bg-primary/5 border border-primary/20 flex items-center justify-between gap-2">
           <div className="flex items-start gap-1.5 min-w-0">

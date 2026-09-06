@@ -66,6 +66,7 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
   const [roster, setRoster] = useState<Student[]>([]);
   const [rows, setRows] = useState<AttendanceRecord[]>([]);
   const [pending, setPending] = useState<AttendanceType | null>(null);
+  const [pendingCat, setPendingCat] = useState<Category>("illness");
   const [bulk, setBulk] = useState(false);
   const [picked, setPicked] = useState<number[]>([]);
   const [q, setQ] = useState("");
@@ -153,13 +154,12 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
       class: s.class,
       number: s.number,
       name: s.name,
-      category: "illness",
+      category: pendingCat,
       type,
       period: type === "absence" ? 0 : 1,
       reason: "",
       status: "draft",
     });
-    setPending(null);
     setQ("");
   }
 
@@ -174,7 +174,7 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
         class: s.class,
         number: s.number,
         name: s.name,
-        category: "illness",
+        category: pendingCat,
         type: pending,
         period: pending === "absence" ? 0 : 1,
         reason: "",
@@ -183,7 +183,6 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
     }
     setPicked([]);
     setBulk(false);
-    setPending(null);
     setQ("");
   }
 
@@ -260,6 +259,7 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
                   dayRows={dayRows}
                   rosterCount={roster.length}
                   pending={pending}
+                  pendingCat={pendingCat}
                   bulk={bulk}
                   picked={picked}
                   q={q}
@@ -271,6 +271,7 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
                     setBulk(false);
                   }}
                   onPending={setPending}
+                  onPendingCat={setPendingCat}
                   onBulk={setBulk}
                   onQ={setQ}
                   onTogglePick={(n) =>

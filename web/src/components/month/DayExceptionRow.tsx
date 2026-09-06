@@ -2,6 +2,7 @@ import type { AttendanceRecord, AttendanceType, Category } from "../../types/mod
 import { CATEGORY_LABELS, TYPE_LABELS } from "../../lib/labels";
 import { typeChipClass } from "./chipStyles";
 import { displayName, padNum } from "./displayName";
+import { REASON_PRESETS } from "../../lib/reasonPresets";
 
 const CATS = Object.keys(CATEGORY_LABELS) as Category[];
 
@@ -101,6 +102,28 @@ export function DayExceptionRow({ row, focused, onFocus, onSave, onDelete }: Pro
       </button>
       {otherBad ? (
         <p className="w-full text-[11px] text-[var(--error)] m-0 pl-1">기타는 사유가 필요합니다</p>
+      ) : null}
+      {REASON_PRESETS[row.category].length > 0 ? (
+        <div className="w-full flex flex-wrap gap-1 pl-[4.25rem] pt-0.5">
+          {REASON_PRESETS[row.category].map((r) => (
+            <button
+              key={r}
+              type="button"
+              className={
+                "px-1.5 py-0.5 rounded text-[10px] border " +
+                (row.reason === r
+                  ? "bg-primary/10 border-primary text-primary"
+                  : "bg-surface-container border-[#E4E4E7] text-on-surface-variant")
+              }
+              onClick={(e) => {
+                e.stopPropagation();
+                onSave({ ...row, reason: r });
+              }}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
       ) : null}
     </div>
   );
