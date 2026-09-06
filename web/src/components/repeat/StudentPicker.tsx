@@ -66,7 +66,7 @@ export function StudentPicker({ query, onQuery, hits, pick, onPick }: Props) {
           </div>
         ) : null}
         {!pick && hits.length > 0 ? (
-          <div className="mt-2 flex flex-col gap-1 max-h-48 overflow-y-auto">
+          <div className="mt-2 grid grid-cols-2 gap-1 max-h-28 overflow-y-auto">
             {hits.map((s) => (
               <button
                 key={`${s.grade}-${s.class}-${s.number}`}
@@ -75,13 +75,10 @@ export function StudentPicker({ query, onQuery, hits, pick, onPick }: Props) {
                   onPick(s);
                   onQuery('');
                 }}
-                className="text-left px-3 py-2 rounded-lg border border-[#E4E4E7] hover:border-primary-container hover:bg-[#F0FDFA] transition-colors"
+                className="text-left px-2 py-1 rounded-md border border-[#E4E4E7] hover:border-teal-300 hover:bg-teal-50/50 transition-colors"
               >
-                <span className="font-semibold text-sm text-on-surface">
-                  {String(s.number).padStart(2, '0')}번 {displayName(s)}
-                </span>
-                <span className="text-xs text-on-surface-variant ml-2">
-                  {s.grade}학년 {s.class}반
+                <span className="font-semibold text-xs text-on-surface">
+                  {String(s.number).padStart(2, '0')} {displayName(s)}
                 </span>
               </button>
             ))}

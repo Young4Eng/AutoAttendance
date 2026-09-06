@@ -181,7 +181,7 @@
 <span class="">출결 일괄 관리 엔진</span>
 </div>
 <h1 class="font-display-lg text-display-lg text-on-surface tracking-tight">장기·반복 출결 등록</h1>
-<p class="font-body-md text-body-md text-on-surface-variant mt-1">종류는 결석·지각·조퇴·결과, 구분은 질병·미인정·기타·출석인정. 결석만 교시 없음. 주말(토·일)은 자동 제외. (#55)</p>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">학생 한 명을 지정하여 특정 기간이나 여러 날짜의 출결 예외를 일괄 생성합니다. 주말(토·일)은 자동으로 제외됩니다.</p>
 </div>
 <div class="flex items-center gap-space-xs bg-surface-container-low px-space-md py-space-xs rounded-lg shadow-sm shrink-0">
 <span class="material-symbols-outlined text-primary text-[18px]">verified</span>
@@ -200,12 +200,12 @@
 <div class="relative">
 <div class="flex items-center bg-surface-container-low rounded-lg px-space-md py-space-xs gap-space-sm">
 <span class="material-symbols-outlined text-outline text-[18px]">search</span>
-<input class="bg-transparent w-full text-on-surface font-title-md text-title-md focus:outline-none placeholder-outline truncate" placeholder="이름 또는 출석번호 검색..." type="text" value="학생01">
+<input class="bg-transparent w-full text-on-surface font-title-md text-title-md focus:outline-none placeholder-outline truncate" placeholder="이름 또는 출석번호 검색..." type="text" value="07번 최현우 (중학교 2학년 3반)">
 <span class="px-space-xs py-0.5 rounded bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-label-sm font-semibold shrink-0">선택됨</span>
 </div>
 <div class="mt-space-2xs flex items-center gap-space-xs text-on-surface-variant font-label-sm text-label-sm px-space-xs">
 <span class="material-symbols-outlined text-[14px] text-primary">badge</span>
-<span class="">선택됨 · 단일 학생</span>
+<span class="">학적 상태: 재학 (출결 통계: 이번 학기 누적 결석 0건)</span>
 </div>
 </div>
 <div class="pt-space-md flex items-center justify-between">
@@ -215,72 +215,58 @@
 </div>
 <span class="font-label-sm text-label-sm text-outline">NEIS 서식 표준</span>
 </div>
-<!-- #55: type=결석/지각/조퇴/결과, category=질병/미인정/기타/출석인정; 기준 교시는 type≠absence일 때만 -->
 <div class="flex flex-col gap-space-sm">
 <div>
 <label class="block font-label-md text-label-md text-on-surface-variant mb-space-2xs">출결 종류</label>
-<div class="grid grid-cols-4 gap-space-xs p-1 bg-surface-container rounded-lg" id="type-toggle-group" role="group" aria-label="출결 종류">
-<button data-type="absence" class="type-btn flex flex-col items-center justify-center py-space-sm px-space-xs rounded-lg transition-all bg-teal-50 text-teal-900 shadow-sm relative" type="button" aria-pressed="true">
-<span class="absolute top-1.5 right-1.5 flex h-2 w-2"><span class="relative inline-flex rounded-full h-2 w-2 bg-teal-600"></span></span>
-<span class="material-symbols-outlined text-[20px] mb-1 text-teal-700">person_off</span>
-<span class="font-title-md text-title-md font-semibold">결석</span>
-<span class="font-label-sm text-[10px] text-teal-700/80 mt-0.5 truncate">종일 · 교시 없음</span>
-</button>
-<button data-type="late" class="type-btn flex flex-col items-center justify-center py-space-sm px-space-xs rounded-lg transition-all bg-surface-container-low text-on-surface-variant hover:bg-surface-container" type="button" aria-pressed="false">
-<span class="material-symbols-outlined text-[20px] mb-1 text-outline">schedule</span>
-<span class="font-title-md text-title-md font-semibold">지각</span>
-<span class="font-label-sm text-[10px] text-outline mt-0.5 truncate">기준 교시 필요</span>
-</button>
-<button data-type="early_leave" class="type-btn flex flex-col items-center justify-center py-space-sm px-space-xs rounded-lg transition-all bg-surface-container-low text-on-surface-variant hover:bg-surface-container" type="button" aria-pressed="false">
-<span class="material-symbols-outlined text-[20px] mb-1 text-outline">logout</span>
-<span class="font-title-md text-title-md font-semibold">조퇴</span>
-<span class="font-label-sm text-[10px] text-outline mt-0.5 truncate">기준 교시 필요</span>
-</button>
-<button data-type="result" class="type-btn flex flex-col items-center justify-center py-space-sm px-space-xs rounded-lg transition-all bg-surface-container-low text-on-surface-variant hover:bg-surface-container" type="button" aria-pressed="false">
-<span class="material-symbols-outlined text-[20px] mb-1 text-outline">swap_horiz</span>
-<span class="font-title-md text-title-md font-semibold">결과</span>
-<span class="font-label-sm text-[10px] text-outline mt-0.5 truncate">기준 교시 필요</span>
-</button>
-</div>
-</div>
-<div>
-<label class="block font-label-md text-label-md text-on-surface-variant mb-space-2xs">출결 구분</label>
-<div class="grid grid-cols-4 gap-space-xs" id="category-toggle-group" role="group" aria-label="출결 구분">
-<button class="cat-btn flex flex-col items-center justify-center py-space-sm px-space-xs rounded-lg transition-all bg-amber-50 text-amber-900 shadow-sm relative" type="button" aria-pressed="true">
-<span class="absolute top-1.5 right-1.5 flex h-2 w-2"><span class="relative inline-flex rounded-full h-2 w-2 bg-amber-600"></span></span>
+<div class="grid grid-cols-4 gap-space-xs p-1 bg-surface-container rounded-lg" id="type-toggle-group"><button class="flex flex-col items-center justify-center py-space-sm px-space-xs rounded-lg transition-all bg-amber-50 text-amber-900 shadow-sm relative" type="button">
+<span class="absolute top-1.5 right-1.5 flex h-2 w-2">
+<span class="relative inline-flex rounded-full h-2 w-2 bg-amber-600"></span>
+</span>
 <span class="material-symbols-outlined text-[20px] mb-1 text-amber-700">healing</span>
 <span class="font-title-md text-title-md font-semibold">질병</span>
 <span class="font-label-sm text-[10px] text-amber-700/80 mt-0.5 truncate">진단서·처방전</span>
 </button>
-<button class="cat-btn flex flex-col items-center justify-center py-space-sm px-space-xs rounded-lg transition-all bg-surface-container-low text-on-surface-variant hover:bg-surface-container" type="button" aria-pressed="false">
+<button class="flex flex-col items-center justify-center py-space-sm px-space-xs rounded-lg transition-all bg-surface-container-low text-on-surface-variant hover:bg-surface-container" type="button">
 <span class="material-symbols-outlined text-[20px] mb-1 text-outline">event_busy</span>
 <span class="font-title-md text-title-md font-semibold">미인정</span>
 <span class="font-label-sm text-[10px] text-outline mt-0.5 truncate">무단·개인사정</span>
 </button>
-<button class="cat-btn flex flex-col items-center justify-center py-space-sm px-space-xs rounded-lg transition-all bg-surface-container-low text-on-surface-variant hover:bg-surface-container" type="button" aria-pressed="false">
+<button class="flex flex-col items-center justify-center py-space-sm px-space-xs rounded-lg transition-all bg-surface-container-low text-on-surface-variant hover:bg-surface-container" type="button">
 <span class="material-symbols-outlined text-[20px] mb-1 text-outline">help_outline</span>
 <span class="font-title-md text-title-md font-semibold">기타</span>
 <span class="font-label-sm text-[10px] text-outline mt-0.5 truncate">학교장 사전승인</span>
 </button>
-<button class="cat-btn flex flex-col items-center justify-center py-space-sm px-space-xs rounded-lg transition-all bg-surface-container-low text-on-surface-variant hover:bg-surface-container" type="button" aria-pressed="false">
+<button class="flex flex-col items-center justify-center py-space-sm px-space-xs rounded-lg transition-all bg-surface-container-low text-on-surface-variant hover:bg-surface-container" type="button">
 <span class="material-symbols-outlined text-[20px] mb-1 text-outline">task_alt</span>
 <span class="font-title-md text-title-md font-semibold">출석인정</span>
 <span class="font-label-sm text-[10px] text-outline mt-0.5 truncate">대회·격리·경조사</span>
+</button></div>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-space-2xs">사유 구분 (직접 선택)</label>
+<div class="grid grid-cols-4 gap-space-xs"><button class="flex flex-col items-center justify-center py-space-sm px-space-xs rounded-lg transition-all bg-amber-50 text-amber-900 shadow-sm relative" type="button">
+<span class="absolute top-1.5 right-1.5 flex h-2 w-2">
+<span class="relative inline-flex rounded-full h-2 w-2 bg-amber-600"></span>
+</span>
+<span class="material-symbols-outlined text-[20px] mb-1 text-amber-700">healing</span>
+<span class="font-title-md text-title-md font-semibold">질병</span>
+<span class="font-label-sm text-[10px] text-amber-700/80 mt-0.5 truncate">진단서·처방전</span>
 </button>
-</div>
-</div>
-<div id="period-block" class="hidden" hidden>
-<label class="block font-label-md text-label-md text-on-surface-variant mb-space-2xs">기준 교시 P</label>
-<p class="font-label-sm text-label-sm text-outline mb-space-2xs">지각·조퇴·결과만 필요. 결석은 교시 없음.</p>
-<div class="flex flex-wrap gap-1" id="period-toggle-group" role="group" aria-label="기준 교시">
-<button type="button" data-period="1" class="period-btn px-3 py-2 rounded-lg border border-[#E4E4E7] text-sm text-on-surface-variant hover:bg-surface-container">1교시</button>
-<button type="button" data-period="2" class="period-btn px-3 py-2 rounded-lg border border-[#E4E4E7] text-sm text-on-surface-variant hover:bg-surface-container">2교시</button>
-<button type="button" data-period="3" class="period-btn px-3 py-2 rounded-lg border bg-[#0F766E] text-white border-[#0F766E] text-sm" aria-pressed="true">3교시</button>
-<button type="button" data-period="4" class="period-btn px-3 py-2 rounded-lg border border-[#E4E4E7] text-sm text-on-surface-variant hover:bg-surface-container">4교시</button>
-<button type="button" data-period="5" class="period-btn px-3 py-2 rounded-lg border border-[#E4E4E7] text-sm text-on-surface-variant hover:bg-surface-container">5교시</button>
-<button type="button" data-period="6" class="period-btn px-3 py-2 rounded-lg border border-[#E4E4E7] text-sm text-on-surface-variant hover:bg-surface-container">6교시</button>
-<button type="button" data-period="7" class="period-btn px-3 py-2 rounded-lg border border-[#E4E4E7] text-sm text-on-surface-variant hover:bg-surface-container">7교시</button>
-</div>
+<button class="flex flex-col items-center justify-center py-space-sm px-space-xs rounded-lg transition-all bg-surface-container-low text-on-surface-variant hover:bg-surface-container" type="button">
+<span class="material-symbols-outlined text-[20px] mb-1 text-outline">event_busy</span>
+<span class="font-title-md text-title-md font-semibold">미인정</span>
+<span class="font-label-sm text-[10px] text-outline mt-0.5 truncate">무단·개인사정</span>
+</button>
+<button class="flex flex-col items-center justify-center py-space-sm px-space-xs rounded-lg transition-all bg-surface-container-low text-on-surface-variant hover:bg-surface-container" type="button">
+<span class="material-symbols-outlined text-[20px] mb-1 text-outline">help_outline</span>
+<span class="font-title-md text-title-md font-semibold">기타</span>
+<span class="font-label-sm text-[10px] text-outline mt-0.5 truncate">학교장 사전승인</span>
+</button>
+<button class="flex flex-col items-center justify-center py-space-sm px-space-xs rounded-lg transition-all bg-surface-container-low text-on-surface-variant hover:bg-surface-container" type="button">
+<span class="material-symbols-outlined text-[20px] mb-1 text-outline">task_alt</span>
+<span class="font-title-md text-title-md font-semibold">출석인정</span>
+<span class="font-label-sm text-[10px] text-outline mt-0.5 truncate">대회·격리·경조사</span>
+</button></div>
 </div>
 </div>
 <div class="pt-space-md flex items-center justify-between">
@@ -335,9 +321,9 @@
 <span class="font-label-sm text-label-sm text-outline">생기부 및 NEIS 반영 문구</span>
 </div>
 <div>
-<textarea class="w-full bg-surface-container-low rounded-lg p-space-md text-on-surface font-body-md text-body-md focus:outline-none placeholder-outline resize-none" placeholder="사유 입력" rows="2"></textarea>
+<textarea class="w-full bg-surface-container-low rounded-lg p-space-md text-on-surface font-body-md text-body-md focus:outline-none placeholder-outline resize-none" placeholder="구체적인 사유를 입력하세요..." rows="2">골절 수술 및 입원 치료 (입퇴원확인서 구비)</textarea>
 <div class="flex items-center justify-between mt-space-2xs px-space-2xs">
-<span class="font-label-sm text-label-sm text-outline">기타 구분일 때 사유 필수 · 증빙은 학교 규정에 따름</span>
+<span class="font-label-sm text-label-sm text-outline">증빙서류: 병원 진단서 및 입퇴원확인서 첨부 확인 필요</span>
 <span class="font-label-sm text-label-sm text-outline">28 / 50자</span>
 </div>
 </div>
@@ -360,13 +346,11 @@
 </div>
 <span class="px-2 py-0.5 rounded-full bg-primary-fixed font-label-sm text-label-sm text-on-primary-fixed-variant font-semibold">총 2건 대기</span>
 </div>
-<div class="flex flex-col gap-space-md">
-<div class="p-space-md rounded-lg bg-surface-container-low flex flex-col gap-space-xs shadow-sm">
+<div class="flex flex-col gap-space-md"><div class="p-space-md rounded-lg bg-surface-container-low flex flex-col gap-space-xs shadow-sm">
 <div class="flex items-center justify-between gap-space-xs">
-<div class="flex items-center gap-space-xs min-w-0 flex-wrap">
-<span class="font-title-md text-title-md font-semibold text-on-surface truncate">학생01</span>
-<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-label-sm text-label-sm font-semibold shrink-0">질병지각</span>
-<span class="px-2 py-0.5 rounded-full bg-teal-100 text-teal-900 font-label-sm text-label-sm font-semibold shrink-0">P3</span>
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="font-title-md text-title-md font-semibold text-on-surface truncate">07번 최현우</span>
+<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-label-sm text-label-sm font-semibold shrink-0">질병 결석</span>
 </div>
 <div class="flex items-center gap-1 shrink-0">
 <button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container-high transition-colors" title="수정" type="button">
@@ -381,17 +365,19 @@
 <span class="material-symbols-outlined text-[16px] text-primary shrink-0">date_range</span>
 <span class="truncate">2025.09.15 ~ 2025.09.19 (평일 5일간)</span>
 </div>
-<p class="font-body-md text-body-md text-on-surface-variant bg-surface-container-lowest p-space-xs rounded text-sm mt-1 text-outline">사유 입력</p>
+<p class="font-body-md text-body-md text-on-surface-variant bg-surface-container-lowest p-space-xs rounded text-sm mt-1">
+              골절 수술 및 입원 치료 (입퇴원확인서 구비)
+            </p>
 <div class="flex items-center justify-between pt-space-xs text-outline font-label-sm text-label-sm">
 <span class="truncate">작성: 오늘 08:42</span>
-<span class="text-primary font-medium shrink-0">대기열 준비</span>
+<span class="text-primary font-medium shrink-0">NEIS 송신 준비완료</span>
 </div>
 </div>
 <div class="p-space-md rounded-lg bg-surface-container-low flex flex-col gap-space-xs shadow-sm">
 <div class="flex items-center justify-between gap-space-xs">
-<div class="flex items-center gap-space-xs min-w-0 flex-wrap">
-<span class="font-title-md text-title-md font-semibold text-on-surface truncate">학생01</span>
-<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-label-sm text-label-sm font-semibold shrink-0">질병결석</span>
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="font-title-md text-title-md font-semibold text-on-surface truncate">19번 정예린</span>
+<span class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-900 font-label-sm text-label-sm font-semibold shrink-0">기타 결과</span>
 </div>
 <div class="flex items-center gap-1 shrink-0">
 <button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container-high transition-colors" title="수정" type="button">
@@ -403,15 +389,17 @@
 </div>
 </div>
 <div class="flex items-center gap-space-xs text-on-surface-variant font-body-code text-body-code mt-1">
-<span class="material-symbols-outlined text-[16px] text-primary shrink-0">date_range</span>
-<span class="truncate">2025.09.22 ~ 2025.09.24 (평일 3일간 · 교시 없음)</span>
+<span class="material-symbols-outlined text-[16px] text-primary shrink-0">repeat</span>
+<span class="truncate">2025.09.05 ~ 2025.09.26 (매주 금요일, 총 4회)</span>
 </div>
-<p class="font-body-md text-body-md text-on-surface-variant bg-surface-container-lowest p-space-xs rounded text-sm mt-1 text-outline">사유 입력</p>
+<p class="font-body-md text-body-md text-on-surface-variant bg-surface-container-lowest p-space-xs rounded text-sm mt-1">
+              특기 적성 원외 진로체험 위탁 교육 (6교시 결과)
+            </p>
 <div class="flex items-center justify-between pt-space-xs text-outline font-label-sm text-label-sm">
 <span class="truncate">작성: 어제 16:15</span>
-<span class="text-primary font-medium shrink-0">대기열 준비</span>
+<span class="text-primary font-medium shrink-0">주기적 자동 스케줄</span>
 </div>
-</div></div></div>
+</div></div>
 </div>
 
 </div>
@@ -432,96 +420,4 @@
 
 
 
-
-<script>
-/* #55 stitch: type vs category; hide period when type=absence */
-(function () {
-  var typeGroup = document.getElementById("type-toggle-group");
-  var periodBlock = document.getElementById("period-block");
-  if (!typeGroup || !periodBlock) return;
-  function setActive(btns, active, onCls, offCls) {
-    btns.forEach(function (b) {
-      var isOn = b === active;
-      b.setAttribute("aria-pressed", isOn ? "true" : "false");
-      b.className = b.className
-        .replace(/\bbg-teal-50\b|\btext-teal-900\b|\bshadow-sm\b|\bbg-amber-50\b|\btext-amber-900\b|\bbg-surface-container-low\b|\btext-on-surface-variant\b|\bhover:bg-surface-container\b|\bbg-\[#0F766E\]\b|\btext-white\b|\bborder-\[#0F766E\]\b/g, "")
-        .trim();
-    });
-  }
-  function syncPeriod(type) {
-    var show = type !== "absence";
-    periodBlock.hidden = !show;
-    periodBlock.classList.toggle("hidden", !show);
-  }
-  typeGroup.addEventListener("click", function (e) {
-    var btn = e.target.closest(".type-btn");
-    if (!btn) return;
-    typeGroup.querySelectorAll(".type-btn").forEach(function (b) {
-      var on = b === btn;
-      b.setAttribute("aria-pressed", on ? "true" : "false");
-      var dot = b.querySelector(".absolute");
-      if (dot) dot.remove();
-      if (on) {
-        b.className = "type-btn flex flex-col items-center justify-center py-space-sm px-space-xs rounded-lg transition-all bg-teal-50 text-teal-900 shadow-sm relative";
-        b.insertAdjacentHTML("afterbegin", '<span class="absolute top-1.5 right-1.5 flex h-2 w-2"><span class="relative inline-flex rounded-full h-2 w-2 bg-teal-600"></span></span>');
-        var icon = b.querySelector(".material-symbols-outlined");
-        if (icon) { icon.classList.remove("text-outline"); icon.classList.add("text-teal-700"); }
-        var sub = b.querySelector(".font-label-sm");
-        if (sub) { sub.className = "font-label-sm text-[10px] text-teal-700/80 mt-0.5 truncate"; }
-      } else {
-        b.className = "type-btn flex flex-col items-center justify-center py-space-sm px-space-xs rounded-lg transition-all bg-surface-container-low text-on-surface-variant hover:bg-surface-container";
-        var icon2 = b.querySelector(".material-symbols-outlined");
-        if (icon2) { icon2.classList.remove("text-teal-700"); icon2.classList.add("text-outline"); }
-        var sub2 = b.querySelector(".font-label-sm");
-        if (sub2) { sub2.className = "font-label-sm text-[10px] text-outline mt-0.5 truncate"; }
-      }
-    });
-    syncPeriod(btn.getAttribute("data-type"));
-  });
-  var catGroup = document.getElementById("category-toggle-group");
-  if (catGroup) {
-    catGroup.addEventListener("click", function (e) {
-      var btn = e.target.closest(".cat-btn");
-      if (!btn) return;
-      catGroup.querySelectorAll(".cat-btn").forEach(function (b) {
-        var on = b === btn;
-        b.setAttribute("aria-pressed", on ? "true" : "false");
-        var dot = b.querySelector(".absolute");
-        if (dot) dot.remove();
-        if (on) {
-          b.className = "cat-btn flex flex-col items-center justify-center py-space-sm px-space-xs rounded-lg transition-all bg-amber-50 text-amber-900 shadow-sm relative";
-          b.insertAdjacentHTML("afterbegin", '<span class="absolute top-1.5 right-1.5 flex h-2 w-2"><span class="relative inline-flex rounded-full h-2 w-2 bg-amber-600"></span></span>');
-          var icon = b.querySelector(".material-symbols-outlined");
-          if (icon) { icon.classList.remove("text-outline"); icon.classList.add("text-amber-700"); }
-          var sub = b.querySelector(".font-label-sm");
-          if (sub) { sub.className = "font-label-sm text-[10px] text-amber-700/80 mt-0.5 truncate"; }
-        } else {
-          b.className = "cat-btn flex flex-col items-center justify-center py-space-sm px-space-xs rounded-lg transition-all bg-surface-container-low text-on-surface-variant hover:bg-surface-container";
-          var icon2 = b.querySelector(".material-symbols-outlined");
-          if (icon2) { icon2.classList.remove("text-amber-700"); icon2.classList.add("text-outline"); }
-          var sub2 = b.querySelector(".font-label-sm");
-          if (sub2) { sub2.className = "font-label-sm text-[10px] text-outline mt-0.5 truncate"; }
-        }
-      });
-    });
-  }
-  var periodGroup = document.getElementById("period-toggle-group");
-  if (periodGroup) {
-    periodGroup.addEventListener("click", function (e) {
-      var btn = e.target.closest(".period-btn");
-      if (!btn) return;
-      periodGroup.querySelectorAll(".period-btn").forEach(function (b) {
-        var on = b === btn;
-        b.setAttribute("aria-pressed", on ? "true" : "false");
-        if (on) {
-          b.className = "period-btn px-3 py-2 rounded-lg border bg-[#0F766E] text-white border-[#0F766E] text-sm";
-        } else {
-          b.className = "period-btn px-3 py-2 rounded-lg border border-[#E4E4E7] text-sm text-on-surface-variant hover:bg-surface-container";
-        }
-      });
-    });
-  }
-  syncPeriod("absence");
-})();
-</script>
 </body></html>

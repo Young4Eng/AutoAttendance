@@ -11,9 +11,8 @@ export function RepeatHero() {
           장기·반복 출결 등록
         </h1>
         <p className="text-[13px] leading-5 text-on-surface-variant mt-1 mb-0">
-          학생 한 명을 지정하여 특정 기간의 출결 예외를 일괄 생성합니다. 주말(토·일)은 자동으로
-          제외됩니다. 종류는 지각·조퇴·결석·결과, 구분은 질병·미인정·기타·출석인정. 결석만 교시
-          없음. (#55)
+          학생 한 명을 지정하여 특정 기간이나 여러 날짜의 출결 예외를 일괄 생성합니다. 주말(토·일)은
+          자동으로 제외됩니다.
         </p>
       </div>
       <div className="flex items-center gap-1.5 bg-surface-container-low px-4 py-2 rounded-lg shadow-sm shrink-0">

@@ -202,24 +202,27 @@ export function DayPanel({
             onChange={(e) => onQ(e.target.value)}
             placeholder="번호 또는 이름 일부"
           />
-          <div className="flex flex-col gap-1 max-h-32 overflow-y-auto">
+          <div className="grid grid-cols-2 gap-1 max-h-28 overflow-y-auto pr-0.5">
             {hits.length === 0 ? (
-              <p className="text-sm text-on-surface-variant m-0">명단에서 CSV를 먼저 가져오세요.</p>
+              <p className="col-span-2 text-xs text-on-surface-variant m-0">명단에서 CSV를 먼저 가져오세요.</p>
             ) : null}
             {hits.map((s) => (
               <button
                 key={s.number}
                 type="button"
                 className={
-                  "text-left px-2 py-1.5 rounded-lg text-sm " +
-                  (picked.includes(s.number) ? "bg-[#CCFBF1]" : "hover:bg-surface-container")
+                  "text-left px-2 py-1 rounded-md text-[12px] leading-tight border transition-colors " +
+                  (picked.includes(s.number)
+                    ? "bg-teal-50 border-teal-200 text-teal-900"
+                    : "bg-white border-[#E4E4E7] hover:border-teal-300 hover:bg-teal-50/40")
                 }
                 onClick={() => {
                   if (bulk) onTogglePick(s.number);
                   else if (pending) void onAddOne(s, pending);
                 }}
               >
-                {s.number} {s.name || `학생${String(s.number).padStart(2, "0")}`}
+                <span className="font-semibold">{String(s.number).padStart(2,"0")}</span>
+                <span className="ml-1 truncate">{s.name || `학생${String(s.number).padStart(2, "0")}`}</span>
               </button>
             ))}
           </div>

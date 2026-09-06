@@ -9,14 +9,13 @@ import { ConfirmSendDialog } from '../components/ConfirmSendDialog';
 import { ConfirmClearDialog } from '../components/ConfirmClearDialog';
 import { QueueHero } from '../components/queue/QueueHero';
 import { ExtensionStatusBanner } from '../components/queue/ExtensionStatusBanner';
-import { QueueFilterBar, type WeekTab } from '../components/queue/QueueFilterBar';
+import { QueueFilterBar, type ScopeTab } from '../components/queue/QueueFilterBar';
 import { DateAccordionGroup } from '../components/queue/DateAccordionGroup';
 import { QueueStickyAside } from '../components/queue/QueueStickyAside';
 import { sendToExtension } from '../lib/sendToExtension';
 import {
   displayStudentName,
   recordKey,
-  weekOfMonth,
   type CategoryFilter,
 } from '../lib/recordKey';
 
@@ -52,7 +51,17 @@ export function SendPreviewScreen({ owner, date, periodCount: _periodCount, onBa
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [evidence, setEvidence] = useState<Set<string>>(() => new Set());
   const [held, setHeld] = useState<Set<string>>(() => new Set());
-  const [week, setWeek] = useState<WeekTab>('all');
+  const monthNow = () => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const last = new Date(y, d.getMonth() + 1, 0).getDate();
+    return { from: `${y}-${m}-01`, to: `${y}-${m}-${String(last).padStart(2, '0')}` };
+  };
+  const initial = monthNow();
+  const [scope, setScope] = useState<ScopeTab>('month');
+  const [from, setFrom] = useState(initial.from);
+  const [to, setTo] = useState(initial.to);
   const [category, setCategory] = useState<CategoryFilter>('all');
   const [query, setQuery] = useState('');
   const [extOk, setExtOk] = useState(true);
@@ -77,16 +86,6 @@ export function SendPreviewScreen({ owner, date, periodCount: _periodCount, onBa
     [records, held],
   );
 
-  const weekCounts = useMemo(() => {
-    const c: Record<WeekTab, number> = { all: active.length, 1: 0, 2: 0, 3: 0, 4: 0 };
-    for (const r of active) {
-      const w = weekOfMonth(r.date);
-      if (w <= 4) c[w as 1 | 2 | 3 | 4] += 1;
-      else c[4] += 1;
-    }
-    return c;
-  }, [active]);
-
   const categoryCounts = useMemo(() => {
     const c: Record<Category | 'all', number> = {
       all: active.length,
@@ -102,11 +101,8 @@ export function SendPreviewScreen({ owner, date, periodCount: _periodCount, onBa
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return active.filter((r) => {
-      if (week !== 'all') {
-        const w = weekOfMonth(r.date);
-        const bucket = w <= 4 ? w : 4;
-        if (bucket !== week) return false;
-      }
+      if (from && r.date < from) return false;
+      if (to && r.date > to) return false;
       if (category !== 'all' && r.category !== category) return false;
       if (!q) return true;
       const name = displayStudentName(r).toLowerCase();
@@ -117,7 +113,7 @@ export function SendPreviewScreen({ owner, date, periodCount: _periodCount, onBa
         r.date.includes(q)
       );
     });
-  }, [active, week, category, query]);
+  }, [active, from, to, category, query]);
 
   const byDate = useMemo(() => {
     const map = new Map<string, AttendanceRecord[]>();
@@ -339,15 +335,25 @@ export function SendPreviewScreen({ owner, date, periodCount: _periodCount, onBa
             total={filtered.length}
             selectedCount={selectedVisible.length}
             allSelected={allSelected}
-            week={week}
-            weekCounts={weekCounts}
+            scope={scope}
+            from={from}
+            to={to}
             category={category}
             categoryCounts={categoryCounts}
             query={query}
             onToggleAll={toggleAll}
             onSendSelected={openSend}
             onHoldSelected={holdSelected}
-            onWeek={setWeek}
+            onScope={(s) => {
+              setScope(s);
+              if (s === 'month') {
+                const m = monthNow();
+                setFrom(m.from);
+                setTo(m.to);
+              }
+            }}
+            onFrom={setFrom}
+            onTo={setTo}
             onCategory={setCategory}
             onQuery={setQuery}
           />
