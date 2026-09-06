@@ -16,3 +16,5 @@
 앱 주소 예: `http://localhost:5173/stitch/month/code.html`
 
 `repeat`: #55 교정 — 출결 종류=결석·지각·조퇴·결과 / 출결 구분=질병·미인정·기타·출석인정(1회) / 기준 교시 P는 결석 제외.
+
+`month`·`day-panel`: #69 — 실명 목업→학생NN, 목록 짧게+스크롤.
