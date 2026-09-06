@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { parseRosterCsv } from "../csv/parseRoster";
+import { decodeRosterCsvFile } from "../csv/decodeRoster";
+import { formatRosterCsvError, parseRosterCsv, sampleRosterCsv } from "../csv/parseRoster";
 import {
   deleteStudent,
   getSettings,
@@ -19,10 +20,6 @@ type Props = {
   onNav: (s: AppScreen) => void;
   onLogout: () => void;
 };
-
-function templateCsv(grade: number, klass: number) {
-  return `grade,class,number,name\n${grade},${klass},1,\n${grade},${klass},2,\n`;
-}
 
 export function RosterScreen({ ownerSub, teacherLabel, screen, onNav, onLogout }: Props) {
   const [rows, setRows] = useState<Student[]>([]);
@@ -61,9 +58,10 @@ export function RosterScreen({ ownerSub, teacherLabel, screen, onNav, onLogout }
     .filter((s) => !q.trim() || String(s.number).startsWith(q.trim()) || s.name.includes(q.trim()));
 
   function downloadTemplate() {
-    const blob = new Blob([templateCsv(settings.grade, settings.class)], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob([sampleRosterCsv(settings.grade, settings.class)], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
+    a.download = "roster-sample.csv";
     a.click();
     URL.revokeObjectURL(a.href);
   }
@@ -96,6 +94,11 @@ export function RosterScreen({ ownerSub, teacherLabel, screen, onNav, onLogout }
             <button type="button" className="px-3 py-2 rounded-xl bg-[#0F766E] text-white text-sm" onClick={() => setForm({ number: String((enrolled.at(-1)?.number ?? 0) + 1), name: "", note: "", status: "enrolled" })}>학생 추가</button>
           </div>
         </div>
+        <p className="text-xs text-[#71717A] mb-3 leading-relaxed">
+          grade·class·number는 숫자만 / UTF-8 CSV / 실명 커밋 금지.
+          엑셀은 「CSV UTF-8(쉼표로 분리)」로 저장하세요. CP949(한글 Windows)도 자동 인식합니다.
+          「CSV 양식 받기」는 결번 예시(1·2·3·4·7·9, 학생01…) 샘플입니다.
+        </p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           <div className="px-4 py-3 rounded-xl bg-[#F0EDF1]"><div className="text-xs text-[#71717A]">실제 재적</div><div className="text-lg font-semibold">{enrolled.length}명</div></div>
           <div className="px-4 py-3 rounded-xl bg-[#F0EDF1]">
@@ -127,7 +130,12 @@ export function RosterScreen({ ownerSub, teacherLabel, screen, onNav, onLogout }
         <input ref={fileRef} type="file" accept=".csv,text/csv" hidden onChange={(e) => {
           const f = e.target.files?.[0];
           if (!f) return;
-          void f.text().then(parseRosterCsv).then((parsed) => replaceRoster(ownerSub, parsed)).then(reload).then(() => setMsg("가져왔습니다")).catch((err) => setMsg(String(err)));
+          void decodeRosterCsvFile(f)
+            .then(parseRosterCsv)
+            .then((parsed) => replaceRoster(ownerSub, parsed))
+            .then(reload)
+            .then(() => setMsg("가져왔습니다"))
+            .catch((err) => setMsg(formatRosterCsvError(err)));
           e.target.value = "";
         }} />
         {form ? (
@@ -152,7 +160,7 @@ export function RosterScreen({ ownerSub, teacherLabel, screen, onNav, onLogout }
         <p className="text-xs text-[#71717A] mb-2">결번은 당기지 않습니다.</p>
         {rows.length === 0 ? (
           <div className="mb-4 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-bg)] px-4 py-3 text-sm text-[var(--accent-active)]">
-            명단 없음 · CSV 양식으로 등록하거나 「학생 추가」로 시작하세요. 빈 번호(결번)는 채우지 않습니다.
+            명단 없음 · 「CSV 양식 받기」샘플을 올리거나 「학생 추가」로 시작하세요. 빈 번호(결번)는 채우지 않습니다.
           </div>
         ) : null}
         <div className="bg-white rounded-xl border border-[#E4E4E7] overflow-hidden">

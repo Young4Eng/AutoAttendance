@@ -4,7 +4,8 @@ Vite + React + TypeScript
 크롬 확장 나이스 DOM Firestore Drive 분석은 이 폴더에 없습니다.
 
 ## 폴더
-web/fixtures/roster-gaps.csv — 번호 1,2,3,4,7,9
+web/fixtures/roster-gaps.csv — 번호 1,2,3,4,7,9 (학생01…)
+CSV: grade·class·number 숫자만 / UTF-8 우선·CP949 재시도 / 실명 커밋 금지
 web/src/auth csv db types App.tsx
 web/.env.example SECURITY-NOTES.md
 
