@@ -36,7 +36,7 @@ export function QueueHero({ total, grade, classNum, onSendAll }: Props) {
         </div>
         <p className="text-sm text-on-surface-variant mt-0.5 mb-0">
           <span className="font-medium text-on-surface">{classLabel}</span> 출결 승인 대기
-          목록입니다. 최종 점검 후 브라우저 확장으로 나이스에 주입합니다.
+          목록입니다. 나이스에 이미 입력된 건을 다시 넣으면 오류가 납니다. 빈 칸만 보내세요.
         </p>
       </div>
       <div className="flex items-center gap-2 shrink-0">
