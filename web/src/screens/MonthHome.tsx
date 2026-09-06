@@ -5,7 +5,7 @@ import {
   listRoster,
   putAttendance,
 } from "../db/store";
-import type { AttendanceRecord, AttendanceType, Student } from "../types/models";
+import type { AttendanceRecord, AttendanceType, Category, Student } from "../types/models";
 import { Shell, type AppScreen } from "./Shell";
 import { MonthHero } from "../components/month/MonthHero";
 import { MonthCalendar } from "../components/month/MonthCalendar";
@@ -186,13 +186,6 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
     setQ("");
   }
 
-  async function applyReason(text: string) {
-    const target =
-      dayRows.find((r) => `${r.number}-${r.type}-${r.period}` === focusKey) ||
-      dayRows[dayRows.length - 1];
-    if (!target) return;
-    await save({ ...target, reason: text });
-  }
 
   function selectDay(key: string) {
     setOpen(key);
@@ -279,7 +272,6 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
                   }
                   onConfirmPicks={() => void confirmPicks()}
                   onAddOne={(s, t) => void addOne(s, t)}
-                  onApplyReason={(text) => void applyReason(text)}
                   onFocusKey={setFocusKey}
                   onSave={(next, prev) => void save(next, prev)}
                   onDelete={(r) => void deleteAttendanceRecord(ownerSub, r).then(reload)}

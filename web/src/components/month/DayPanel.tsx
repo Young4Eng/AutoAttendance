@@ -29,7 +29,6 @@ type Props = {
   onTogglePick: (n: number) => void;
   onConfirmPicks: () => void;
   onAddOne: (s: Student, t: AttendanceType) => void;
-  onApplyReason: (text: string) => void;
   onFocusKey: (k: string | null) => void;
   onSave: (next: AttendanceRecord, previous?: AttendanceRecord) => void;
   onDelete: (r: AttendanceRecord) => void;
@@ -58,7 +57,6 @@ export function DayPanel({
   onTogglePick,
   onConfirmPicks,
   onAddOne,
-  onApplyReason,
   onFocusKey,
   onSave,
   onDelete,
