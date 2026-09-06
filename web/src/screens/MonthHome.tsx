@@ -128,6 +128,12 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
     }
     await putAttendance(ownerSub, next);
     await reload();
+    const prevKey = previous
+      ? `${previous.number}-${previous.type}-${previous.period}`
+      : `${next.number}-${next.type}-${next.period}`;
+    if (!focusKey || focusKey === prevKey) {
+      setFocusKey(`${next.number}-${next.type}-${next.period}`);
+    }
   }
 
   async function addOne(s: Student, type: AttendanceType) {
