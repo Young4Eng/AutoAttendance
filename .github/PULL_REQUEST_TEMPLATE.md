@@ -73,3 +73,11 @@ CI·저장소에는 가명만 사용한다 (`학생01`).
 
 보안 판정: 통과 / 수정 후 재검토 / 차단  
 근거:
+
+## 보안 유지 (SECURITY.md 0.2)
+
+- [ ] RPC 소유자는 `auth.uid()` (클라이언트 owner_id 신뢰 금지)
+- [ ] 확장 허용 주소에 Preview·임의 도메인 추가 없음. 스토어 패키지는 프로덕션 웹만
+- [ ] `dangerouslySetInnerHTML`·시안 HTML 통째 삽입 없음
+- [ ] 출결마감 자동화 없음
+- [ ] service_role / `.env` 값 커밋 없음

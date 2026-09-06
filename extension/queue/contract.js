@@ -28,6 +28,7 @@ export const TYPES = Object.freeze([
   "result",
 ]);
 
+/** 개발: localhost. 스토어 패키지에서는 vercel 프로덕션만 남긴다. Preview·임의 도메인 금지. SECURITY.md 0.2 */
 const ALLOWED_ORIGINS = Object.freeze(["http://localhost:5173", "https://young4eng.github.io", "https://auto-attendance-six.vercel.app"]);
 
 export function originAllowed(urlOrOrigin) {
