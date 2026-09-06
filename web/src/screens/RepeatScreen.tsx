@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { listRoster, putAttendance } from "../db/store";
+import { applyRepeat, listRoster } from "../db/store";
 import type { AttendanceType, Category, Student } from "../types/models";
 import { Shell, type AppScreen } from "./Shell";
 
@@ -48,14 +48,19 @@ export function RepeatScreen({ ownerSub, teacherLabel, screen, onNav, onLogout }
     if (!pick) return;
     if (cat === "other" && !reason.trim()) { setMsg("기타는 사유 필수"); return; }
     if (type !== "absence" && period < 1) { setMsg("기준 교시 필요"); return; }
-    for (const date of days) {
-      await putAttendance(ownerSub, {
-        date, year: Number(date.slice(0, 4)), grade: pick.grade, class: pick.class,
-        number: pick.number, name: pick.name, category: cat, type,
-        period: type === "absence" ? 0 : period, reason, status: "draft",
-      });
-    }
-    setMsg(`${pick.name} · 평일 ${days.length}일`);
+    const result = await applyRepeat(ownerSub, {
+      grade: pick.grade,
+      class: pick.class,
+      number: pick.number,
+      name: pick.name,
+      category: cat,
+      type,
+      period: type === "absence" ? 0 : period,
+      reason,
+      start,
+      end,
+    });
+    setMsg(`${pick.name} · 평일 ${result.count}일`);
   }
 
   return (

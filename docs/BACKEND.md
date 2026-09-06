@@ -80,7 +80,7 @@
 | type | `absence` `late` `early_leave` `result` 만. **구분 네 개를 여기 넣으면 거절** (#55) |
 | period | 결석이면 **반드시 0**. 그 외 **1..7** |
 | reason | `other`이면 공백 거절. 그 외 빈 문자열 허용 |
-| status | `draft` `queued` `error` 만. 미리보기 “대기 취소” = queued→draft. 행 삭제 아님 |
+| status | `draft` `queued` `error` 만(#58). 미리보기 “대기 취소” = queued→draft. 행 삭제 아님. **CHECK는 `synced`도 허용** — data-contract·확장이 이미 씀. 1차 미리보기 흐름은 draft/queued/error |
 
 PK `(owner_id, date, grade, class, number, type, period)`
 
@@ -213,6 +213,8 @@ other ⇒ reason trim 필수
 - **원본은 `entries` / `roster`**
 - IDB는 오프라인 캐시이거나, 없앤다
 - 쓰기는 서버 성공 후에만 화면에 반영. 실패면 에러
+
+**#58 방향 (클라 `web/src/db/store.ts`):** Supabase가 단일 원본. IDB는 서버 성공 후 캐시·미설정 시 로컬 폴백만. 이중 원본 쓰기(선 IDB 후 클라우드)는 제거. `replace_roster` / `upsert_entry` / `apply_repeat` RPC 사용.
 
 1차 마무리는 “서버 규칙 + 트랜잭션 replace/repeat”이면 된다. 동기화 엔진을 새로 만들지 않는다.
 

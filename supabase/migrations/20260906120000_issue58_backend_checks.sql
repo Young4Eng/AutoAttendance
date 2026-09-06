@@ -1,62 +1,10 @@
--- 출결메이트 1차. service_role은 브라우저에 두지 않는다.
--- Issue #58 CHECKs/RPCs: also see supabase/migrations/20260906120000_issue58_backend_checks.sql
-
-create table if not exists roster (
-  owner_id text not null,
-  grade int not null,
-  class int not null,
-  number int not null,
-  name text not null,
-  primary key (owner_id, grade, class, number)
-);
-
-create table if not exists entries (
-  owner_id text not null,
-  date date not null,
-  year int not null,
-  grade int not null,
-  class int not null,
-  number int not null,
-  name text not null,
-  category text not null,
-  type text not null,
-  period int not null default 0,
-  reason text not null default '',
-  status text not null default 'draft',
-  primary key (owner_id, date, grade, class, number, type, period)
-);
-
-alter table roster enable row level security;
-alter table entries enable row level security;
-
-create policy roster_own on roster
-  for all using (owner_id = auth.uid()::text)
-  with check (owner_id = auth.uid()::text);
-
-create policy entries_own on entries
-  for all using (owner_id = auth.uid()::text)
-  with check (owner_id = auth.uid()::text);
-
-
--- 학급 설정·명단 확장 (기능 갭)
-create table if not exists class_settings (
-  owner_id text primary key,
-  grade int not null default 2,
-  class int not null default 3,
-  capacity int not null default 30
-);
-alter table class_settings enable row level security;
-drop policy if exists class_settings_own on class_settings;
-create policy class_settings_own on class_settings
-  for all using (owner_id = auth.uid()::text)
-  with check (owner_id = auth.uid()::text);
-
-alter table roster add column if not exists status text not null default 'enrolled';
-alter table roster add column if not exists note text not null default '';
+-- Issue #58 / docs/BACKEND.md 1차
+-- CHECK + replace_roster + upsert_entry + apply_repeat
+-- status: draft|queued|error per #58; also allow synced (data-contract + extension already use it)
+-- Apply in Supabase SQL editor or CLI when project is available. CI does not apply automatically.
 
 -- ---------------------------------------------------------------------------
--- #58 entries CHECK (greenfield). Existing DBs: apply migrations/…_issue58_…
--- status keeps synced — data-contract + extension; #58 preview states are draft|queued|error
+-- 1) entries CHECK constraints
 -- ---------------------------------------------------------------------------
 
 alter table entries drop constraint if exists entries_category_check;
@@ -82,11 +30,16 @@ alter table entries drop constraint if exists entries_reason_other_check;
 alter table entries add constraint entries_reason_other_check
   check (category <> 'other' or length(trim(reason)) > 0);
 
+-- Weekend reject (ISODOW Mon=1 .. Sun=7). No documented exception for 1차.
 alter table entries drop constraint if exists entries_weekday_check;
 alter table entries add constraint entries_weekday_check
   check (extract(isodow from date) between 1 and 5);
 
 create index if not exists entries_owner_date_idx on entries (owner_id, date);
+
+-- ---------------------------------------------------------------------------
+-- 2) Shared validators (RPC error codes match BACKEND.md)
+-- ---------------------------------------------------------------------------
 
 create or replace function aa_raise(code text)
 returns void
@@ -134,6 +87,10 @@ begin
   end if;
 end;
 $$;
+
+-- ---------------------------------------------------------------------------
+-- 3) replace_roster(rows jsonb) — one transaction; failure keeps previous roster
+-- ---------------------------------------------------------------------------
 
 create or replace function replace_roster(rows jsonb)
 returns void
@@ -183,6 +140,10 @@ $$;
 revoke all on function replace_roster(jsonb) from public;
 grant execute on function replace_roster(jsonb) to authenticated;
 grant execute on function replace_roster(jsonb) to anon;
+
+-- ---------------------------------------------------------------------------
+-- 4) upsert_entry(row jsonb) — #55 rules + named error codes
+-- ---------------------------------------------------------------------------
 
 create or replace function upsert_entry(row jsonb)
 returns void
@@ -247,6 +208,10 @@ revoke all on function upsert_entry(jsonb) from public;
 grant execute on function upsert_entry(jsonb) to authenticated;
 grant execute on function upsert_entry(jsonb) to anon;
 
+-- ---------------------------------------------------------------------------
+-- 5) apply_repeat — weekdays only, all-or-nothing, upsert same keys
+-- ---------------------------------------------------------------------------
+
 create or replace function apply_repeat(
   p_grade int,
   p_class int,
@@ -287,6 +252,7 @@ begin
 
   v_period := case when p_type = 'absence' then 0 else coalesce(p_period, 0) end;
 
+  -- Template checks (weekend checked per date below)
   if p_type is null or p_type not in ('absence', 'late', 'early_leave', 'result') then
     perform aa_raise('bad_type');
   end if;
