@@ -32,9 +32,32 @@
     return m[1] + "-" + m[2].padStart(2, "0") + "-" + m[3].padStart(2, "0");
   }
 
+  window.__mateAbort = false;
+  function aborted() {
+    return Boolean(window.__mateAbort);
+  }
+  function requestAbort() {
+    window.__mateAbort = true;
+    try {
+      chrome.runtime.sendMessage({ type: "apply-aborted" });
+    } catch (eAbort) {}
+  }
+  document.addEventListener(
+    "keydown",
+    function (ev) {
+      if (ev.key === "Escape" || ev.key === "Esc") requestAbort();
+    },
+    true,
+  );
   function sleep(ms) {
     return new Promise(function (r) {
-      setTimeout(r, ms);
+      var end = Date.now() + ms;
+      var id = setInterval(function () {
+        if (aborted() || Date.now() >= end) {
+          clearInterval(id);
+          r();
+        }
+      }, 50);
     });
   }
 
@@ -3519,7 +3542,8 @@
         .then(function (res) {
           sendResponse(res);
         })
-        .catch(function () {
+        .catch(function (err) {
+          console.info("[출결메이트]", "apply_threw", err && err.name ? String(err.name) : "Error");
           sendResponse({ ok: false, code: "apply_threw" });
         });
       return true;
