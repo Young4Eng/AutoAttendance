@@ -234,6 +234,8 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
               if (!weekend(now)) selectDay(today);
             }}
             onNext={() => setCursor(new Date(year, month, 1))}
+            onThisMonth={() => setCursor(new Date(now.getFullYear(), now.getMonth(), 1))}
+            onLastMonth={() => setCursor(new Date(now.getFullYear(), now.getMonth() - 1, 1))}
           />
 
           {open ? (

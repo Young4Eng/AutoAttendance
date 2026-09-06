@@ -10,6 +10,8 @@ type Props = {
   onPrev: () => void;
   onToday: () => void;
   onNext: () => void;
+  onThisMonth: () => void;
+  onLastMonth: () => void;
 };
 
 /** Month title, nav, and stats chips (month.html density). */
@@ -24,6 +26,8 @@ export function MonthHero({
   onPrev,
   onToday,
   onNext,
+  onThisMonth,
+  onLastMonth,
 }: Props) {
   const parts = breakdown.filter((b) => b.count > 0);
   return (
@@ -52,6 +56,20 @@ export function MonthHero({
               onClick={onPrev}
             >
               <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+            </button>
+            <button
+              type="button"
+              className="px-2 py-0.5 rounded text-sm text-on-surface hover:bg-surface-container-highest transition-colors"
+              onClick={onLastMonth}
+            >
+              저번 달
+            </button>
+            <button
+              type="button"
+              className="px-2 py-0.5 rounded text-sm text-on-surface hover:bg-surface-container-highest transition-colors"
+              onClick={onThisMonth}
+            >
+              이번 달
             </button>
             <button
               type="button"
