@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { applyRepeat, listRoster } from '../db/store';
+import { applyRepeat, listRoster, putAttendance } from '../db/store';
 import type { AttendanceType, Category, Student } from '../types/models';
 import { Shell, type AppScreen } from './Shell';
 import { RepeatHero } from '../components/repeat/RepeatHero';
@@ -7,7 +7,7 @@ import { StudentPicker } from '../components/repeat/StudentPicker';
 import { TypeCardGroup } from '../components/repeat/TypeCardGroup';
 import { CategoryCardGroup } from '../components/repeat/CategoryCardGroup';
 import { PeriodStepper } from '../components/repeat/PeriodStepper';
-import { DateRangePanel } from '../components/repeat/DateRangePanel';
+import { DateRangePanel, type DateMode } from '../components/repeat/DateRangePanel';
 import { ReasonField } from '../components/repeat/ReasonField';
 import {
   RepeatPendingList,
@@ -60,12 +60,18 @@ export function RepeatScreen({ ownerSub, teacherLabel, screen, onNav, onLogout }
   const [reason, setReason] = useState('');
   const [msg, setMsg] = useState('');
   const [pending, setPending] = useState<PendingItem[]>([]);
+  const [mode, setMode] = useState<DateMode>('range');
+  const [picks, setPicks] = useState<string[]>([]);
+  const now = new Date();
+  const [calYear, setCalYear] = useState(now.getFullYear());
+  const [calMonth, setCalMonth] = useState(now.getMonth() + 1);
 
   useEffect(() => {
     void listRoster(ownerSub).then(setRoster);
   }, [ownerSub]);
 
-  const days = useMemo(() => weekdays(start, end), [start, end]);
+  const rangeDays = useMemo(() => weekdays(start, end), [start, end]);
+  const days = mode === 'picks' ? [...picks].sort() : rangeDays;
   const hits = roster
     .filter((s) => !q || String(s.number).startsWith(q) || s.name.includes(q))
     ;
@@ -97,18 +103,38 @@ export function RepeatScreen({ ownerSub, teacherLabel, screen, onNav, onLogout }
       setMsg('적용할 평일이 없습니다');
       return;
     }
-    const result = await applyRepeat(ownerSub, {
-      grade: pick.grade,
-      class: pick.class,
-      number: pick.number,
-      name: pick.name,
-      category: cat,
-      type,
-      period: type === 'absence' ? 0 : period,
-      reason,
-      start,
-      end,
-    });
+    let result: { count: number };
+    if (mode === 'picks') {
+      for (const date of days) {
+        await putAttendance(ownerSub, {
+          date,
+          year: Number(date.slice(0, 4)),
+          grade: pick.grade,
+          class: pick.class,
+          number: pick.number,
+          name: pick.name,
+          category: cat,
+          type,
+          period: type === 'absence' ? 0 : period,
+          reason,
+          status: 'draft',
+        });
+      }
+      result = { count: days.length };
+    } else {
+      result = await applyRepeat(ownerSub, {
+        grade: pick.grade,
+        class: pick.class,
+        number: pick.number,
+        name: pick.name,
+        category: cat,
+        type,
+        period: type === 'absence' ? 0 : period,
+        reason,
+        start,
+        end,
+      });
+    }
     const item: PendingItem = {
       id: `${Date.now()}-${pick.number}-${type}-${cat}`,
       number: pick.number,
@@ -116,8 +142,8 @@ export function RepeatScreen({ ownerSub, teacherLabel, screen, onNav, onLogout }
       category: cat,
       type,
       period: type === 'absence' ? 0 : period,
-      start,
-      end,
+      start: days[0] || start,
+      end: days[days.length - 1] || end,
       dayCount: result.count,
       reason,
       createdLabel: nowLabel(),
@@ -169,11 +195,31 @@ export function RepeatScreen({ ownerSub, teacherLabel, screen, onNav, onLogout }
               </div>
 
               <DateRangePanel
+                mode={mode}
                 start={start}
                 end={end}
-                days={days}
+                days={rangeDays}
+                picks={picks}
+                calYear={calYear}
+                calMonth={calMonth}
+                onMode={setMode}
                 onStart={setStart}
                 onEnd={setEnd}
+                onTogglePick={(d) =>
+                  setPicks((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]))
+                }
+                onCalPrev={() => {
+                  if (calMonth === 1) {
+                    setCalYear((y) => y - 1);
+                    setCalMonth(12);
+                  } else setCalMonth((m) => m - 1);
+                }}
+                onCalNext={() => {
+                  if (calMonth === 12) {
+                    setCalYear((y) => y + 1);
+                    setCalMonth(1);
+                  } else setCalMonth((m) => m + 1);
+                }}
               />
 
               <ReasonField
