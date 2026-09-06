@@ -112,6 +112,7 @@ export function RepeatScreen({ ownerSub, teacherLabel, screen, onNav, onLogout }
             <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} className="h-10 rounded-xl border border-[#E4E4E7] px-2" />
             <span className="text-sm text-[#71717A]">평일 {days.length}일</span>
           </div>
+          <p className="text-xs text-[#71717A] mt-2">평일 미리보기: {days.join(", ")}</p>
         </section>
         <input className="mt-4 h-10 w-full rounded-xl border border-[#E4E4E7] px-3" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="사유" />
         <button type="button" className="mt-4 px-4 py-2 rounded-xl bg-[#0F766E] text-white" onClick={() => void apply().catch((e) => setMsg(String(e)))}>기간 적용</button>

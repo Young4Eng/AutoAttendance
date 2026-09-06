@@ -35,3 +35,20 @@ create policy roster_own on roster
 create policy entries_own on entries
   for all using (owner_id = auth.uid()::text)
   with check (owner_id = auth.uid()::text);
+
+
+-- 학급 설정·명단 확장 (기능 갭)
+create table if not exists class_settings (
+  owner_id text primary key,
+  grade int not null default 2,
+  class int not null default 3,
+  capacity int not null default 30
+);
+alter table class_settings enable row level security;
+drop policy if exists class_settings_own on class_settings;
+create policy class_settings_own on class_settings
+  for all using (owner_id = auth.uid()::text)
+  with check (owner_id = auth.uid()::text);
+
+alter table roster add column if not exists status text not null default 'enrolled';
+alter table roster add column if not exists note text not null default '';

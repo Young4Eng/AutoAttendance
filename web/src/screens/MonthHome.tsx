@@ -159,6 +159,11 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
             <div className="flex flex-col pr-4">
               <span className="text-xs text-[#71717A]">이번 달 예외 총계</span>
               <span className="text-lg font-semibold text-[#0F766E]">{rows.filter(r => r.date.startsWith(`${year}-${String(month).padStart(2,"0")}`)).length}<span className="text-xs font-normal text-[#71717A] ml-0.5">건</span></span>
+              <span className="text-xs text-[#71717A]">
+                결석 {rows.filter(r => r.date.startsWith(`${year}-${String(month).padStart(2,"0")}`) && r.type==="absence").length}
+                · 지각 {rows.filter(r => r.date.startsWith(`${year}-${String(month).padStart(2,"0")}`) && r.type==="late").length}
+                · 조퇴 {rows.filter(r => r.date.startsWith(`${year}-${String(month).padStart(2,"0")}`) && r.type==="early_leave").length}
+              </span>
             </div>
           </div>
         </header>
@@ -193,7 +198,7 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
                   <span className={"text-sm font-semibold " + (sel ? "text-[#0F766E]" : "")}>{d.getDate()}</span>
                   {n > 0 && !wk ? (
                     <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-[#0F766E] text-white text-[11px] font-semibold">예외 {n}명</span>
-                  ) : null}
+                  ) : (!wk && !out ? <span className="text-[11px] text-[#A1A1AA]">전원 출석</span> : null)}
                 </div>
                 <div className="flex flex-col gap-1 mt-1">
                   {list.slice(0, 2).map((r) => (

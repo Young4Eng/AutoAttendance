@@ -1,4 +1,4 @@
-import type { AttendanceRecord, Student } from "../types/models";
+import type { AttendanceRecord, ClassSettings, EnrollStatus, Student } from "../types/models";
 import * as idb from "./idb";
 import { getSupabase } from "./supabaseClient";
 
@@ -22,6 +22,8 @@ export async function replaceRoster(
       class: s.class,
       number: s.number,
       name: s.name,
+      status: s.status ?? "enrolled",
+      note: s.note ?? "",
     })),
   );
   if (error) {
@@ -43,6 +45,8 @@ export async function listRoster(ownerSub: string): Promise<Student[]> {
       class: r.class,
       number: r.number,
       name: r.name,
+      status: (r.status === "transferred" ? "transferred" : "enrolled") as EnrollStatus,
+      note: String(r.note ?? ""),
     }))
     .sort((a, b) => a.number - b.number);
 }
@@ -175,4 +179,63 @@ export async function deleteAttendanceRecord(
     .eq("period", record.period)
     .eq("type", record.type);
   if (error) throw new Error(error.message);
+}
+
+
+export async function upsertStudent(
+  ownerSub: string,
+  student: Omit<Student, "ownerSub">,
+): Promise<void> {
+  const cur = await listRoster(ownerSub);
+  const next = cur
+    .filter((s) => !(s.grade === student.grade && s.class === student.class && s.number === student.number))
+    .concat([{ ...student, ownerSub }])
+    .map(({ ownerSub: _o, ...rest }) => rest);
+  await replaceRoster(ownerSub, next);
+}
+
+export async function deleteStudent(
+  ownerSub: string,
+  student: Pick<Student, "grade" | "class" | "number">,
+): Promise<void> {
+  const cur = await listRoster(ownerSub);
+  await replaceRoster(
+    ownerSub,
+    cur
+      .filter((s) => !(s.grade === student.grade && s.class === student.class && s.number === student.number))
+      .map(({ ownerSub: _o, ...rest }) => rest),
+  );
+}
+
+const SETTINGS_KEY = "chulgyeol-class-settings";
+
+export async function getSettings(ownerSub: string): Promise<ClassSettings> {
+  const fallback: ClassSettings = { ownerSub, grade: 2, class: 3, capacity: 30 };
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY + ":" + ownerSub);
+    if (raw) Object.assign(fallback, JSON.parse(raw));
+  } catch { /* ignore */ }
+  const client = sb();
+  if (!client) return fallback;
+  const { data } = await client.from("class_settings").select("*").eq("owner_id", ownerSub).maybeSingle();
+  if (!data) return fallback;
+  return {
+    ownerSub,
+    grade: Number(data.grade) || fallback.grade,
+    class: Number(data.class) || fallback.class,
+    capacity: Number(data.capacity) || fallback.capacity,
+  };
+}
+
+export async function putSettings(ownerSub: string, s: Omit<ClassSettings, "ownerSub">): Promise<void> {
+  localStorage.setItem(SETTINGS_KEY + ":" + ownerSub, JSON.stringify(s));
+  const client = sb();
+  if (!client) return;
+  const { error } = await client.from("class_settings").upsert({
+    owner_id: ownerSub,
+    grade: s.grade,
+    class: s.class,
+    capacity: s.capacity,
+  });
+  if (error) console.warn(error.message);
 }

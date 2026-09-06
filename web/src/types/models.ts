@@ -10,12 +10,23 @@ export interface Owner {
   displayName?: string;
 }
 
+export type EnrollStatus = 'enrolled' | 'transferred';
+
 export interface Student {
   ownerSub: string;
   grade: number;
   class: number;
   number: number;
   name: string;
+  status?: EnrollStatus;
+  note?: string;
+}
+
+export interface ClassSettings {
+  ownerSub: string;
+  grade: number;
+  class: number;
+  capacity: number;
 }
 
 export interface AttendanceRecord {
