@@ -80,7 +80,18 @@ export function Shell({
             구글 계정에 저장
           </div>
           <div className="text-xs text-[var(--text-secondary)]">명단 {rosterCount ?? "—"}명</div>
-          <div className="text-xs text-[var(--text-secondary)] truncate">담임 전용</div>
+          <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-container)] p-2.5 text-[11px] leading-snug text-[var(--text-secondary)]">
+            <div className="font-semibold text-[var(--text)] mb-1">확장으로 나이스에 넣기</div>
+            <ol className="m-0 pl-4 flex flex-col gap-0.5">
+              <li>미리보기에서 대기열을 확장으로 보낸다.</li>
+              <li>나이스 일일출결(담임용) 화면을 연다.</li>
+              <li>그 탭을 둔 채 크롬 오른쪽 위 퍼즐(확장)에서 출결메이트를 연다.</li>
+              <li>「적용 후 저장」을 누른다. 출결마감은 누르지 않는다.</li>
+            </ol>
+            <button type="button" className="mt-1.5 text-[var(--primary-container)] font-semibold" onClick={() => onNav("guide")}>
+              사용 방법에서 자세히
+            </button>
+          </div>
           <button
             type="button"
             className="text-left text-sm px-2 py-1 rounded-lg hover:bg-[var(--surface-container)]"

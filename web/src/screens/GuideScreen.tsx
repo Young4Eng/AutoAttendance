@@ -5,6 +5,7 @@ import { GuideCsv } from "../components/guide/GuideCsv";
 import { GuideTips } from "../components/guide/GuideTips";
 import { GuideFaq } from "../components/guide/GuideFaq";
 import { GuidePrivacy } from "../components/guide/GuidePrivacy";
+import { GuideExtension } from "../components/guide/GuideExtension";
 import { Shell, type AppScreen } from "./Shell";
 
 type Props = {
@@ -40,6 +41,7 @@ export function GuideScreen({ teacherLabel, screen, onNav, onLogout }: Props) {
             <GuideCsv />
             <GuideTips onNavRepeat={() => onNav("repeat")} />
             <GuideFaq />
+            <GuideExtension />
             <GuidePrivacy />
             <section className="p-8 rounded-xl bg-primary text-on-primary shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex flex-col gap-1 text-center md:text-left">
