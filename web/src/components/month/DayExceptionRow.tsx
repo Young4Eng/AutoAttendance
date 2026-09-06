@@ -14,27 +14,59 @@ type Props = {
   onSave: (next: AttendanceRecord, previous?: AttendanceRecord) => void;
   onDelete: () => void;
   onEndDate: (row: AttendanceRecord, end: string) => void;
+  onCollapse: () => void;
 };
 
-export function DayExceptionRow({ row, focused, onFocus, onSave, onDelete, onEndDate }: Props) {
+export function DayExceptionRow({ row, focused, onFocus, onSave, onDelete, onEndDate, onCollapse }: Props) {
   const otherBad = row.category === "other" && !row.reason.trim();
   const reasons = REASON_PRESETS[row.category];
+  const catLabel = row.category === "recognized" ? "인정" : CATEGORY_LABELS[row.category];
+  const summary = [
+    TYPE_LABELS[row.type],
+    catLabel,
+    row.type !== "absence" && row.period ? `${row.period}교시` : "",
+    row.reason,
+  ].filter(Boolean).join(" · ");
+
+  if (!focused) {
+    return (
+      <button
+        type="button"
+        className="w-full text-left py-2.5 px-2 rounded-lg hover:bg-surface-container-low/60 flex items-center gap-2"
+        onClick={onFocus}
+      >
+        <span className="w-16 shrink-0 text-sm font-semibold">
+          {padNum(row.number)} {displayName(row.number, row.name)}
+        </span>
+        <span className={"px-1.5 py-0.5 rounded text-[11px] font-bold border " + typeChipClass(row.type)}>
+          {TYPE_LABELS[row.type]}
+        </span>
+        <span className="text-sm text-on-surface-variant truncate">{summary.replace(TYPE_LABELS[row.type] + " · ", "")}</span>
+      </button>
+    );
+  }
+
   return (
-    <div
-      className={
-        "py-3 px-2 rounded-lg transition-colors flex flex-col gap-2 " +
-        (focused ? "bg-surface-container-low" : "hover:bg-surface-container-low/50")
-      }
-      onClick={onFocus}
-    >
+    <div className="py-3 px-2 rounded-lg bg-surface-container-low flex flex-col gap-2">
       <div className="flex items-center gap-2">
         <div className="text-base font-semibold text-on-surface truncate">
           {padNum(row.number)} {displayName(row.number, row.name)}
         </div>
         <button
           type="button"
+          title="입력 완료"
+          className="ml-auto w-9 h-9 rounded-lg flex items-center justify-center bg-primary-container text-on-primary"
+          onClick={(e) => {
+            e.stopPropagation();
+            onCollapse();
+          }}
+        >
+          <span className="material-symbols-outlined text-[20px]">check</span>
+        </button>
+        <button
+          type="button"
           title="삭제"
-          className="ml-auto w-8 h-8 rounded-lg flex items-center justify-center text-outline hover:text-error"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-outline hover:text-error"
           onClick={(e) => {
             e.stopPropagation();
             onDelete();

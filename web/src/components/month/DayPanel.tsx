@@ -7,18 +7,11 @@ type Props = {
   isToday: boolean;
   dayRows: AttendanceRecord[];
   rosterCount: number;
-  pending: AttendanceType | null;
-  bulk: boolean;
-  picked: number[];
   q: string;
   hits: Student[];
   focusKey: string | null;
   onClose: () => void;
-  onPending: (t: AttendanceType | null) => void;
-  onBulk: (v: boolean) => void;
   onQ: (v: string) => void;
-  onTogglePick: (n: number) => void;
-  onConfirmPicks: () => void;
   onAddOne: (s: Student, t: AttendanceType) => void;
   onFocusKey: (k: string | null) => void;
   onSave: (next: AttendanceRecord, previous?: AttendanceRecord) => void;
@@ -34,18 +27,11 @@ export function DayPanel({
   isToday,
   dayRows,
   rosterCount,
-  pending,
-  bulk,
-  picked,
   q,
   hits,
   focusKey,
   onClose,
-  onPending,
-  onBulk,
   onQ,
-  onTogglePick,
-  onConfirmPicks,
   onAddOne,
   onFocusKey,
   onSave,
@@ -133,20 +119,6 @@ export function DayPanel({
             <span>동일 결석 사유 일괄 입력 ↗</span>
           </button>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            onBulk(true);
-            onPending(pending || "absence");
-          }}
-          className={
-            "w-full flex items-center justify-center gap-1 py-2 rounded-lg border text-sm " +
-            (bulk ? "border-primary ring-1 ring-primary" : "border-[#E4E4E7]")
-          }
-        >
-          <span className="material-symbols-outlined text-[15px]">playlist_add_check</span>+ 다수
-          일괄 등록
-        </button>
       </div>
 
       <div className="px-3 py-2 border-b border-[#E4E4E7] flex flex-col gap-2">
@@ -166,33 +138,19 @@ export function DayPanel({
                 type="button"
                 className={
                   "text-left px-3 py-2 rounded-lg text-sm leading-tight border transition-colors " +
-                  (picked.includes(s.number)
-                    ? "bg-teal-50 border-teal-200 text-teal-900"
-                    : "bg-white border-[#E4E4E7] hover:border-teal-300 hover:bg-teal-50/40")
+                  "bg-white border-[#E4E4E7] hover:border-teal-300 hover:bg-teal-50/40"
                 }
-                onClick={() => {
-                  if (bulk) onTogglePick(s.number);
-                  else void onAddOne(s, pending || "absence");
-                }}
+                onClick={() => void onAddOne(s, "absence")}
               >
                 <span className="font-semibold">{String(s.number).padStart(2,"0")}</span>
                 <span className="ml-1 truncate">{s.name || `학생${String(s.number).padStart(2, "0")}`}</span>
               </button>
             ))}
           </div>
-          {bulk ? (
-            <button
-              type="button"
-              className="rounded-lg border border-[#E4E4E7] py-2 text-sm"
-              onClick={() => void onConfirmPicks()}
-            >
-              {picked.length}명 등록
-            </button>
-          ) : null}
         </div>
 
       <div className="max-h-[440px] overflow-y-auto divide-y divide-[#E4E4E7]/70 px-3 py-1 bg-surface-container-lowest flex-1">
-        {dayRows.length === 0 && !pending ? (
+        {dayRows.length === 0 ? (
           <p className="text-sm text-on-surface-variant bg-[#F0FDFA] border border-[#99F6E4] rounded-xl px-3 py-2 my-2">
             오늘 출결 특이 사항 없음 · 전원 출석. +결석 등으로만 추가하세요.
           </p>
@@ -208,6 +166,7 @@ export function DayPanel({
               onSave={(next, prev) => onSave(next, prev)}
               onEndDate={onEndDate}
               onDelete={() => onDelete(c)}
+              onCollapse={() => onFocusKey(null)}
             />
           );
         })}

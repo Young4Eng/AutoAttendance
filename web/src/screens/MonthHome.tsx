@@ -60,9 +60,6 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
   const [open, setOpen] = useState<string | null>(weekend(now) ? null : today);
   const [roster, setRoster] = useState<Student[]>([]);
   const [rows, setRows] = useState<AttendanceRecord[]>([]);
-  const [pending, setPending] = useState<AttendanceType | null>(null);
-  const [bulk, setBulk] = useState(false);
-  const [picked, setPicked] = useState<number[]>([]);
   const [q, setQ] = useState("");
   const [focusKey, setFocusKey] = useState<string | null>(null);
 
@@ -135,6 +132,7 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
 
   async function addOne(s: Student, type: AttendanceType) {
     if (!open) return;
+    const period = type === "absence" ? 0 : 1;
     await save({
       date: open,
       year: Number(open.slice(0, 4)),
@@ -144,35 +142,14 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
       name: s.name,
       category: "illness",
       type,
-      period: type === "absence" ? 0 : 1,
+      period,
       reason: "",
       status: "draft",
     });
+    setFocusKey(`${s.number}-${type}-${period}`);
     setQ("");
   }
 
-  async function confirmPicks() {
-    if (!open || !pending) return;
-    const set = new Set(picked);
-    for (const s of roster.filter((x) => set.has(x.number))) {
-      await save({
-        date: open,
-        year: Number(open.slice(0, 4)),
-        grade: s.grade,
-        class: s.class,
-        number: s.number,
-        name: s.name,
-        category: "illness",
-        type: pending,
-        period: pending === "absence" ? 0 : 1,
-        reason: "",
-        status: "draft",
-      });
-    }
-    setPicked([]);
-    setBulk(false);
-    setQ("");
-  }
 
 
   async function applyEndDate(row: AttendanceRecord, end: string) {
@@ -192,9 +169,6 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
 
   function selectDay(key: string) {
     setOpen(key);
-    setPending(null);
-    setBulk(false);
-    setPicked([]);
     setQ("");
     setFocusKey(null);
   }
@@ -247,24 +221,13 @@ export function MonthHome({ ownerSub, teacherLabel, onLogout, onNav, screen }: P
                   isToday={open === today}
                   dayRows={dayRows}
                   rosterCount={roster.length}
-                  pending={pending}
-                  bulk={bulk}
-                  picked={picked}
                   q={q}
                   hits={hits}
                   focusKey={focusKey}
                   onClose={() => {
                     setOpen(null);
-                    setPending(null);
-                    setBulk(false);
-                  }}
-                  onPending={setPending}
-                  onBulk={setBulk}
+                                                  }}
                   onQ={setQ}
-                  onTogglePick={(n) =>
-                    setPicked((p) => (p.includes(n) ? p.filter((x) => x !== n) : [...p, n]))
-                  }
-                  onConfirmPicks={() => void confirmPicks()}
                   onAddOne={(s, t) => void addOne(s, t)}
                   onFocusKey={setFocusKey}
                   onSave={(next, prev) => void save(next, prev)}
