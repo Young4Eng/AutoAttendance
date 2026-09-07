@@ -24,7 +24,12 @@ function extMsg(code: string): string {
     return 'web/.env에 VITE_EXTENSION_ID가 없습니다. 크롬 확장 ID를 넣고 서버를 다시 켜세요.';
   if (code === 'no_chrome_runtime') return '크롬이 아니거나 확장이 없습니다.';
   if (code === 'empty_queue') return '보낼 queued가 없습니다.';
-  if (code === 'runtime_error') return '확장이 메시지를 거절했습니다. 확장 로드·ID를 확인하세요.';
+  if (code === 'runtime_error' || code.startsWith('runtime_error:')) {
+    const hint = code.startsWith('runtime_error:') ? code.slice('runtime_error:'.length) : '';
+    return hint
+      ? `확장이 메시지를 거절했습니다. ${hint}`
+      : '확장이 메시지를 거절했습니다. 확장 ID와 사이트 주소가 같은지 확인하세요.';
+  }
   return '확장 미연결(' + code + ')';
 }
 

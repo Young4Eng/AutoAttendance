@@ -62,7 +62,8 @@ export function sendToExtension(
         { type: 'attendance.queue', items },
         (response) => {
           if (runtime.lastError) {
-            resolve({ ok: false, code: 'runtime_error' });
+            const hint = String(runtime.lastError.message || '').slice(0, 180);
+            resolve({ ok: false, code: hint ? `runtime_error:${hint}` : 'runtime_error' });
             return;
           }
           if (!response || response.ok !== true) {
