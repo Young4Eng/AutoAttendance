@@ -58,23 +58,50 @@ export async function replaceRoster(
   ownerSub: string,
   students: Omit<Student, "ownerSub">[],
 ): Promise<void> {
+  const rows = students.map((s) => ({
+    grade: s.grade,
+    class: s.class,
+    number: s.number,
+    name: stripCsvFormula(s.name),
+    status: (s.status === "transferred" ? "transferred" : "enrolled") as EnrollStatus,
+    note: s.note ?? "",
+  }));
   const client = sb();
   if (client) {
-    const { error } = await client.rpc("replace_roster", {
-      rows: students.map((s) => ({
-        grade: s.grade,
-        class: s.class,
-        number: s.number,
-        name: s.name,
-        status: s.status ?? "enrolled",
-        note: s.note ?? "",
-      })),
-    });
-    if (error) throw new Error(rpcErrorMessage(error));
-    await idb.replaceRoster(ownerSub, students);
+    const { error } = await client.rpc("replace_roster", { rows });
+    if (error) {
+      const { error: delErr } = await client.from("roster").delete().eq("owner_id", ownerSub);
+      if (delErr) throw new Error(rpcErrorMessage(error));
+      if (rows.length) {
+        const { error: insErr } = await client.from("roster").insert(
+          rows.map((s) => ({
+            owner_id: ownerSub,
+            grade: s.grade,
+            class: s.class,
+            number: s.number,
+            name: s.name,
+            status: s.status,
+            note: s.note,
+          })),
+        );
+        if (insErr) {
+          const { error: plainErr } = await client.from("roster").insert(
+            rows.map((s) => ({
+              owner_id: ownerSub,
+              grade: s.grade,
+              class: s.class,
+              number: s.number,
+              name: s.name,
+            })),
+          );
+          if (plainErr) throw new Error(rpcErrorMessage(error));
+        }
+      }
+    }
+    await idb.replaceRoster(ownerSub, rows);
     return;
   }
-  await idb.replaceRoster(ownerSub, students);
+  await idb.replaceRoster(ownerSub, rows);
 }
 
 export async function listRoster(ownerSub: string): Promise<Student[]> {

@@ -43,8 +43,19 @@ export function formatRosterCsvError(err: unknown): string {
       return '같은 학년·반·번호가 중복되었습니다.';
     case 'csv_encoding':
       return 'CSV 글자가 깨졌습니다. 엑셀에서 「CSV UTF-8(쉼표로 분리)」로 저장하거나, 메모장→다른 이름으로 저장→UTF-8 후 다시 올려 주세요. CP949(한글 Windows)도 지원합니다.';
+    case 'not_authenticated':
+      return '로그인이 만료되었습니다. 다시 로그인한 뒤 올려 주세요.';
+    case 'bad_rows':
+    case 'bad_roster_row':
+      return '명단 행이 올바르지 않습니다. grade,class,number,name 양식을 확인해 주세요.';
     default:
-      return `CSV 처리 실패 (${code})`;
+      if (/status/i.test(code) && /column|does not exist|schema/i.test(code)) {
+        return '명단은 저장됐어야 하는데 서버 학급 칸이 옛 버전입니다. 다시 한 번 올려 보시고, 또 실패하면 알려 주세요.';
+      }
+      if (/status/i.test(code)) {
+        return '명단 저장에 실패했습니다. CSV를 다시 올리거나 「학생 추가」로 넣어 주세요.';
+      }
+      return `명단 처리 실패 (${code})`;
   }
 }
 
