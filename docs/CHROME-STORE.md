@@ -63,3 +63,8 @@
 3. 웹을 다시 배포한다. 미리보기의 「나이스로 전송」이 그 ID로 가야 한다.
 
 심사에는 며칠이 걸릴 수 있다. 거절되면 이 문서의 Privacy 문장을 그대로 보강해 다시 제출한다.
+
+## 개발용 고정 ID (스토어 전)
+ unpacked 설치도 같은 ID를 쓰려면 manifest `key`를 유지한다.
+ ID: `faccbfnnhlkbgfmbandaaiafdgmkmdek`
+ Vercel `VITE_EXTENSION_ID`에 이 값을 넣는다. 스토어 게시 후 발급 ID로 교체한다.

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "출결메이트",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "나이스 담임용 출결: 감지·대기열·라벨 기준 마감/P칸/저장. 출결마감·로그인 자동화 없음.",
   "minimum_chrome_version": "116",
   "permissions": [
@@ -55,5 +55,6 @@
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
-  }
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAry7TASSRKc3RqpYljyq6bmslCq3YGms9Ci7++wQ/gtOW4CR/kXzFI+yeLkM96OCUWafQPs/49rEa9v57/9EzrRED+JUGCLoxa7f95/dx0cLQdD6KGuo59OO90MITP+m1eNrmQ5AJ9e6xsn3nFAMMETVdwsGSTGvuKoaVHhFuooazMorDQoEzRkmo11dm1qN1iES7id+dJqKjq549mGx/XrcUMGQI9o047EMAhz0oK0FcTObiHkqN1s88ko7NnxGLJl+GMyCmD9XpWDOm46ogpzsm97PHV0WidPHprqzt89TyN/LWd7fcl5ka/X1oiI2ARNHaUx0q/4dERLqCWDyDlwIDAQAB"
 }
