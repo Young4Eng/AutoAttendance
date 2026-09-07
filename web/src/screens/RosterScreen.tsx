@@ -61,7 +61,7 @@ export function RosterScreen({ ownerSub, teacherLabel, screen, onNav, onLogout }
     const blob = new Blob([sampleRosterCsv(settings.grade, settings.class)], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "roster-sample.csv";
+    a.download = "명단양식.csv";
     a.click();
     URL.revokeObjectURL(a.href);
   }

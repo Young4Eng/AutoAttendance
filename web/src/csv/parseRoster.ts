@@ -22,7 +22,8 @@ export const SAMPLE_ROSTER_CSV = `grade,class,number,name
 export function sampleRosterCsv(grade: number, klass: number): string {
   const g = Number.isInteger(grade) && grade > 0 ? grade : 2;
   const c = Number.isInteger(klass) && klass > 0 ? klass : 3;
-  return SAMPLE_ROSTER_CSV.replace(/^2,3,/gm, `${g},${c},`);
+  const body = SAMPLE_ROSTER_CSV.replace(/^2,3,/gm, `${g},${c},`);
+  return "\uFEFF" + body;
 }
 
 /** Map parser/decoder error codes to short Korean UI copy (never echo name cells). */
