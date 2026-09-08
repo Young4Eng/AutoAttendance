@@ -68,3 +68,6 @@
  unpacked 설치도 같은 ID를 쓰려면 manifest `key`를 유지한다.
  ID: `faccbfnnhlkbgfmbandaaiafdgmkmdek`
  Vercel `VITE_EXTENSION_ID`에 이 값을 넣는다. 스토어 게시 후 발급 ID로 교체한다.
+
+게시됨: https://chromewebstore.google.com/detail/출결메이트/fjpncglmbgpfaehcjmkbpeaeplhojmhc
+스토어 ID: `fjpncglmbgpfaehcjmkbpeaeplhojmhc`

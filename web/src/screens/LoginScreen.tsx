@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import type { Owner } from "../types/models";
 import { FIXTURE_OWNER_SUB } from "../types/models";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
+import { CHROME_STORE_URL } from "../lib/storeLinks";
 
 interface Props {
   onLogin: (owner: Owner) => void;
@@ -36,11 +37,20 @@ export function LoginScreen({ onLogin, error, onError }: Props) {
           출
         </div>
         <h1 className="text-2xl font-bold tracking-tight mb-2">출결메이트</h1>
-        <p className="text-sm text-[var(--text-secondary)] mb-8 leading-relaxed">
+        <p className="text-sm text-[var(--text-secondary)] mb-4 leading-relaxed">
           나이스 일일출결 전, 담임교사를 위한 가벼운 초안 기록장.
           <br />
           예외 학생만 메모하면 크롬 확장이 나이스에 알아서 입력합니다.
         </p>
+        <a
+          href={CHROME_STORE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mb-8 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--primary-container)]"
+        >
+          <span className="material-symbols-outlined text-[18px]">extension</span>
+          크롬 웹스토어에서 확장 설치
+        </a>
         <div className="w-full bg-white border border-[var(--border)] rounded-2xl p-7 shadow-sm">
           <div className="flex flex-col gap-5 text-left">
             <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 text-xs text-[#475569] space-y-2.5">

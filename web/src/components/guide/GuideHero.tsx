@@ -1,3 +1,4 @@
+import { CHROME_STORE_URL } from "../../lib/storeLinks";
 type Props = {
   onJump: (id: string) => void;
 };
@@ -37,6 +38,10 @@ export function GuideHero({ onJump }: Props) {
             <span className="material-symbols-outlined text-[15px]">help</span>
             <span>자주 묻는 질문</span>
           </button>
+          <a href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer" className={link}>
+            <span className="material-symbols-outlined text-[15px]">extension</span>
+            <span>확장 설치</span>
+          </a>
           <button
             type="button"
             className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary-fixed text-on-primary-fixed hover:bg-primary hover:text-on-primary text-[11px] font-semibold transition-colors"

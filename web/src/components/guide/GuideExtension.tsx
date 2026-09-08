@@ -1,4 +1,5 @@
 import { PuzzleIcon } from "../PuzzleIcon";
+import { CHROME_STORE_URL } from "../../lib/storeLinks";
 export function GuideExtension() {
   return (
     <section className="mb-12 p-6 md:p-8 rounded-xl bg-surface-container-lowest border border-outline-variant/60 shadow-sm" id="extension-section">
@@ -7,6 +8,12 @@ export function GuideExtension() {
         <span>크롬 확장</span>
       </div>
       <h2 className="text-2xl font-semibold tracking-tight text-on-surface m-0 mb-2">나이스에 넣는 순서</h2>
+      <p className="m-0 mb-3">
+        <a href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm font-semibold text-primary">
+          <PuzzleIcon />
+          크롬 웹스토어에서 확장 설치
+        </a>
+      </p>
       <p className="text-[15px] leading-6 text-on-surface-variant m-0 mb-4">
         웹에서 초안을 만든 뒤, 미리보기가 확장에 대기열을 넘깁니다. 확장이 나이스 칸을 채우는 것은
         출결 화면이 열린 상태에서 확장 창의 버튼을 눌렀을 때입니다.
@@ -20,7 +27,7 @@ export function GuideExtension() {
           <PuzzleIcon />
           ) 버튼을 클릭하고 출결메이트를 엽니다.
         </li>
-        <li>이후 「적용 후 저장」을 누릅니다. 처음이면 「시운전」으로 칸만 확인할 수 있습니다.</li>
+        <li>이후 「시운전」으로 칸만 확인하거나, 「실제 입력」으로 나이스에 저장합니다.</li>
         <li>나이스에 이미 넣은 날짜를 다시 넣으면 오류로 멈춥니다. 칸을 비우거나, 아직 작업하지 않은 날짜부터 기간을 정하세요. 예: 9월 4일까지 수동이면 9월 5일부터.</li>
         <li>날짜가 바뀌기 전에 나이스 저장 확인까지 끝냅니다. 「출결마감」은 프로그램이 누르지 않으며, 선생님도 이 프로그램으로는 누르지 않습니다.</li>
       </ol>

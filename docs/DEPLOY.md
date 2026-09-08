@@ -11,7 +11,7 @@
    - VITE_GOOGLE_CLIENT_ID
    - VITE_SUPABASE_URL
    - VITE_SUPABASE_ANON_KEY
-   - VITE_EXTENSION_ID=faccbfnnhlkbgfmbandaaiafdgmkmdek  (1.0.2 unpacked 공통 ID. 스토어 게시 후 스토어 ID로 교체)
+   - VITE_EXTENSION_ID=fjpncglmbgpfaehcjmkbpeaeplhojmhc  (크롬 웹스토어 ID)
 6. Deploy
 7. 나온 주소(예: https://autoattendance.vercel.app)를 채팅에 보낸다.
 

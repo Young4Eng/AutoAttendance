@@ -144,7 +144,7 @@ export function GuideWorkflow({ onNavRoster, onNavMonth, onNavPreview }: Props) 
             <p className="text-[13px] leading-5 text-on-surface-variant mb-4">
               미리보기에서 대기열을 확장으로 보낸 다음, 나이스 일일출결 화면을 연 채 오른쪽 (
               <PuzzleIcon />
-              ) 버튼을 클릭하고 출결메이트를 열어주세요. 이후,「적용 후 저장」을 누릅니다.
+              ) 버튼을 클릭하고 출결메이트를 열어주세요. 이후 「시운전」또는 「실제 입력」을 누릅니다.
             </p>
             <div className="p-2 rounded-lg bg-secondary-fixed flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
