@@ -11,12 +11,17 @@
       <p id="status" class="status">확인 중…</p>
       <p id="queue" class="muted">대기열: …</p>
       <div class="actions">
-        <button type="button" id="btnDry" class="primary">시운전 (저장 전 중단)</button>
-        <button type="button" id="btnSave" class="danger">적용 후 저장</button>
-        <button type="button" id="btnClear" class="ghost">대기열 비우기</button>
+        <button type="button" id="btnDry" class="primary">1. 시운전 (나이스 저장 안 함)</button>
+        <button type="button" id="btnSave" class="danger">2. 실제 입력 (나이스에 저장)</button>
+        <button type="button" id="btnClear" class="ghost">3. 대기열 비우기</button>
       </div>
       <p id="result" class="muted"></p>
-      <p class="hint">시작 후 <strong>Esc</strong>를 누르면 중단합니다. 날짜가 바뀌기 전에 저장. 빨간 버튼이 저장까지 함. 출결마감은 안 누름.</p>
+      <ol class="hint">
+        <li>웹 앱 <strong>미리보기</strong>에서 나이스로 전송</li>
+        <li>나이스 <strong>일일출결(담임용)</strong> 탭을 연다</li>
+        <li>이 창에서 시운전 또는 실제 입력을 누른다</li>
+      </ol>
+      <p class="hint muted">Esc로 중단 · 출결마감은 누르지 않습니다</p>
     </main>
     <script src="popup.js"></script>
   </body>

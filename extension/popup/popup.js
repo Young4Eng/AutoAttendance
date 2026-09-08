@@ -30,7 +30,7 @@ function refresh() {
 }
 
 function run(dryRun) {
-  elResult.textContent = (dryRun ? "시운전 중…" : "저장 포함 적용 중…") + " Esc로 중단";
+  elResult.textContent = (dryRun ? "시운전 중… 저장 안 함" : "실제 입력 중… 나이스에 저장") + " · Esc로 중단";
   btnDry.disabled = true;
   btnSave.disabled = true;
   chrome.runtime.sendMessage({ type: "run-apply", dryRun: dryRun }, (res) => {
@@ -45,7 +45,7 @@ function run(dryRun) {
         "ok · 적용 " +
         (res.applied || 0) +
         " · " +
-        (res.dryRun ? "저장 안 함" : "저장함") +
+        (res.dryRun ? "시운전(저장 안 함)" : "실제 입력(저장함)") +
         " · synced 미설정";
     } else {
       var msg = "중단: " + (res.code || "error");
@@ -66,7 +66,7 @@ function run(dryRun) {
 
 btnDry.addEventListener("click", () => run(true));
 btnSave.addEventListener("click", () => {
-  if (!confirm("나이스에 저장합니다. 출결마감은 누르지 않습니다. 계속?")) return;
+  if (!confirm("나이스에 저장합니다. 출결마감은 누르지 않습니다. 진행할까요?")) return;
   run(false);
 });
 btnClear.addEventListener("click", () => {

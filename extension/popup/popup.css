@@ -16,7 +16,9 @@ h1 {
 .status.ok { color: #0b6; }
 .status.no { color: #666; }
 .muted { color: #666; font-size: 12px; margin: 0 0 8px; }
-.hint { color: #888; font-size: 11px; margin: 8px 0 0; }
+ol.hint { color: #555; font-size: 11px; margin: 10px 0 4px; padding-left: 1.2rem; }
+ol.hint li { margin: 0 0 3px; }
+.hint { color: #888; font-size: 11px; margin: 4px 0 0; }
 .actions { display: flex; flex-direction: column; gap: 6px; }
 button {
   border: 1px solid #ccc;
