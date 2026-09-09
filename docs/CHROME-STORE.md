@@ -71,3 +71,5 @@
 
 게시됨: https://chromewebstore.google.com/detail/출결메이트/fjpncglmbgpfaehcjmkbpeaeplhojmhc
 스토어 ID: `fjpncglmbgpfaehcjmkbpeaeplhojmhc`
+
+스토어 업데이트 zip에는 manifest `key`를 넣지 않는다. key는 unpacked 고정 ID용이며 스토어 ID(`fjpncglmbgpfaehcjmkbpeaeplhojmhc`)와 다르다.
