@@ -1,4 +1,5 @@
 import type { AttendanceRecord } from '../types/models';
+import { STORE_EXTENSION_ID } from './storeLinks';
 
 export type SendToExtensionResult =
   | { ok: true; accepted: number; rejected: number }
@@ -34,8 +35,13 @@ declare global {
 export function sendToExtension(
   queue: AttendanceRecord[],
 ): Promise<SendToExtensionResult> {
-  const extensionId = import.meta.env.VITE_EXTENSION_ID as string | undefined;
-  if (!extensionId || !extensionId.trim()) {
+  const fromEnv = String(import.meta.env.VITE_EXTENSION_ID || '').trim();
+  const legacy = new Set([
+    'faccbfnnhlkbgfmbandaaiafdgmkmdek',
+    'npfanefckmgojcofhneccimpaoneigcc',
+  ]);
+  const extensionId = fromEnv && !legacy.has(fromEnv) ? fromEnv : STORE_EXTENSION_ID;
+  if (!extensionId) {
     return Promise.resolve({ ok: false, code: 'missing_extension_id' });
   }
 
@@ -58,7 +64,7 @@ export function sendToExtension(
   return new Promise((resolve) => {
     try {
       runtime.sendMessage(
-        extensionId.trim(),
+        extensionId,
         { type: 'attendance.queue', items },
         (response) => {
           if (runtime.lastError) {
