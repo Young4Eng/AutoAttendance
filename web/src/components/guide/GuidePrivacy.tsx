@@ -13,7 +13,8 @@ export function GuidePrivacy() {
         </div>
         <h2 className="text-2xl font-semibold tracking-tight text-on-surface m-0">개인정보 처리방침</h2>
         <p className="text-[15px] leading-6 text-on-surface-variant m-0">
-          아래는 출결메이트가 실제로 적용하는 처리방침입니다. 로그인 화면에도 같은 조항을 보여 줍니다.
+          「개인정보 보호법」 제30조 및 개인정보보호위원회 작성지침 골격에 따른 처리방침입니다.
+          로그인 화면과 동일한 제1조부터 제14조입니다.
         </p>
       </div>
       <div className="rounded-xl border border-[#99F6E4] bg-[#F0FDFA] p-4 text-sm leading-relaxed text-on-surface">
