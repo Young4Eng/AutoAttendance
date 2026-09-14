@@ -3,6 +3,7 @@ import type { Owner } from "../types/models";
 import { FIXTURE_OWNER_SUB } from "../types/models";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { CHROME_STORE_URL } from "../lib/storeLinks";
+import { PrivacyPolicyBody } from "../components/PrivacyPolicyBody";
 
 interface Props {
   onLogin: (owner: Owner) => void;
@@ -53,21 +54,20 @@ export function LoginScreen({ onLogin, error, onError }: Props) {
         </a>
         <div className="w-full bg-white border border-[var(--border)] rounded-2xl p-7 shadow-sm">
           <div className="flex flex-col gap-5 text-left">
-            <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 text-xs text-[#475569] space-y-2.5">
-              <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2">
-                <span className="font-semibold text-[var(--primary-container)]">계정 DB 저장 및 동기화 안내</span>
-                <span className="text-[11px] text-[var(--text-secondary)] font-medium">자세히 → 안내</span>
+            <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 text-xs text-[#475569] space-y-2">
+              <div className="border-b border-[#E2E8F0] pb-2">
+                <span className="font-semibold text-[var(--primary-container)]">개인정보 처리방침</span>
               </div>
-              <ul className="space-y-1.5 leading-relaxed text-[var(--on-surface-variant)]">
-                <li>출결 초안(번호·성명·사유)은 <strong>출결메이트 계정 DB에 저장</strong>됩니다.</li>
-                <li>브라우저 캐시를 삭제해도 유지되며, 동일한 구글 계정이라면 <strong>다른 PC에서도 이어서 확인·작업</strong>할 수 있습니다.</li>
-                <li>나이스에 최종 반영된 출결은 나이스에 보관되며, 본 DB는 <strong>편리한 입력을 돕는 초안 보관함</strong>입니다.</li>
-              </ul>
+              <p className="m-0 leading-relaxed">
+                출결 초안(번호·성명·사유)은 계정 DB에 저장됩니다. 캐시를 지워도 남고, 같은 구글이면
+                다른 PC에서도 보입니다. 나이스에 넣은 값은 나이스에 있습니다.
+              </p>
+              <PrivacyPolicyBody compact />
             </div>
             <label className="flex items-start gap-2.5 cursor-pointer select-none bg-white rounded-xl border border-[var(--border)] p-3.5">
               <input type="checkbox" className="w-4 h-4 mt-0.5 accent-[var(--primary-container)]" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
               <span className="text-xs font-medium leading-snug">
-                위 안내를 읽었고, 이 학급 출결 초안을 계정에 저장하는 데 동의합니다.
+                개인정보 처리방침(제1조부터 제12조)을 읽었고, 이 학급 출결 초안을 계정에 저장하는 데 동의합니다.
                 <span className="text-[var(--primary-container)] text-[11px] font-semibold block mt-0.5">[필수]</span>
               </span>
             </label>
@@ -81,7 +81,7 @@ export function LoginScreen({ onLogin, error, onError }: Props) {
             ) : null}
             {error ? <p className="text-sm text-[var(--error)]" role="alert">{error}</p> : null}
             <div className="flex items-center justify-center gap-3 text-[11px] text-[var(--text-secondary)] pt-1 border-t border-[#F4F4F5]">
-              사용 방법 · 개인정보 안내
+              로그인 후 「사용 방법」에서 처리방침 전문을 다시 볼 수 있습니다.
             </div>
           </div>
         </div>
