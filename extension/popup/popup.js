@@ -5,6 +5,37 @@ const btnDry = document.getElementById("btnDry");
 const btnSave = document.getElementById("btnSave");
 const btnClear = document.getElementById("btnClear");
 
+function formatResult(last) {
+  if (!last) return "";
+  if (last.state === "running") {
+    return (last.dryRun ? "시운전 진행 중…" : "실제 입력 진행 중…") + " \ub05d나면 아이콘을 다시 누르세요";
+  }
+  if (last.ok) {
+    return (
+      "ok \u00b7 적용 " +
+      (last.applied || 0) +
+      " \u00b7 " +
+      (last.dryRun ? "시운전(저장 안 함)" : "실제 입력(저장함)")
+    );
+  }
+  var msg = "중단: " + (last.code || "error");
+  if (last.diag && typeof last.diag === "object") {
+    var parts = [];
+    Object.keys(last.diag).forEach(function (k) {
+      parts.push(k + "=" + last.diag[k]);
+    });
+    if (parts.length) msg += " \u00b7 " + parts.join(" ");
+  }
+  if (last.frames != null) msg += " \u00b7 frames=" + last.frames;
+  if (last.reachable != null) msg += " \u00b7 reachable=" + last.reachable;
+  return msg;
+}
+
+function showLast(last) {
+  elResult.textContent = formatResult(last);
+  elResult.className = last && last.state === "error" ? "result-err" : "muted";
+}
+
 function refresh() {
   chrome.runtime.sendMessage({ type: "get-page-kind" }, (res) => {
     if (chrome.runtime.lastError || !res || !res.ok) {
@@ -16,7 +47,7 @@ function refresh() {
       elStatus.textContent = "담임용 일일출결 화면";
       elStatus.className = "status ok";
     } else if (res.kind === "other") {
-      elStatus.textContent = "대상 화면 아님 — 중단";
+      elStatus.textContent = "대상 화면 아님 \u2014 중단";
       elStatus.className = "status no";
     } else {
       elStatus.textContent = "아직 감지 안 됨";
@@ -27,40 +58,17 @@ function refresh() {
     const n = res && res.ok ? res.count : 0;
     elQueue.textContent = "대기열: " + n + "건";
   });
+  chrome.storage.session.get("lastApply", (data) => {
+    showLast(data && data.lastApply);
+  });
 }
 
 function run(dryRun) {
-  elResult.textContent = (dryRun ? "시운전 중… 저장 안 함" : "실제 입력 중… 나이스에 저장") + " · Esc로 중단";
+  elResult.textContent = (dryRun ? "시운전 시작" : "실제 입력 시작") + " \u00b7 창을 닫습니다";
   btnDry.disabled = true;
   btnSave.disabled = true;
-  chrome.runtime.sendMessage({ type: "run-apply", dryRun: dryRun }, (res) => {
-    btnDry.disabled = false;
-    btnSave.disabled = false;
-    if (chrome.runtime.lastError || !res) {
-      elResult.textContent = "실패: no_response";
-      return;
-    }
-    if (res.ok) {
-      elResult.textContent =
-        "ok · 적용 " +
-        (res.applied || 0) +
-        " · " +
-        (res.dryRun ? "시운전(저장 안 함)" : "실제 입력(저장함)") +
-        " · synced 미설정";
-    } else {
-      var msg = "중단: " + (res.code || "error");
-      if (res.diag && typeof res.diag === "object") {
-        var parts = [];
-        Object.keys(res.diag).forEach(function (k) {
-          parts.push(k + "=" + res.diag[k]);
-        });
-        if (parts.length) msg += " · " + parts.join(" ");
-      }
-      if (res.frames != null) msg += " · frames=" + res.frames;
-      if (res.reachable != null) msg += " · reachable=" + res.reachable;
-      elResult.textContent = msg;
-    }
-    refresh();
+  chrome.runtime.sendMessage({ type: "run-apply", dryRun: dryRun }, () => {
+    window.close();
   });
 }
 
@@ -74,6 +82,10 @@ btnClear.addEventListener("click", () => {
     elResult.textContent = "대기열 비움";
     refresh();
   });
+});
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "session" && changes.lastApply) showLast(changes.lastApply.newValue);
 });
 
 refresh();

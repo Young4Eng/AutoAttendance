@@ -1,6 +1,7 @@
 /**
  * 감지 + 대기열 수신 + 적용 지시.
  * synced 자동 표시 없음. 출결마감·로그인 자동화 없음.
+ * 작업 중 팝업은 닫힘. 결과·오류 코드는 session에 남겠다가 아이콘 재클릭 시 표시.
  */
 import {
   originAllowed,
@@ -9,19 +10,23 @@ import {
 
 const PAGE_KEY = "pageKind";
 const QUEUE_KEY = "queueItems";
+const LAST_KEY = "lastApply";
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.session.set({ [PAGE_KEY]: "unknown", [QUEUE_KEY]: [] });
 });
 
-async function setBadge(kind, tabId) {
-  const on = kind === "homeroom-daily";
-  const text = on ? "ON" : "";
+async function setBadge(text, color, tabId) {
   const opts = tabId != null ? { tabId } : {};
-  await chrome.action.setBadgeText({ text, ...opts });
-  if (on) {
-    await chrome.action.setBadgeBackgroundColor({ color: "#0B7A45", ...opts });
+  await chrome.action.setBadgeText({ text: text || "", ...opts });
+  if (text && color) {
+    await chrome.action.setBadgeBackgroundColor({ color, ...opts });
   }
+}
+
+async function setPageBadge(kind, tabId) {
+  const on = kind === "homeroom-daily";
+  await setBadge(on ? "ON" : "", "#0B7A45", tabId);
 }
 
 function logRow(row, type, result, code) {
@@ -42,7 +47,6 @@ async function listFrames(tabId) {
     if (!Array.isArray(frames) || !frames.length) {
       return [{ frameId: 0, url: "" }];
     }
-    // neis 문서만. about:blank 등은 뒤로.
     const neis = [];
     const other = [];
     for (const f of frames) {
@@ -62,13 +66,11 @@ async function listFrames(tabId) {
   }
 }
 
-/** content script가 없는 iframe에 파일을 다시 싣는다. */
 async function ensureScripts(tabId, frameIds) {
   if (!chrome.scripting || !chrome.scripting.executeScript) {
     return { ok: false, code: "no_scripting" };
   }
   const files = ["content/detect.js", "content/filter-bar-parse.js", "content/row-match.js", "content/popup-apply.js", "content/neis-apply.js"];
-  // 1) allFrames 한 번 (host_permissions 범위)
   try {
     await chrome.scripting.executeScript({
       target: { tabId, allFrames: true },
@@ -103,6 +105,32 @@ async function pingFrame(tabId, frameId) {
   }
 }
 
+function summarize(res, dryRun) {
+  const ok = Boolean(res && res.ok);
+  return {
+    state: ok ? "done" : "error",
+    ok,
+    code: ok ? null : (res && res.code) || "error",
+    applied: (res && res.applied) || 0,
+    dryRun: Boolean(dryRun),
+    diag: res && res.diag && typeof res.diag === "object" ? res.diag : null,
+    frames: res && res.frames != null ? res.frames : null,
+    reachable: res && res.reachable != null ? res.reachable : null,
+    at: Date.now(),
+  };
+}
+
+async function saveLast(entry, tabId) {
+  await chrome.storage.session.set({ [LAST_KEY]: entry });
+  if (entry.state === "running") {
+    await setBadge("\u2026", "#1d4ed8", tabId);
+  } else if (entry.ok) {
+    await setBadge("OK", "#0B7A45", tabId);
+  } else {
+    await setBadge("!", "#b42318", tabId);
+  }
+}
+
 async function runApply(dryRun) {
   const data = await chrome.storage.session.get(QUEUE_KEY);
   const items = Array.isArray(data[QUEUE_KEY]) ? data[QUEUE_KEY] : [];
@@ -112,7 +140,6 @@ async function runApply(dryRun) {
 
   const frames = await listFrames(tab.id);
   const frameIds = frames.map((f) => f.frameId);
-  // 익명 진단: 개수만
   console.info(
     "[출결메이트]",
     "frames=",
@@ -121,7 +148,6 @@ async function runApply(dryRun) {
     frames.filter((f) => /\.neis\.go\.kr/i.test(f.url || "")).length,
   );
 
-  // 먼저 ping. 실패한 프레임만 재주입 (리스너 중복 방지 가드 있음).
   let reachable = [];
   for (const frameId of frameIds) {
     if (await pingFrame(tab.id, frameId)) reachable.push(frameId);
@@ -155,7 +181,6 @@ async function runApply(dryRun) {
         softFail = softFail || res;
         continue;
       }
-      // 익명 diag만 (이름·번호 값 없음)
       if (res.diag && typeof res.diag === "object") {
         const d = res.diag;
         console.info(
@@ -209,21 +234,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     chrome.storage.session.get(PAGE_KEY).then((data) => {
       const prev = data[PAGE_KEY] || "unknown";
       let next = hostOk ? kind : "other";
-      // 자식 iframe의 other로 담임용 감지를 지우지 않음
       if (next === "other" && prev === "homeroom-daily" && frameId !== 0) {
         sendResponse({ ok: true, kind: prev, ignored: true });
         return;
       }
       chrome.storage.session.set({ [PAGE_KEY]: next });
-      setBadge(next, sender.tab?.id).catch(() => {});
+      chrome.storage.session.get(LAST_KEY).then((lastData) => {
+        const last = lastData[LAST_KEY];
+        if (!last || last.state !== "running") {
+          setPageBadge(next, sender.tab?.id).catch(() => {});
+        }
+      });
       console.info(
         "[출결메이트]",
         "page=",
         next,
         "frame=",
         frameId,
-        "badge=",
-        next === "homeroom-daily" ? "ON" : "off",
       );
       sendResponse({ ok: true, kind: next });
     });
@@ -254,25 +281,32 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === "abort-apply" || message.type === "apply-aborted") {
     findNeisTab().then(async (tab) => {
-      if (!tab?.id) {
-        sendResponse({ ok: true });
-        return;
+      if (tab?.id) {
+        const frames = await listFrames(tab.id);
+        await Promise.all(
+          frames.map((f) =>
+            chrome.tabs.sendMessage(tab.id, { type: "abort-apply" }, { frameId: f.frameId }).catch(() => null),
+          ),
+        );
       }
-      const frames = await listFrames(tab.id);
-      await Promise.all(
-        frames.map((f) =>
-          chrome.tabs.sendMessage(tab.id, { type: "abort-apply" }, { frameId: f.frameId }).catch(() => null),
-        ),
-      );
+      await saveLast({ state: "error", ok: false, code: "aborted", at: Date.now() }, tab?.id);
       sendResponse({ ok: true });
     });
     return true;
   }
 
   if (message.type === "run-apply") {
-    // dryRun 기본 true
     const dryRun = message.dryRun !== false;
-    runApply(dryRun).then((res) => sendResponse(res));
+    findNeisTab().then(async (tab) => {
+      await saveLast({ state: "running", ok: false, dryRun, at: Date.now() }, tab?.id);
+      sendResponse({ ok: true, started: true });
+      try {
+        const res = await runApply(dryRun);
+        await saveLast(summarize(res, dryRun), tab?.id);
+      } catch (err) {
+        await saveLast({ state: "error", ok: false, code: "apply_threw", dryRun, at: Date.now() }, tab?.id);
+      }
+    });
     return true;
   }
 
